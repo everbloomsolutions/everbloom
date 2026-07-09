@@ -1,0 +1,36 @@
+# web-admin: build from monorepo root (Option A)
+# Build: docker build -f docker/Dockerfile.web-admin -t ghcr.io/everbloom/web-admin:latest .
+# Context must be repo root (.)
+
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@10 --activate
+
+COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY pnpm-lock.yaml* ./
+COPY apps/web-admin ./apps/web-admin
+
+RUN set -e; \
+  if [ -f pnpm-lock.yaml ]; then \
+  pnpm install --frozen-lockfile; \
+  else \
+  pnpm install; \
+  fi
+ENV NODE_OPTIONS=--max-old-space-size=8192
+RUN pnpm turbo run build --filter=@everbloom/web-admin
+
+# Stage 2: Production (nginx)
+FROM nginx:alpine
+
+RUN apk add --no-cache gettext wget
+
+COPY --from=builder /app/apps/web-admin/dist /usr/share/nginx/html
+COPY --from=builder /app/apps/web-admin/docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=builder /app/apps/web-admin/docker/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 8080
+ENTRYPOINT ["/docker-entrypoint.sh"]

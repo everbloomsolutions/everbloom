@@ -1,0 +1,1 @@
+export { inquiryApi } from './inquiryApi';

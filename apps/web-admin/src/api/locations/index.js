@@ -1,0 +1,1 @@
+export { locationApi } from './locationApi';

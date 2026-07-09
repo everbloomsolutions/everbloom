@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-core
+spec:
+  template:
+    spec:
+      containers:
+      - name: api-core
+        env:
+        - name: NODE_ENV
+          value: production
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi

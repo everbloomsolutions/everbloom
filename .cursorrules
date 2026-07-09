@@ -1,0 +1,156 @@
+## 1. Reasoning & Communication
+
+* **Internal Chain-of-Thought**: Never reveal internal reasoning process
+* **Structured Summaries**: what/why/assumptions/next steps
+* **Clear but concise**: Not verbose
+* **Clarify only when**: Missing info blocks correctness
+* **Organized responses**: Sectioned, structured output
+* **Avoid granular back-and-forth**: Unless needed
+
+## 2. Context & Memory Management
+
+* **Selective long-term**: Architectural decisions, important outputs/definitions
+* **Short-term**: Active workflow steps
+* **Hybrid memory**: Short-term task + selective long-term retention
+* **Auto-ignore**: Irrelevant history automatically
+* **Context level**: More than Fresh Mode, less than Stability Mode
+* **Never store**: Sensitive data, secrets, private data
+* **Focus on**: Working style, framework preferences, naming, structure
+* **Task history**: Keep only relevant task history
+* **Discard**: Old, irrelevant branches
+* **Preserve**: Important decisions/data structures
+* **Reset when**: Project changes, new track, stale/conflicting context
+
+## 3. Workflow Handling
+
+* **Scope**: Medium-complexity (multi-step flows, multi-file ops, refactoring, feature architecture)
+* **State management**: Maintain state across steps, not full histories
+* **Anchors**: Active plan, task stages, intermediate artifacts
+* **No aggressive resets**: Unlike Fresh Mode
+* **No endless history**: Unlike Stability Mode
+
+
+## 4. File & Output Management
+
+* **Create files**: Do not generate new files unless explicitly requested
+* **Large output**: Recommend file creation → create if agreed → else inline
+* **Active artifacts**: Maintain only one(`docs/artifact.md`)
+* **Inline threshold**: Only if <300 lines
+* **Multi-file output**: Ask before creating multiple files
+* **Edit existing**: Directly when appropriate
+* **File reading**: Read only necessary sections (line offsets), reference > inline for >200 lines, use search/grep when possible
+
+## 5. Code Output Policy
+
+* **Full, functional code**: Complete logic (not necessarily entire files)
+* **Large code**: Ask before generating. File creation is allowed only if permitted by the active domain rules.
+* **Clean patches**: Minimal, focused changes
+* **Show relevant sections**: Use line numbers, `...` for omissions
+* **Prefer minimal diffs**: Over full dumps
+* **Extract patterns**: Reusable patterns to references
+* **Alternatives**: Offer 1–3 only when requested, critical for trade-offs, or user uncertain
+* **Otherwise**: Offer on request
+
+## 6. Assumptions & Clarification
+
+* **Assume when**: Safe, reversible, explicitly documented
+* **Clarify when**: Correctness depends on missing input, DB/credentials/deployment/destructive actions
+* **If unsure but not risky**: Proceed with clear assumptions
+
+## 7. Token Optimization
+
+* **Balance**: Clarity with efficiency
+* **Response format**: Concise bullets > paragraphs, 1–2 examples max, no repetition
+* **Context management**: Reference by topic/keyword, use abbreviations (define once), summarize long context, drop irrelevant branches
+* **Output format**: Tables for comparisons, lists for steps, structured formats (JSON/YAML) for data
+* **Prompts**: Batch related requests, specific questions, avoid redundant clarifications
+* **Files**: Read only necessary sections (line offsets), reference > inline for >200 lines, use search/grep when possible
+
+## 8. Documentation Guidelines
+
+* **Default**: Concise summaries in chat response only
+* **DO NOT create**: Detailed analysis documents, migration plans, implementation guides, or comprehensive reports unless explicitly requested
+* **Create documents only when**: User explicitly requests using "generate documentation"
+* **Summary format**: Brief, structured summaries in chat (what/why/key points)
+* **Location**: Use `.rules/` for rule files, `docs/` for project documentation and any active workflow artifacts
+* **Format**: Markdown with consistent structure when documents are created
+
+
+## 9. Project-Specific Rules
+
+- **Isolation**: Backend, Frontend, Admin Panel are isolated; no cross-assumptions; no shared packages or runtime deps.
+* **Architecture**: Single-tenant architecture; no instance-specific deployments.
+* **Testing**: Centralized, non-colocated tests:
+  - Backend: backend/tests/
+  - Frontend: frontend/tests/
+  - Admin Panel: adminpanel/tests/
+  - Mobile: mobile/tests/
+* **Dependencies**: Use identical dependency versions across all packages. Check existing usage before adding. Prefer native/prebuilt modules.
+
+### General Patterns
+
+* **File Naming**:
+  - Components: PascalCase (`Button.jsx`)
+  - Utilities: camelCase (`formatDate.js`)
+  - Constants: UPPER_SNAKE_CASE (`API_BASE_URL`)
+
+* **Component Structure**:
+  - Functional components + hooks
+  - Arrow functions
+  - Destructured props
+  - Meaningful names
+  - Small, focused components
+
+### Code Quality
+
+- **TypeScript**: `strict` mode
+- **Style**: 100-char lines, single quotes
+- **Size limits**:
+  - **Functions** ≤300 lines
+  - **Files** ≤800 lines
+
+- **Backend**:
+  - Controllers ≤300
+  - Services ≤400
+  - Repositories ≤400
+  - Routes ≤300
+  - Classes ≤400
+
+- **Frontend**:
+  - Components ≤400
+  - Pages ≤800
+
+- **Mobile**:
+  - Widgets ≤400
+  - Pages ≤500
+  - Classes ≤300
+
+## 11. Detailed Rules & References
+
+For authoritative, in-depth guidelines, refer to the following rule files.
+These documents are **reference-only** and should be consulted **on demand**, not treated as always-on context.
+
+- **`.rules/backend-rules.md`**
+  Backend architecture, module boundaries, API contracts, validation, security, and data handling.
+
+- **`.rules/adminpanel-rules.md`**
+  Admin Panel UI rules, API usage, state management, styling, file/output constraints, and forbidden actions.
+
+- **`.rules/frontend-rules.md`**
+  Frontend (non-admin) routing, theming, build configuration. Add when needed; otherwise see adminpanel-rules for web UI patterns.
+
+
+
+## 12 Token Usage
+
+- **Every response must include a token usage estimate**
+- Always add a section titled: `## Token Usage`
+- Place it **at the end of the response**
+
+### Format
+```md
+## Token Usage
+- Input (est.): <number>
+- Output (est.): <number>
+- Total (est.): <number>
+

@@ -1,0 +1,57 @@
+name: Update Image Tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to set in deploy base kustomization (default: git SHA)'
+        required: false
+        default: ''
+      update_gitops:
+        description: 'Commit and push tag changes to deploy base kustomizations'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  UPDATE_GITOPS: ${{ github.event.inputs.update_gitops }}
+
+jobs:
+  update-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update api-core base kustomization
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ steps.tag.outputs.tag }}/" deploy/apps/api-core/base/kustomization.yaml
+
+      - name: Update web-admin base kustomization
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ steps.tag.outputs.tag }}/" deploy/apps/web-admin/base/kustomization.yaml
+
+      - name: Update web-public base kustomization
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ steps.tag.outputs.tag }}/" deploy/apps/web-public/base/kustomization.yaml
+
+      - name: Update GitOps repository
+        if: env.UPDATE_GITOPS == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add deploy/apps/api-core/base/kustomization.yaml \
+                deploy/apps/web-admin/base/kustomization.yaml \
+                deploy/apps/web-public/base/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore(deploy): update image tags to ${{ steps.tag.outputs.tag }}"
+          git push || exit 0

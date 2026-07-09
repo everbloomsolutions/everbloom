@@ -1,0 +1,6 @@
+# pnpm Workspace Configuration
+# This file defines the workspace structure for pnpm
+# Even for a single package, this is good practice for future monorepo expansion
+
+packages:
+  - '.'

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-admin
+  labels:
+    app: web-admin
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-admin
+  template:
+    metadata:
+      labels:
+        app: web-admin
+        component: frontend
+    spec:
+      containers:
+      - name: web-admin
+        image: ghcr.io/everbloom/web-admin:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: PORT
+          value: "8080"
+        - name: VITE_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: web-admin-config
+              key: vite-api-base-url
+        - name: VITE_SOCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              name: web-admin-config
+              key: vite-socket-url
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5

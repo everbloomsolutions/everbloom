@@ -1,0 +1,6 @@
+# Dev compose: mongo + redis only (one Compose Application in Docker Desktop).
+# Run api-core and web-admin locally (pnpm dev). Root includes apps/api-core/docker-compose.dev.yaml.
+# From repo root: docker compose -f docker-compose.dev.yaml up -d
+
+include:
+  - apps/api-core/docker-compose.dev.yaml

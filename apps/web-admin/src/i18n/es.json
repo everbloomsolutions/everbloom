@@ -1,0 +1,30 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "noData": "No hay datos disponibles"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "dashboard": {
+    "title": "Panel de control",
+    "totalUsers": "Total de usuarios",
+    "totalInquiries": "Total de consultas"
+  },
+  "users": {
+    "title": "Usuarios",
+    "name": "Nombre",
+    "email": "Correo",
+    "role": "Rol"
+  }
+}

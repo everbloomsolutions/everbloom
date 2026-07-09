@@ -1,0 +1,19 @@
+{
+  "name": "@everbloom/web-public",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "description": "Public marketing website for Everbloom",
+  "scripts": {
+    "dev": "echo 'web-public app not yet implemented'",
+    "build": "node -e \"require('fs').mkdirSync('dist',{recursive:true}); require('fs').writeFileSync('dist/.placeholder','');\"",
+    "start": "echo 'web-public app not yet implemented'",
+    "preview": "echo 'web-public app not yet implemented'",
+    "test": "echo 'no tests'",
+    "lint": "echo 'no lint'",
+    "type-check": "echo 'no type-check'",
+    "clean": "echo 'no clean'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

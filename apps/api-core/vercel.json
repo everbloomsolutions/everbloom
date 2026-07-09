@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60
+    }
+  },
+  "regions": [
+    "iad1"
+  ],
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "/api/index.ts?path=api/v1/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.ts?path=api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/index.ts?path=health"
+    },
+    {
+      "source": "/health/:path*",
+      "destination": "/api/index.ts?path=health/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api/index.ts?path=:path*"
+    }
+  ]
+}

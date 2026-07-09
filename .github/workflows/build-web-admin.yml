@@ -1,0 +1,127 @@
+name: Build Web Admin
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/web-admin/**'
+      - '.github/workflows/build-web-admin.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  IMAGE_NAME: web-admin
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: ./apps/web-admin
+        run: pnpm lint
+
+      - name: Type-check
+        working-directory: ./apps/web-admin
+        run: pnpm type-check
+
+      - name: Validate environment variables
+        working-directory: ./apps/web-admin
+        run: pnpm run validate:env
+        env:
+          NODE_ENV: ${{ github.event.inputs.environment || 'production' }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL || 'ws://localhost:8080' }}
+        continue-on-error: true
+
+      - name: Test
+        working-directory: ./apps/web-admin
+        run: pnpm test
+
+      - name: Build application
+        working-directory: ./apps/web-admin
+        run: pnpm build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL || 'ws://localhost:8080' }}
+          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME || 'Everbloom Admin' }}
+          VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION || '0.0.0' }}
+
+      - name: Set image tag for branch
+        id: tag
+        run: |
+          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.web-admin
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Vercel
+        if: env.DEPLOY_TO == 'vercel'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./apps/web-admin
+        continue-on-error: true
+
+      - name: Update GitOps repository
+        if: env.UPDATE_GITOPS == 'true'
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/web-admin/base/kustomization.yaml
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add deploy/apps/web-admin/base/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore(deploy): update web-admin image to ${{ github.sha }}"
+          git push || exit 0

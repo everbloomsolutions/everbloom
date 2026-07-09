@@ -1,0 +1,55 @@
+# Single dev compose: mongo + redis only. Run api-core and web-admin locally (e.g. pnpm dev).
+# Mongo DB name: everbloom (MONGO_INITDB_DATABASE). Set MONGODB_URI=mongodb://localhost:27017/everbloom in .env (see env.example).
+# Default: one Compose Application in Docker Desktop (project dir = repo root, this file or root).
+#
+# From repo root: docker compose -f apps/api-core/docker-compose.dev.yaml up -d
+# From apps/api-core: ./scripts/docker-dev.sh up
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: everbloom-mongo-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-dev-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=everbloom
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "localhost:27017/test", "--quiet", "--eval", "db.runCommand({ping:1})" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - everbloom-dev
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: everbloom-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - everbloom-dev
+
+volumes:
+  mongo-dev-data:
+    driver: local
+  redis-dev-data:
+    driver: local
+
+networks:
+  everbloom-dev:
+    driver: bridge

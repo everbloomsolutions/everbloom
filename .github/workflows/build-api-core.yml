@@ -1,0 +1,98 @@
+name: Build API Core
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/api-core/**'
+      - '.github/workflows/build-api-core.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  IMAGE_NAME: api-core
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: ./apps/api-core
+        run: pnpm lint
+
+      - name: Type-check
+        working-directory: ./apps/api-core
+        run: pnpm type-check
+
+      - name: Test
+        working-directory: ./apps/api-core
+        run: pnpm test
+
+      - name: Set image tag for branch
+        id: tag
+        run: |
+          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api-core
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update GitOps repository
+        if: env.UPDATE_GITOPS == 'true'
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/api-core/base/kustomization.yaml
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add deploy/apps/api-core/base/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore(deploy): update api-core image to ${{ github.sha }}"
+          git push || exit 0

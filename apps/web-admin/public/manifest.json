@@ -1,0 +1,24 @@
+{
+  "name": "Everbloom Admin Panel",
+  "short_name": "Everbloom Admin",
+  "description": "Everbloom Admin Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "462x161",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

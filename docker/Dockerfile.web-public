@@ -1,0 +1,10 @@
+# web-public: build from monorepo root (Option A) — placeholder
+# Build: docker build -f docker/Dockerfile.web-public -t ghcr.io/everbloom/web-public:latest .
+# Context must be repo root (.)
+
+FROM nginx:alpine
+
+RUN echo "web-public app not yet implemented" > /usr/share/nginx/html/index.html
+
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

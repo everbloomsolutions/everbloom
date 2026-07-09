@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-core
+  labels:
+    app: api-core
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-core
+  template:
+    metadata:
+      labels:
+        app: api-core
+        component: api
+    spec:
+      containers:
+      - name: api-core
+        image: ghcr.io/everbloom/api-core:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: api-core-config
+              key: NODE_ENV
+        - name: PORT
+          value: "8080"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: api-core-secrets
+              key: mongodb-uri
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-core-secrets
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: api-core-secrets
+              key: jwt-secret
+        - name: JWT_REFRESH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: api-core-secrets
+              key: jwt-refresh-secret
+        - name: ADMIN_PANEL_URL
+          valueFrom:
+            configMapKeyRef:
+              name: api-core-config
+              key: admin-panel-url
+        - name: BACKEND_CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: api-core-config
+              key: cors-origin
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30

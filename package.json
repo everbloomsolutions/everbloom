@@ -1,0 +1,22 @@
+{
+  "name": "everbloom",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Everbloom monorepo",
+  "scripts": {
+    "dev": "node scripts/kill-dev-ports.js && turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "preview": "turbo run preview",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf .turbo",
+    "clean:cache": "rm -rf .turbo && pnpm store prune"
+  },
+  "devDependencies": {
+    "kill-port": "^1.0.1",
+    "turbo": "^2.3.3"
+  },
+  "packageManager": "pnpm@10.27.0"
+}

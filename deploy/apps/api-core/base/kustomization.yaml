@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - configmap.yaml
+  - secret.yaml
+
+commonLabels:
+  app: api-core
+  component: api
+
+images:
+  - name: api-core
+    newName: ghcr.io/everbloom/api-core
+    newTag: latest
