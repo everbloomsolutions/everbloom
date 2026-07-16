@@ -22,6 +22,8 @@ on:
 
 env:
   IMAGE_NAME: web-admin
+  AWS_REGION: ap-south-2
+  ECR_REPOSITORY: everbloom/web-admin
 
 jobs:
   build-and-push:
@@ -86,12 +88,16 @@ jobs:
             echo "tag=staging" >> $GITHUB_OUTPUT
           fi
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-ecr-push
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -100,8 +106,8 @@ jobs:
           file: docker/Dockerfile.web-admin
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

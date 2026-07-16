@@ -9,3 +9,10 @@ data:
   LOG_LEVEL: info
   admin-panel-url: https://web-admin.vercel.app
   cors-origin: https://web-admin.vercel.app
+  # MongoDB Self-hosted Configuration
+  MONGODB_HOST: mongodb
+  MONGODB_PORT: "27017"
+  MONGODB_DATABASE: everbloom
+  # ElastiCache Valkey Configuration
+  REDIS_HOST: everbloom-valkey.xxxxxx.use1.cache.amazonaws.com
+  REDIS_PORT: "6379"
