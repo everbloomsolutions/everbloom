@@ -48,3 +48,28 @@ coverage/
 # Prisma (if used later)
 prisma/migrations/
 
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+terraform.rc
+
+# AWS
+.aws/
+credentials
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
