@@ -41,6 +41,7 @@ export class RedisHelperService {
     redis: {
       host: string;
       port: number;
+      username?: string;
       password?: string;
       tls?: Record<string, unknown>;
       connectTimeout?: number;
@@ -86,7 +87,7 @@ export class RedisHelperService {
             host,
             port,
             username: url.username || 'default',
-            password: decodeURIComponent(password),
+            password: password ? decodeURIComponent(password) : undefined,
             tls: {}, // Empty object enables TLS with default settings for ioredis
             connectTimeout: 10000, // 10 seconds timeout
             lazyConnect: false, // Connect immediately
