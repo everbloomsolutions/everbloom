@@ -36,8 +36,8 @@ resource "aws_secretsmanager_secret" "api_core" {
 resource "aws_secretsmanager_secret_version" "api_core" {
   secret_id = aws_secretsmanager_secret.api_core.id
   secret_string = jsonencode({
-    mongodb-uri = "mongodb://${var.mongodb_username}:${var.mongodb_password}@mongodb:27017/everbloom?authSource=admin"
-    redis-url = "rediss://:${var.valkey_auth_token}@${aws_elasticache_replication_group.everbloom.primary_endpoint_address}:6379"
+    mongodb-uri = "mongodb://${urlencode(var.mongodb_username)}:${urlencode(var.mongodb_password)}@mongodb:27017/everbloom?authSource=admin"
+    redis-url = "rediss://:${urlencode(var.valkey_auth_token)}@${aws_elasticache_replication_group.everbloom.primary_endpoint_address}:6379"
     jwt-secret = var.jwt_secret
     jwt-refresh-secret = var.jwt_refresh_secret
     cloudinary-cloud-name = var.cloudinary_cloud_name

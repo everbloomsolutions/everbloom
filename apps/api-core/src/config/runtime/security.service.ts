@@ -66,6 +66,11 @@ export class SecurityService {
       if (String(req.headers.upgrade || '').toLowerCase() === 'websocket') {
         return next();
       }
+
+      // Skip HTTPS redirect for health checks so Kubernetes/ALB probes work on HTTP port
+      if (req.path === '/health' || req.path === '/health/detailed' || req.path === '/health/cors-test') {
+        return next();
+      }
       
       if (req.header('x-forwarded-proto') !== 'https') {
         return res.redirect(301, `https://${req.header('host')}${req.url}`);

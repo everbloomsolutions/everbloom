@@ -187,7 +187,16 @@ export function validateConfig(config: Record<string, unknown>) {
   }
 
   // Redis URL validation (optional, but if provided must be valid)
-  const redisUrl = String(validatedConfig.redisUrl || '').trim();
+  // CRITICAL: If config.redisUrl is empty but process.env.REDIS_URL is set, use process.env directly
+  let redisUrl = String(validatedConfig.redisUrl || '').trim();
+  if (!redisUrl && process.env.REDIS_URL) {
+    const rawRedisUrl = String(process.env.REDIS_URL).trim();
+    if (rawRedisUrl) {
+      if (isDevLog) console.log('[Validation] FIX: Using process.env.REDIS_URL directly because config.redisUrl is empty');
+      redisUrl = rawRedisUrl;
+      (validatedConfig as unknown as Record<string, unknown>).redisUrl = redisUrl;
+    }
+  }
   if (redisUrl.length > 0 && !/^redis(s)?:\/\//.test(redisUrl)) {
     throw new Error('REDIS_URL must be a valid Redis connection string');
   }

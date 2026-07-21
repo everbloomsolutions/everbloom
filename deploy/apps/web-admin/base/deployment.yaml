@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: web-admin
-        image: ghcr.io/everbloom/web-admin:latest
+        image: web-admin:latest
         ports:
         - containerPort: 8080
           name: http

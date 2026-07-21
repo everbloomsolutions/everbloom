@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: api-core
-        image: ghcr.io/everbloom/api-core:latest
+        image: api-core:latest
         ports:
         - containerPort: 8080
           name: http
