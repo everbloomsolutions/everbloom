@@ -6,7 +6,7 @@ namespace: production
 resources:
   - secret-store.yaml
   - cluster-issuer.yaml
-  - ../../../apps/mongodb/base
+  - ../../apps/mongodb/base
   - ./api-core
   - ./web-admin
   - ./web-public
