@@ -21,8 +21,11 @@ import { LoggerModule } from '../logger/logger.module';
           const isUpstash = redisUrl.includes('upstash.io') || redisUrl.includes('upstash.com');
           const isTls = redisUrl.startsWith('rediss://');
 
+          const parsedUrl = new URL(redisUrl);
           const clientConfig: Parameters<typeof createClient>[0] = {
             url: redisUrl,
+            username: parsedUrl.username || 'default',
+            password: decodeURIComponent(parsedUrl.password),
           };
 
           if (isUpstash) {

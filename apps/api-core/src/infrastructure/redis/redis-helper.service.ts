@@ -85,7 +85,8 @@ export class RedisHelperService {
           redis: {
             host,
             port,
-            password,
+            username: url.username || 'default',
+            password: decodeURIComponent(password),
             tls: {}, // Empty object enables TLS with default settings for ioredis
             connectTimeout: 10000, // 10 seconds timeout
             lazyConnect: false, // Connect immediately
