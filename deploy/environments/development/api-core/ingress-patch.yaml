@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-core
+  labels:
+    app: api-core
+spec:
+  tls:
+    - hosts:
+        - dev-api.everbloom.com
+      secretName: api-core-dev-tls
+  rules:
+    - host: dev-api.everbloom.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-core
+                port:
+                  number: 80
