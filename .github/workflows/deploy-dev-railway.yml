@@ -85,8 +85,14 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli
 
+      - name: Set Dockerfile path for api-core-dev
+        run: railway variable set RAILWAY_DOCKERFILE_PATH=/docker/Dockerfile.api-core RAILWAY_HEALTHCHECK_PATH=/health --service api-core-dev --environment development --project "$RAILWAY_PROJECT_ID" --skip-deploys
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+
       - name: Deploy api-core to Railway
-        run: railway up --service api-core-dev --environment development
+        run: railway up --service api-core-dev --environment development --project "$RAILWAY_PROJECT_ID"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
@@ -102,8 +108,14 @@ jobs:
       - name: Install Railway CLI
         run: npm i -g @railway/cli
 
+      - name: Set Dockerfile path for web-admin-dev
+        run: railway variable set RAILWAY_DOCKERFILE_PATH=/docker/Dockerfile.web-admin RAILWAY_HEALTHCHECK_PATH=/health --service web-admin-dev --environment development --project "$RAILWAY_PROJECT_ID" --skip-deploys
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+
       - name: Deploy web-admin to Railway
-        run: railway up --service web-admin-dev --environment development
+        run: railway up --service web-admin-dev --environment development --project "$RAILWAY_PROJECT_ID"
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
