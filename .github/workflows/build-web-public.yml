@@ -1,94 +1,15 @@
 name: Build Web Public
 
-on:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - 'apps/web-public/**'
-      - '.github/workflows/build-web-public.yml'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - development
-          - staging
-          - production
+# Disabled until the web-public application is implemented.
+# Once implemented, replace this file with a workflow similar to build-web-admin.yml.
 
-env:
-  IMAGE_NAME: web-public
-  AWS_REGION: ap-south-2
-  ECR_REPOSITORY: everbloom/web-public
+on:
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  placeholder:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
-
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build application
-        working-directory: ./apps/web-public
-        run: pnpm build || echo "Build not yet implemented"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-ecr-push
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image tags
-        id: tags
-        run: |
-          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:staging" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.web-public
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Update GitOps repository
-        if: env.UPDATE_GITOPS == 'true' && github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/web-public/base/kustomization.yaml
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add deploy/apps/web-public/base/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore(deploy): update web-public image to ${{ github.sha }}"
-          git push || exit 0
+      - name: Placeholder
+        run: echo "web-public is not implemented yet; CI is disabled."

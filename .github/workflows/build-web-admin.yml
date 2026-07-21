@@ -7,47 +7,35 @@ on:
       - develop
     paths:
       - 'apps/web-admin/**'
+      - 'packages/**'
+      - 'docker/Dockerfile.web-admin'
       - '.github/workflows/build-web-admin.yml'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - development
-          - staging
-          - production
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/actions/setup-monorepo/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/web-admin/**'
+      - 'packages/**'
+      - '.github/workflows/build-web-admin.yml'
+      - '.github/actions/setup-monorepo/**'
 
-env:
-  IMAGE_NAME: web-admin
-  AWS_REGION: ap-south-2
-  ECR_REPOSITORY: everbloom/web-admin
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-push:
+  test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
-
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo
 
       - name: Lint
         working-directory: ./apps/web-admin
@@ -57,75 +45,19 @@ jobs:
         working-directory: ./apps/web-admin
         run: pnpm type-check
 
-      - name: Validate environment variables
-        working-directory: ./apps/web-admin
-        run: pnpm run validate:env
-        env:
-          NODE_ENV: ${{ github.event.inputs.environment || 'production' }}
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
-          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL || 'ws://localhost:8080' }}
-        continue-on-error: true
-
       - name: Test
         working-directory: ./apps/web-admin
         run: pnpm test
 
-      - name: Build application
-        working-directory: ./apps/web-admin
-        run: pnpm build
-        env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
-          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL || 'ws://localhost:8080' }}
-          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME || 'Everbloom Admin' }}
-          VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION || '0.0.0' }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-ecr-push
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image tags
-        id: tags
-        run: |
-          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:staging" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.web-admin
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Deploy to Vercel
-        if: env.DEPLOY_TO == 'vercel'
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./apps/web-admin
-        continue-on-error: true
-
-      - name: Update GitOps repository
-        if: env.UPDATE_GITOPS == 'true' && github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/web-admin/base/kustomization.yaml
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add deploy/apps/web-admin/base/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore(deploy): update web-admin image to ${{ github.sha }}"
-          git push || exit 0
+  build-and-push:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/_build-and-push.yml
+    with:
+      app_name: web-admin
+      dockerfile: docker/Dockerfile.web-admin
+      ecr_repository: everbloom/web-admin
+      kustomization_path: deploy/apps/web-admin/base/kustomization.yaml
+    secrets: inherit
+    permissions:
+      contents: write
+      id-token: write

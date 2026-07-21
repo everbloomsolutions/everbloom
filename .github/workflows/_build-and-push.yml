@@ -1,0 +1,81 @@
+name: Build and Push to ECR
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        description: Application name
+        required: true
+        type: string
+      dockerfile:
+        description: Path to the Dockerfile
+        required: true
+        type: string
+      ecr_repository:
+        description: ECR repository name
+        required: true
+        type: string
+      kustomization_path:
+        description: Path to the base kustomization.yaml to update
+        required: true
+        type: string
+      build_context:
+        description: Docker build context
+        required: false
+        type: string
+        default: '.'
+
+env:
+  AWS_REGION: ap-south-2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-ecr-push
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr_repository }}
+          tags: |
+            type=sha
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.build_context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update GitOps kustomization
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" ${{ inputs.kustomization_path }}
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ${{ inputs.kustomization_path }}
+          git diff --staged --quiet || git commit -m "chore(deploy): update ${{ inputs.app_name }} image to ${{ github.sha }}"
+          git push || exit 0

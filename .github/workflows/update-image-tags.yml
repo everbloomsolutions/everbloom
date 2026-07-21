@@ -13,12 +13,16 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+
 env:
   UPDATE_GITOPS: ${{ github.event.inputs.update_gitops }}
 
 jobs:
   update-tags:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4

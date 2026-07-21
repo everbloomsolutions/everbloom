@@ -7,47 +7,35 @@ on:
       - develop
     paths:
       - 'apps/api-core/**'
+      - 'packages/**'
+      - 'docker/Dockerfile.api-core'
       - '.github/workflows/build-api-core.yml'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - development
-          - staging
-          - production
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/actions/setup-monorepo/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/api-core/**'
+      - 'packages/**'
+      - '.github/workflows/build-api-core.yml'
+      - '.github/actions/setup-monorepo/**'
 
-env:
-  IMAGE_NAME: api-core
-  AWS_REGION: ap-south-2
-  ECR_REPOSITORY: everbloom/api-core
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-push:
+  test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
-
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo
 
       - name: Lint
         working-directory: ./apps/api-core
@@ -61,42 +49,15 @@ jobs:
         working-directory: ./apps/api-core
         run: pnpm test
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-ecr-push
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image tags
-        id: tags
-        run: |
-          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:staging" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.api-core
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Update GitOps repository
-        if: env.UPDATE_GITOPS == 'true' && github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/api-core/base/kustomization.yaml
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add deploy/apps/api-core/base/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore(deploy): update api-core image to ${{ github.sha }}"
-          git push || exit 0
+  build-and-push:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/_build-and-push.yml
+    with:
+      app_name: api-core
+      dockerfile: docker/Dockerfile.api-core
+      ecr_repository: everbloom/api-core
+      kustomization_path: deploy/apps/api-core/base/kustomization.yaml
+    secrets: inherit
+    permissions:
+      contents: write
+      id-token: write
