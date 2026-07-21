@@ -404,35 +404,35 @@ pnpm test
 
 ## Deployment
 
-### Railway Deployment
+### Container Platform Deployment
 
-The backend is configured to work seamlessly with Railway's dynamic port assignment.
+The backend is configured to work with any container platform that injects a `PORT` environment variable.
 
 #### Port Configuration (Automatic)
 
-**Railway automatically handles port configuration:**
-- Railway sets the `PORT` environment variable at runtime
+**Container platforms automatically handle port configuration:**
+- The platform sets the `PORT` environment variable at runtime
 - The application automatically reads `PORT` and binds to `0.0.0.0`
 - No manual port configuration is needed
 
 **Port Resolution Priority:**
-1. `PORT` (Railway sets this automatically) - Highest priority
+1. `PORT` (set by the container platform automatically) - Highest priority
 2. `BACKEND_PORT` (Manual override, if set)
 3. Default: `8080` (Development fallback)
 
 **Host Configuration:**
-- Automatically binds to `0.0.0.0` when `PORT` or Railway env vars are present
+- Automatically binds to `0.0.0.0` when `PORT` or container platform env vars are present
 - Uses `localhost` for local development (when `PORT` is not set)
 
-#### Railway Setup
+#### Container Setup
 
-1. **Deploy to Railway:**
-   - Railway will automatically detect `railway.json` configuration
-   - Uses Dockerfile from root directory (`Dockerfile`)
-   - No additional port configuration needed
+1. **Deploy with Docker/Kubernetes:**
+   - Use the `docker/Dockerfile.api-core` at the repo root
+   - The build context is the monorepo root
+   - No additional port configuration is needed
 
 2. **Environment Variables:**
-   - Set required variables in Railway dashboard:
+   - Set required variables in your platform dashboard or manifest:
      - `MONGODB_URI` (required)
      - `JWT_SECRET` (required)
      - `JWT_REFRESH_SECRET` (required)
@@ -442,15 +442,15 @@ The backend is configured to work seamlessly with Railway's dynamic port assignm
      - Other service credentials as needed
 
 3. **Health Checks:**
-   - Railway uses `/health` endpoint for health checks
+   - The platform uses `/api/v1/health` endpoint for health checks
    - Automatically configured in Dockerfile
 
 **Important Notes:**
-- Do NOT manually set `PORT` in Railway - Railway provides it automatically
-- The application code handles Railway's dynamic port assignment
-- Server automatically binds to `0.0.0.0` when deployed to Railway
+- Do NOT manually set `PORT` when the platform manages it
+- The application code handles dynamic port assignment from `PORT`
+- Server automatically binds to `0.0.0.0` when deployed to a container platform
 - For local development, use `BACKEND_PORT` if you need a specific port
-- Environment variables should be set in Railway dashboard, not in `.env` files (which are gitignored)
+- Environment variables should be set in the platform dashboard or Kubernetes secrets, not in `.env` files (which are gitignored)
 
 ## License
 

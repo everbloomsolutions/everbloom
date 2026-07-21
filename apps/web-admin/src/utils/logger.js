@@ -1,16 +1,16 @@
 /**
  * Admin panel logger utility
- * Production-ready logging for Railway and other platforms
- * 
+ * Production-ready logging for containerized and serverless platforms
+ *
  * Error tracking: Supports Sentry, LogRocket, and other error tracking services
- * Railway: Logs are captured via console.error/warn/info and visible in Railway dashboard
+ * Logs are captured via console.error/warn/info and visible in the platform dashboard
  */
 
 const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
 
 /**
- * Format error for structured logging (Railway-friendly)
+ * Format error for structured logging (JSON format)
  */
 function formatErrorForLogging(error, context = {}) {
   const timestamp = new Date().toISOString();
@@ -84,13 +84,13 @@ function formatErrorForLogging(error, context = {}) {
 class Logger {
   /**
    * Log an error (always logged, even in production)
-   * Browser console errors are visible in browser DevTools, not Railway logs
+   * Browser console errors are visible in browser DevTools; backend logs capture server-side errors
    */
   error(message, ...args) {
     const errorData = args[0] instanceof Error ? args[0] : new Error(message);
     const context = args.length > 1 ? args.slice(1) : {};
     
-    // Structured logging for Railway (JSON format for easy parsing)
+    // Structured logging using JSON format for easy parsing
     const structuredLog = formatErrorForLogging(errorData, {
       message,
       ...context,
@@ -212,7 +212,7 @@ class Logger {
   }
   
   /**
-   * Log with context (structured logging for Railway)
+   * Log with context (structured logging using JSON)
    */
   logWithContext(level, message, context = {}) {
     const structuredLog = {

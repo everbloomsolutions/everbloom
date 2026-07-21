@@ -40,6 +40,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    outputs:
+      registry: ${{ steps.login-ecr.outputs.registry }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -87,6 +89,7 @@ jobs:
     with:
       image_tag: ${{ github.sha }}
       kustomization_paths: ${{ inputs.kustomization_path }}
+      image_uri: ${{ needs.build-and-push.outputs.registry }}/${{ inputs.ecr_repository }}
       update_gitops: true
     permissions:
       contents: write
@@ -98,6 +101,7 @@ jobs:
     with:
       image_tag: staging
       kustomization_paths: deploy/environments/development/${{ inputs.app_name }}/kustomization.yaml
+      image_uri: ${{ needs.build-and-push.outputs.registry }}/${{ inputs.ecr_repository }}
       update_gitops: true
     permissions:
       contents: write
