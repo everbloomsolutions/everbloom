@@ -65,7 +65,7 @@ DEV_SOCKET_URL="${DEV_SOCKET_URL:-wss://dev-api.everbloom.com}"
 create_secret "$SECRET_PREFIX/mongodb" "$(printf 'root-username=root\nroot-password=%s\nusername=everbloom\npassword=%s\n' "$MONGO_ROOT_PASSWORD" "$MONGO_APP_PASSWORD" | make_secret_json)"
 
 # 2. api-core secret (includes MongoDB URI and managed Redis URL)
-MONGODB_URI="mongodb://root:${MONGO_ROOT_PASSWORD}@mongodb:27017/everbloom?authSource=admin"
+MONGODB_URI=$(printf '%s' "$MONGO_ROOT_PASSWORD" | python3 -c 'import urllib.parse, sys; pw = urllib.parse.quote(sys.stdin.read(), safe=""); print(f"mongodb://root:{pw}@mongodb:27017/everbloom?authSource=admin")')
 
 create_secret "$SECRET_PREFIX/api-core" "$(printf 'mongodb-uri=%s\nredis-url=%s\njwt-secret=%s\njwt-refresh-secret=%s\ncloudinary-cloud-name=%s\ncloudinary-api-key=%s\ncloudinary-api-secret=%s\ngoogle-maps-api-key=%s\n' "$MONGODB_URI" "$REDIS_URL" "$JWT_SECRET" "$JWT_REFRESH_SECRET" "$CLOUDINARY_CLOUD_NAME" "$CLOUDINARY_API_KEY" "$CLOUDINARY_API_SECRET" "$GOOGLE_MAPS_API_KEY" | make_secret_json)"
 
