@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - name: Setup monorepo
@@ -70,12 +70,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Update GitOps kustomization
-        if: github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" ${{ inputs.kustomization_path }}
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add ${{ inputs.kustomization_path }}
-          git diff --staged --quiet || git commit -m "chore(deploy): update ${{ inputs.app_name }} image to ${{ github.sha }}"
-          git push || exit 0
+  update-gitops:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/_update-image-tags.yml
+    with:
+      image_tag: ${{ github.sha }}
+      kustomization_paths: ${{ inputs.kustomization_path }}
+      update_gitops: true
+    permissions:
+      contents: write

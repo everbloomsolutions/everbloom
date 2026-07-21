@@ -1,0 +1,41 @@
+name: Update Image Tags
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: Image tag to set in kustomization files
+        required: true
+        type: string
+      kustomization_paths:
+        description: Comma-separated list of kustomization.yaml paths to update
+        required: true
+        type: string
+      update_gitops:
+        description: Whether to commit and push the changes
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  update-tags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update GitOps kustomizations
+        if: inputs.update_gitops
+        run: |
+          IFS=',' read -ra PATHS <<< "${{ inputs.kustomization_paths }}"
+          for p in "${PATHS[@]}"; do
+            sed -i "s/newTag: .*/newTag: ${{ inputs.image_tag }}/" "$p"
+          done
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add "${PATHS[@]}"
+          git diff --staged --quiet || git commit -m "chore(deploy): update image tags to ${{ inputs.image_tag }}"
+          git push || exit 0
