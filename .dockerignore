@@ -1,0 +1,34 @@
+# Version control
+.git
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build artifacts and caches
+dist
+build
+.turbo
+.cache
+.vite
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.production.local
+
+# Logs
+*.log
+
+# Documentation
+*.md
+
+# Top-level directories not needed inside Docker images
+/.github
+/deploy
+/docker
+/scripts
+
+# Compose files
+docker-compose*.yaml

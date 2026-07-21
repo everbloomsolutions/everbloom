@@ -9,8 +9,13 @@ on:
       - 'apps/web-admin/**'
       - 'packages/**'
       - 'docker/Dockerfile.web-admin'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
       - '.github/workflows/build-web-admin.yml'
       - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
       - '.github/actions/setup-monorepo/**'
   pull_request:
     branches:
@@ -19,7 +24,13 @@ on:
     paths:
       - 'apps/web-admin/**'
       - 'packages/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
       - '.github/workflows/build-web-admin.yml'
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
       - '.github/actions/setup-monorepo/**'
 
 concurrency:

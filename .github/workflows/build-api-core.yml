@@ -9,8 +9,13 @@ on:
       - 'apps/api-core/**'
       - 'packages/**'
       - 'docker/Dockerfile.api-core'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
       - '.github/workflows/build-api-core.yml'
       - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
       - '.github/actions/setup-monorepo/**'
   pull_request:
     branches:
@@ -19,7 +24,13 @@ on:
     paths:
       - 'apps/api-core/**'
       - 'packages/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
       - '.github/workflows/build-api-core.yml'
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
       - '.github/actions/setup-monorepo/**'
 
 concurrency:

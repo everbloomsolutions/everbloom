@@ -36,8 +36,8 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Setup monorepo
-        uses: ./.github/actions/setup-monorepo
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,7 +56,7 @@ jobs:
         with:
           images: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr_repository }}
           tags: |
-            type=sha
+            type=sha,prefix=,format=long
             type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
 
       - name: Build and push Docker image
