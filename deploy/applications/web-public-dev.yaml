@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/everbloom/everbloom.git
+    repoURL: https://github.com/everbloomsolutions/everbloom.git
     targetRevision: develop
     path: deploy/environments/development/web-public
   destination:
