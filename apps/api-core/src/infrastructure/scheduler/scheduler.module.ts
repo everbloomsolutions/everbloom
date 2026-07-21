@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, BullModuleAsyncOptions, BullModuleOptions } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { RedisHelperService } from '../redis/redis-helper.service';
@@ -29,30 +29,57 @@ const baseImports = [
   MailModule,
 ];
 
-const bullQueues = [
-  BullModule.registerQueue(
-    { name: 'email' },
-    { name: 'cleanup' },
-    { name: 'analytics' },
-    { name: 'audit-cleanup' },
-    {
-      name: 'import',
-      defaultJobOptions: {
-        removeOnComplete: {
-          age: 24 * 3600,
-          count: 100,
-        },
-        removeOnFail: {
-          age: 7 * 24 * 3600,
-        },
-        attempts: 1,
-      },
-    },
-  ),
-];
+function getQueueRedisConfig(redisHelper: RedisHelperService): BullModuleOptions['redis'] {
+  const conn = redisHelper.getBullRedisConnection();
+  if (!conn) {
+    throw new Error(
+      'Redis URL is not configured. On Vercel, leave REDIS_URL unset to use the no-op scheduler (no queues).',
+    );
+  }
+  return typeof conn === 'string' ? conn : conn.redis;
+}
+
+function createQueueAsyncOption(
+  name: string,
+  extraOptions: Omit<BullModuleOptions, 'name' | 'redis'> = {},
+): BullModuleAsyncOptions {
+  return {
+    name,
+    imports: [RedisModule],
+    useFactory: (redisHelper: RedisHelperService) => ({
+      name,
+      redis: getQueueRedisConfig(redisHelper),
+      ...extraOptions,
+    }),
+    inject: [RedisHelperService],
+  };
+}
+
+const bullQueueAsync = hasRedisEnabled()
+  ? [
+      BullModule.registerQueueAsync(
+        createQueueAsyncOption('email'),
+        createQueueAsyncOption('cleanup'),
+        createQueueAsyncOption('analytics'),
+        createQueueAsyncOption('audit-cleanup'),
+        createQueueAsyncOption('import', {
+          defaultJobOptions: {
+            removeOnComplete: {
+              age: 24 * 3600,
+              count: 100,
+            },
+            removeOnFail: {
+              age: 7 * 24 * 3600,
+            },
+            attempts: 1,
+          },
+        }),
+      ),
+    ]
+  : [];
 
 /** Same Redis URL logic as configuration() so scheduler and config stay in sync (e.g. Vercel no-op when REDIS_URL unset). */
-function getHasRedisFromEnv(): boolean {
+function hasRedisEnabled(): boolean {
   const isVercel = !!process.env.VERCEL;
   const nodeEnv = process.env.NODE_ENV || 'development';
   const redisUrl =
@@ -72,43 +99,24 @@ export class SchedulerModule {
    * are used; otherwise no-op services are registered so the app runs without Redis (e.g. Vercel).
    */
   static forRoot(): DynamicModule {
-    const hasRedis = getHasRedisFromEnv();
-
-    const bullRoot = hasRedis
-      ? [
-        BullModule.forRootAsync({
-          useFactory: (redisHelper: RedisHelperService) => {
-            const conn = redisHelper.getBullRedisConnection();
-            if (!conn) {
-              throw new Error(
-                'Redis URL is not configured. On Vercel, leave REDIS_URL unset to use the no-op scheduler (no queues).',
-              );
-            }
-            return {
-              redis: typeof conn === 'string' ? conn : conn.redis,
-            };
-          },
-          inject: [RedisHelperService],
-        }),
-      ]
-      : [];
+    const hasRedis = hasRedisEnabled();
 
     const providers = hasRedis
       ? [
-        SchedulerService,
-        SchedulerQueueService,
-        EmailProcessor,
-        CleanupProcessor,
-        AnalyticsProcessor,
-        AuditCleanupProcessor,
-        ImportProcessor,
-      ]
+          SchedulerService,
+          SchedulerQueueService,
+          EmailProcessor,
+          CleanupProcessor,
+          AnalyticsProcessor,
+          AuditCleanupProcessor,
+          ImportProcessor,
+        ]
       : [
-        { provide: SchedulerService, useClass: SchedulerServiceNoOp },
-        { provide: SchedulerQueueService, useClass: SchedulerQueueServiceNoOp },
-      ];
+          { provide: SchedulerService, useClass: SchedulerServiceNoOp },
+          { provide: SchedulerQueueService, useClass: SchedulerQueueServiceNoOp },
+        ];
 
-    const imports = [...baseImports, ...bullRoot, ...(hasRedis ? bullQueues : [])];
+    const imports = [...baseImports, ...(hasRedis ? bullQueueAsync : [])];
     const exports = hasRedis
       ? [SchedulerService, SchedulerQueueService, BullModule]
       : [SchedulerService, SchedulerQueueService];
