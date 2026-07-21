@@ -36,7 +36,10 @@ function getQueueRedisConfig(redisHelper: RedisHelperService): BullModuleOptions
       'Redis URL is not configured. On Vercel, leave REDIS_URL unset to use the no-op scheduler (no queues).',
     );
   }
-  return typeof conn === 'string' ? conn : conn.redis;
+  const redis = typeof conn === 'string' ? conn : conn.redis;
+  // eslint-disable-next-line no-console
+  console.log(`[SchedulerModule] queue redis config for Bull: ${JSON.stringify({ ...redis, password: '***' })}`);
+  return redis;
 }
 
 function createQueueAsyncOption(
