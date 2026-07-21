@@ -67,10 +67,12 @@ resource "aws_iam_role_policy_attachment" "github_actions_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
 
-# Minimal custom policy for EKS read access (aws eks update-kubeconfig).
-resource "aws_iam_policy" "github_actions_eks" {
-  name        = "everbloom-github-actions-eks-policy"
-  description = "EKS access for GitHub Actions CI/CD"
+# Inline policy for EKS read access (aws eks update-kubeconfig).
+# This policy already exists on the role; the import block below brings it
+# under Terraform management.
+resource "aws_iam_role_policy" "github_actions_eks" {
+  name = "EKSAccess"
+  role = aws_iam_role.github_actions.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -86,17 +88,11 @@ resource "aws_iam_policy" "github_actions_eks" {
       }
     ]
   })
-
-  tags = {
-    Name        = "everbloom-github-actions-eks-policy"
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
 }
 
-resource "aws_iam_role_policy_attachment" "github_actions_eks" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.github_actions_eks.arn
+import {
+  to = aws_iam_role_policy.github_actions_eks
+  id = "everbloom-github-actions-role:EKSAccess"
 }
 
 # Grant the GitHub Actions role cluster-admin access via EKS access entries.
@@ -133,13 +129,14 @@ resource "kubernetes_config_map_v1_data" "aws_auth" {
   force = true
 
   data = {
-    mapRoles = trimspace(yamlencode([
-      {
-        groups   = ["system:bootstrappers", "system:nodes"]
-        rolearn  = aws_iam_role.eks_nodes.arn
-        username = "system:node:{{EC2PrivateDNSName}}"
-      }
-    ]))
+    mapRoles = trimspace(<<-EOT
+      - groups:
+        - system:bootstrappers
+        - system:nodes
+        rolearn: ${aws_iam_role.eks_nodes.arn}
+        username: system:node:{{EC2PrivateDNSName}}
+      EOT
+    )
   }
 
   depends_on = [

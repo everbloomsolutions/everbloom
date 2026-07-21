@@ -15,6 +15,10 @@ resource "aws_iam_openid_connect_provider" "eks" {
     Environment = "production"
     ManagedBy   = "terraform"
   }
+
+  lifecycle {
+    ignore_changes = [thumbprint_list]
+  }
 }
 
 # IAM Role for External Secrets Operator
