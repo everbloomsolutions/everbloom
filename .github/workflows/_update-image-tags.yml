@@ -11,6 +11,11 @@ on:
         description: Comma-separated list of kustomization.yaml paths to update
         required: true
         type: string
+      image_uri:
+        description: Full image repository URI (without tag) to match in the kustomization images list. If omitted, all newTag values are updated.
+        required: false
+        type: string
+        default: ''
       update_gitops:
         description: Whether to commit and push the changes
         required: false
@@ -30,12 +35,57 @@ jobs:
       - name: Update GitOps kustomizations
         if: inputs.update_gitops
         run: |
-          IFS=',' read -ra PATHS <<< "${{ inputs.kustomization_paths }}"
-          for p in "${PATHS[@]}"; do
-            sed -i "s/newTag: .*/newTag: ${{ inputs.image_tag }}/" "$p"
-          done
+          python3 -m pip install --quiet pyyaml
+          python3 << 'PYEOF'
+          import pathlib
+          import sys
+          import yaml
+
+          paths = [p.strip() for p in "${{ inputs.kustomization_paths }}".split(',') if p.strip()]
+          image_uri = "${{ inputs.image_uri }}".strip()
+          image_tag = "${{ inputs.image_tag }}".strip()
+
+          if not paths or not image_tag:
+              print("Missing required inputs: image_tag and kustomization_paths")
+              sys.exit(1)
+
+          for p in paths:
+              path = pathlib.Path(p)
+              if not path.exists():
+                  print(f"File not found: {p}")
+                  sys.exit(1)
+
+              with path.open('r') as f:
+                  doc = yaml.safe_load(f) or {}
+
+              images = doc.get('images')
+              if not images:
+                  print(f"No images block in {p}; nothing to update")
+                  continue
+
+              updated = False
+              for entry in images:
+                  # Match by the image `name` or `newName` when a specific URI is provided.
+                  if image_uri:
+                      if entry.get('name') == image_uri or entry.get('newName') == image_uri:
+                          entry['newTag'] = image_tag
+                          updated = True
+                  else:
+                      entry['newTag'] = image_tag
+                      updated = True
+
+              if image_uri and not updated:
+                  print(f"Warning: no image matching {image_uri} in {p}; falling back to first image")
+                  images[0]['newTag'] = image_tag
+
+              with path.open('w') as f:
+                  yaml.safe_dump(doc, f, default_flow_style=False, sort_keys=False)
+
+          print("Kustomization image tags updated")
+          PYEOF
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add "${PATHS[@]}"
+          git add ${{ inputs.kustomization_paths }}
           git diff --staged --quiet || git commit -m "chore(deploy): update image tags to ${{ inputs.image_tag }}"
           git push || exit 0

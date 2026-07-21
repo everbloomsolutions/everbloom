@@ -19,7 +19,7 @@ export const appConfig = {
       return runtimeConfig.VITE_API_BASE_URL;
     }
     
-    // Build-time config (Vercel, Railway, etc.)
+    // Build-time config (Vercel, container platforms, etc.)
     if (import.meta.env.VITE_API_BASE_URL) {
       return import.meta.env.VITE_API_BASE_URL;
     }
@@ -43,7 +43,7 @@ export const appConfig = {
       return runtimeConfig.VITE_SOCKET_URL;
     }
     
-    // Build-time config (Vercel, Railway, etc.)
+    // Build-time config (Vercel, container platforms, etc.)
     if (import.meta.env.VITE_SOCKET_URL) {
       return import.meta.env.VITE_SOCKET_URL;
     }

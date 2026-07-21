@@ -21,7 +21,7 @@ Monorepo for Everbloom applications and GitOps deployment.
 - Build all apps: `pnpm turbo run build`. Or one app: `pnpm turbo run build --filter=@everbloom/api-core`.
 - See each app’s `README.md` for run instructions.
 
-**Development:** Run `pnpm dev` from repo root. This clears dev ports once (8080, 3001, 3000), then starts api-core and web-admin. Port design: Backend 8080, Admin 3001, Frontend 3000 (distinct ports to avoid EADDRINUSE). Registry: `scripts/dev-ports.config.js`. Env: Backend `PORT`/`BACKEND_PORT` (8080); Admin `VITE_DEV_PORT` (3001); `VITE_BACKEND_PORT` (8080). If 8080 is in use, the backend tries 8081–8085 and logs the chosen port. Deployments: Railway/AWS use `PORT`; Vercel is serverless. For api-core-only dev, run `pnpm run kill-ports` from `apps/api-core` first.
+**Development:** Run `pnpm dev` from repo root. This clears dev ports once (8080, 3001, 3000), then starts api-core and web-admin. Port design: Backend 8080, Admin 3001, Frontend 3000 (distinct ports to avoid EADDRINUSE). Registry: `scripts/dev-ports.config.js`. Env: Backend `PORT`/`BACKEND_PORT` (8080); Admin `VITE_DEV_PORT` (3001); `VITE_BACKEND_PORT` (8080). If 8080 is in use, the backend tries 8081–8085 and logs the chosen port. Deployments: Docker/Kubernetes/AWS use `PORT`; Vercel is serverless. For api-core-only dev, run `pnpm run kill-ports` from `apps/api-core` first.
 
 **Docker:** One Compose Application (mongo + redis only). Put `.env` at repo root. From root: `docker compose -f docker-compose.dev.yaml up -d`. Run api-core and web-admin locally (`pnpm dev`). See [Docker Desktop](#docker-desktop) below.
 

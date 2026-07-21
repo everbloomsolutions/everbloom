@@ -269,12 +269,12 @@ try {
           VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
         },
         issue: 'Using relative URL in production will cause 405 errors',
-        solution: 'Set VITE_API_BASE_URL environment variable in Railway admin panel service',
+        solution: 'Set VITE_API_BASE_URL environment variable in your deployment platform (e.g. Docker, Kubernetes, or hosting dashboard)',
         steps: [
-          '1. Go to Railway Dashboard',
-          '2. Select admin panel service (not backend)',
-          '3. Go to Variables tab',
-          '4. Add VITE_API_BASE_URL=https://your-backend.up.railway.app/api/v1',
+          '1. Open your deployment platform dashboard',
+          '2. Select the admin panel service (not backend)',
+          '3. Go to Environment Variables',
+          '4. Add VITE_API_BASE_URL=https://your-backend.example.com/api/v1',
           '5. Redeploy',
         ],
         impact: 'All API requests will fail with 405 errors',
@@ -288,7 +288,7 @@ try {
     try {
       logger.error('API Configuration Error', new Error(errorMessage), {
         baseURL,
-        message: 'API requests will fail until VITE_API_BASE_URL is configured in Railway',
+        message: 'API requests will fail until VITE_API_BASE_URL is configured in your deployment platform',
       });
     } catch (_consoleError) {
       // Silently fail if logger throws
@@ -365,9 +365,9 @@ try {
     if (finalBaseURL.startsWith('/')) {
       logger.error('[AXIOS] Configuration Error: Using relative URL in production', {
         baseURL: finalBaseURL,
-        issue: 'Relative URLs won\'t work on Railway (admin panel and backend are separate services)',
-        solution: 'Set VITE_API_BASE_URL to full backend URL in Railway environment variables',
-        example: 'VITE_API_BASE_URL=https://your-backend-service.up.railway.app/api/v1',
+        issue: 'Relative URLs won\'t work when admin panel and backend are deployed separately',
+        solution: 'Set VITE_API_BASE_URL to full backend URL in your deployment environment variables',
+        example: 'VITE_API_BASE_URL=https://your-backend.example.com/api/v1',
       });
     } else {
       // Log successful configuration (info level, can be enabled via env var)
@@ -388,16 +388,16 @@ axiosInstance.interceptors.request.use(
       delete config.__redirectTimeout;
     }
     
-    // Production check: Warn if using relative URL (will fail on Railway)
+    // Production check: Warn if using relative URL (won't work when services are separate)
     if (isProduction && config.baseURL && config.baseURL.startsWith('/')) {
       const fullUrl = `${config.baseURL}${config.url || ''}`;
-      logger.error('API Request with relative URL (will fail on Railway)', {
+      logger.error('API Request with relative URL (services deployed separately)', {
         method: config.method,
         url: config.url,
         baseURL: config.baseURL,
         fullUrl,
         issue: 'Relative URLs don\'t work when admin panel and backend are separate services',
-        fix: 'Set VITE_API_BASE_URL environment variable in Railway',
+        fix: 'Set VITE_API_BASE_URL environment variable in your deployment platform',
       });
     }
     
@@ -601,7 +601,7 @@ axiosInstance.interceptors.response.use(
       const baseURL = axiosInstance.defaults.baseURL || getBaseURL() || 'backend server';
       const userMessage = `Cannot connect to backend server. Please ensure the backend is running.`;
       
-      // Log API error with full context for Railway
+      // Log API error with full context
       logger.logApiError(error, {
         url: originalRequest?.url,
         method: originalRequest?.method,
@@ -626,7 +626,7 @@ axiosInstance.interceptors.response.use(
       }
       const userMessage = 'Server error. Please try again later.';
       
-      // Log API error with full context for Railway
+      // Log API error with full context
       logger.logApiError(error, {
         url: originalRequest?.url,
         method: originalRequest?.method,
@@ -652,7 +652,7 @@ axiosInstance.interceptors.response.use(
       }
       const userMessage = 'Too many requests. Please wait a moment and try again.';
       
-      // Log API error for Railway
+      // Log API error
       logger.logApiError(error, {
         url: originalRequest?.url,
         method: originalRequest?.method,
@@ -665,7 +665,7 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle 405 Method Not Allowed (common on Railway if API URL misconfigured)
+    // Handle 405 Method Not Allowed (common if API URL is misconfigured)
     if (error.response?.status === 405) {
       const baseURL = axiosInstance.defaults.baseURL || getBaseURL();
       const isRelativeURL = baseURL.startsWith('/');
@@ -676,7 +676,7 @@ axiosInstance.interceptors.response.use(
       // If using relative URL in production, this is a configuration issue
       if (isProduction && isRelativeURL) {
         userMessage = 'API Configuration Error: Backend URL not configured.';
-        detailedMessage = `The admin panel is trying to use a relative URL (${baseURL}), but on Railway, the admin panel and backend are separate services. You must set VITE_API_BASE_URL environment variable in Railway to your backend service URL.`;
+        detailedMessage = `The admin panel is trying to use a relative URL (${baseURL}), but when deployed separately the admin panel and backend are on different services. Set VITE_API_BASE_URL to your backend service URL.`;
         
         // Log detailed error with instructions
         logger.error('API Configuration Error - Backend URL not configured', new Error(userMessage), {
@@ -684,7 +684,7 @@ axiosInstance.interceptors.response.use(
           isRelativeURL,
           detailedMessage,
           instructions: {
-            step1: 'Go to Railway Dashboard → Your Admin Panel Service → Variables',
+            step1: 'Open your deployment platform dashboard → admin panel service → Variables',
             step2: 'Add/Edit variable:',
             variableName: 'VITE_API_BASE_URL',
             variableValue: 'https://your-backend.example.com/api/v1',
@@ -708,7 +708,7 @@ axiosInstance.interceptors.response.use(
         status: 405,
         isRelativeURL,
         suggestion: isRelativeURL 
-          ? 'Set VITE_API_BASE_URL to full backend URL in Railway'
+          ? 'Set VITE_API_BASE_URL to a full backend URL'
           : 'Check if the backend route accepts this HTTP method',
       });
       

@@ -23,8 +23,8 @@ if (missing.length > 0) {
   console.error('');
   console.error('Please set these variables in your deployment platform:');
   console.error('  - Vercel: Project Settings > Environment Variables');
-  console.error('  - Railway: Service > Variables');
-  console.error('  - Docker: Set in docker-compose.yaml or .env file');
+  console.error('  - Docker/Kubernetes: Set in docker-compose.yaml, deployment manifest, or .env file');
+  console.error('  - Other platforms: Use the platform dashboard or environment settings');
   process.exit(1);
 }
 

@@ -3,9 +3,9 @@
 /**
  * Kill processes running on backend dev server port before starting dev server
  * Port: 8080 (backend default)
- * 
- * Railway Compatible Port Configuration:
- * - Backend: 8080 (default) or PORT env var (Railway)
+ *
+ * Port Configuration:
+ * - Backend: 8080 (default) or PORT env var (container platforms)
  */
 
 const { killPortProcess } = require('kill-port');
