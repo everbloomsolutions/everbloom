@@ -7,7 +7,6 @@ on:
       - develop
     paths:
       - 'apps/api-core/**'
-      - 'packages/**'
       - 'docker/Dockerfile.api-core'
       - 'package.json'
       - 'pnpm-workspace.yaml'
@@ -23,7 +22,6 @@ on:
       - develop
     paths:
       - 'apps/api-core/**'
-      - 'packages/**'
       - 'package.json'
       - 'pnpm-workspace.yaml'
       - 'pnpm-lock.yaml'
@@ -59,6 +57,10 @@ jobs:
       - name: Test
         working-directory: ./apps/api-core
         run: pnpm test
+
+      - name: Build
+        working-directory: ./apps/api-core
+        run: pnpm build
 
   build-and-push:
     if: github.event_name == 'push'

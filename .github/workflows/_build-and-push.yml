@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: '.'
+      build_args:
+        description: Docker build arguments (newline-separated KEY=value)
+        required: false
+        type: string
+        default: ''
 
 env:
   AWS_REGION: ap-south-2
@@ -67,8 +72,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ inputs.build_args }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
   update-gitops:
     needs: build-and-push

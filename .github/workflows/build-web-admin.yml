@@ -7,7 +7,6 @@ on:
       - develop
     paths:
       - 'apps/web-admin/**'
-      - 'packages/**'
       - 'docker/Dockerfile.web-admin'
       - 'package.json'
       - 'pnpm-workspace.yaml'
@@ -23,7 +22,6 @@ on:
       - develop
     paths:
       - 'apps/web-admin/**'
-      - 'packages/**'
       - 'package.json'
       - 'pnpm-workspace.yaml'
       - 'pnpm-lock.yaml'
@@ -60,6 +58,15 @@ jobs:
         working-directory: ./apps/web-admin
         run: pnpm test
 
+      - name: Build
+        working-directory: ./apps/web-admin
+        run: pnpm build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
+          VITE_SOCKET_URL: ${{ vars.VITE_SOCKET_URL || 'ws://localhost:8080' }}
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Everbloom Admin' }}
+          VITE_APP_VERSION: ${{ vars.VITE_APP_VERSION || '0.0.0' }}
+
   build-and-push:
     if: github.event_name == 'push'
     uses: ./.github/workflows/_build-and-push.yml
@@ -68,6 +75,11 @@ jobs:
       dockerfile: docker/Dockerfile.web-admin
       ecr_repository: everbloom/web-admin
       kustomization_path: deploy/apps/web-admin/base/kustomization.yaml
+      build_args: |
+        VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'http://localhost:8080/api/v1' }}
+        VITE_SOCKET_URL=${{ vars.VITE_SOCKET_URL || 'ws://localhost:8080' }}
+        VITE_APP_NAME=${{ vars.VITE_APP_NAME || 'Everbloom Admin' }}
+        VITE_APP_VERSION=${{ vars.VITE_APP_VERSION || '0.0.0' }}
     secrets: inherit
     permissions:
       contents: write

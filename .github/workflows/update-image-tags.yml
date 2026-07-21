@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/_update-image-tags.yml
     with:
       image_tag: ${{ github.event.inputs.image_tag || github.sha }}
-      kustomization_paths: deploy/apps/api-core/base/kustomization.yaml,deploy/apps/web-admin/base/kustomization.yaml,deploy/apps/web-public/base/kustomization.yaml
+      kustomization_paths: deploy/apps/api-core/base/kustomization.yaml,deploy/apps/web-admin/base/kustomization.yaml
       update_gitops: ${{ fromJSON(github.event.inputs.update_gitops || 'false') }}
     permissions:
       contents: write

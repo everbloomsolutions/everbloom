@@ -13,14 +13,25 @@ COPY package.json pnpm-workspace.yaml turbo.json ./
 COPY pnpm-lock.yaml* ./
 COPY apps/web-admin ./apps/web-admin
 
+ARG VITE_API_BASE_URL
+ARG VITE_SOCKET_URL
+ARG VITE_APP_NAME
+ARG VITE_APP_VERSION
+
 RUN set -e; \
   if [ -f pnpm-lock.yaml ]; then \
   pnpm install --frozen-lockfile; \
   else \
   pnpm install; \
   fi
+
 ENV NODE_OPTIONS=--max-old-space-size=8192
-RUN pnpm turbo run build --filter=@everbloom/web-admin
+RUN set -e; \
+  export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:8080/api/v1}"; \
+  export VITE_SOCKET_URL="${VITE_SOCKET_URL:-ws://localhost:8080}"; \
+  export VITE_APP_NAME="${VITE_APP_NAME:-Everbloom Admin}"; \
+  export VITE_APP_VERSION="${VITE_APP_VERSION:-0.0.0}"; \
+  pnpm turbo run build --filter=@everbloom/web-admin
 
 # Stage 2: Production (nginx running as non-root)
 FROM nginx:alpine
