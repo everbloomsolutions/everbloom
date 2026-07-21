@@ -50,6 +50,14 @@ function getQueueRedisConfig(): BullModuleOptions['redis'] {
   return typeof conn === 'string' ? conn : conn.redis;
 }
 
+let bullQueuesModule: DynamicModule | undefined;
+function getBullQueues(): DynamicModule {
+  if (!bullQueuesModule) {
+    bullQueuesModule = buildBullQueues();
+  }
+  return bullQueuesModule;
+}
+
 function buildBullQueues() {
   const bullRedis = getQueueRedisConfig();
   return BullModule.registerQueue(
@@ -74,6 +82,8 @@ function buildBullQueues() {
   );
 }
 
+let schedulerModule: DynamicModule | undefined;
+
 /**
  * Scheduler (Bull/Redis) module. Must be imported via SchedulerModule.forRoot() in all consumers
  * (AppModule, AdminModule, etc.) so Nest can resolve SchedulerService / SchedulerQueueService.
@@ -85,6 +95,10 @@ export class SchedulerModule {
    * are used; otherwise no-op services are registered so the app runs without Redis (e.g. Vercel).
    */
   static forRoot(): DynamicModule {
+    if (schedulerModule) {
+      return schedulerModule;
+    }
+
     const hasRedis = hasRedisEnabled();
 
     const providers = hasRedis
@@ -103,17 +117,18 @@ export class SchedulerModule {
         ];
 
     const imports = hasRedis
-      ? [...baseImports, buildBullQueues()]
+      ? [...baseImports, getBullQueues()]
       : [...baseImports];
     const exports = hasRedis
       ? [SchedulerService, SchedulerQueueService, BullModule]
       : [SchedulerService, SchedulerQueueService];
 
-    return {
+    schedulerModule = {
       module: SchedulerModule,
       imports,
       providers,
       exports,
     };
+    return schedulerModule;
   }
 }
