@@ -75,5 +75,35 @@ create_secret "$SECRET_PREFIX/web-admin" "$(printf 'api-base-url=%s/api/v1\nsock
 # 4. web-public secret
 create_secret "$SECRET_PREFIX/web-public" "$(printf 'api-base-url=%s/api/v1\nsocket-url=%s\n' "$DEV_API_BASE_URL" "$DEV_SOCKET_URL" | make_secret_json)"
 
+# 5. Local development env file (gitignored) with generated JWT secrets.
+# This removes the need for hardcoded dev defaults in configuration.ts.
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+LOCAL_ENV_FILE="${LOCAL_ENV_FILE:-$REPO_ROOT/apps/api-core/.env.development.local}"
+LOCAL_MONGODB_URI="${LOCAL_MONGODB_URI:-mongodb://localhost:27017/everbloom}"
+LOCAL_REDIS_URL="${LOCAL_REDIS_URL:-redis://localhost:6379}"
+
+if [ -f "$LOCAL_ENV_FILE" ]; then
+  echo "Warning: $LOCAL_ENV_FILE already exists and will be overwritten."
+fi
+
+cat > "$LOCAL_ENV_FILE" <<EOF
+NODE_ENV=development
+LOG_LEVEL=debug
+MONGODB_URI=${LOCAL_MONGODB_URI}
+REDIS_URL=${LOCAL_REDIS_URL}
+JWT_SECRET=${JWT_SECRET}
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+# CLOUDINARY_CLOUD_NAME=REPLACE
+# CLOUDINARY_API_KEY=REPLACE
+# CLOUDINARY_API_SECRET=REPLACE
+# GOOGLE_MAPS_API_KEY=REPLACE
+# SMTP_HOST=
+# SMTP_PORT=587
+# SMTP_USER=
+# SMTP_PASS=
+# SMTP_FROM=
+EOF
+
 echo "Development secrets created/verified."
+echo "Wrote local dev env to $LOCAL_ENV_FILE"
 echo "Next: update REDIS_URL, Cloudinary and Google Maps values in AWS Secrets Manager if placeholders were used."

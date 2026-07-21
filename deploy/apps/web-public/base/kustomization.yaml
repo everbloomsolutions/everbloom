@@ -1,22 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: default
-
 resources:
-  - deployment.yaml
-  - service.yaml
-  - ingress.yaml
-  - configmap.yaml
-  - pdb.yaml
-  - hpa.yaml
-  - external-secret.yaml
-
+- deployment.yaml
+- service.yaml
+- ingress.yaml
+- configmap.yaml
+- pdb.yaml
+- hpa.yaml
+- external-secret.yaml
 commonLabels:
   app: web-public
   component: frontend
-
 images:
-  - name: web-public
-    newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public
-    newTag: 19ac93d1216016d45d04d59ebb601ec5cf5fcb07
+- name: web-public
+  newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public
+  newTag: fbe7c80f91a132e453af1dcea573892a28ea9c46

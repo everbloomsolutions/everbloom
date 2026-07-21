@@ -36,7 +36,6 @@ export const configuration = () => {
   const runtimePlatform = detectRuntimePlatform();
   const isVercel = runtimePlatform === 'vercel';
 
-  
   const runtimePolicy = getRuntimePolicy(nodeEnv);
 
   // Detect if running in a containerized environment (Docker/Kubernetes)
@@ -50,31 +49,15 @@ export const configuration = () => {
   const protocol = isProduction || isVercel ? 'https' : 'http';
   const logLevel = process.env.LOG_LEVEL || (isProduction || isVercel ? 'info' : 'debug');
   const enableDebug = process.env.ENABLE_DEBUG === 'true' || (!isProduction && !isVercel);
-  // Admin panel URL: required in production/Vercel via ADMIN_PANEL_URL; dev default only when not production
+
+  // Admin panel URL: required in production/Vercel/containerized environments;
+  // non-containerized local dev may fall back to localhost.
   const adminPanelUrl = normalizeUrl(
-    process.env.ADMIN_PANEL_URL || (isProduction || isVercel ? '' : 'http://localhost:3001'),
+    process.env.ADMIN_PANEL_URL || (isProduction || isVercel || isContainerized ? '' : 'http://localhost:3001'),
     isProduction || isVercel ? 'https' : 'http',
   );
   const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
   const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
-
-  // MongoDB URI - required, but allow empty in production for validation to catch it
-  // In production/Vercel/containerized environments, MONGODB_URI must be set as environment variable
-  // NEVER use localhost defaults in containerized environments (Docker/Kubernetes)
-
-  const isDevLog = nodeEnv === 'development' && !isVercel;
-  if (isDevLog) {
-    console.log('[Config] Environment detection:', {
-      nodeEnv,
-      isProduction,
-      isVercel,
-      isContainerized,
-      cwd: process.cwd(),
-      hasMongoEnvVar: !!process.env.MONGODB_URI,
-      mongoEnvVarLength: process.env.MONGODB_URI?.length || 0,
-      port: process.env.PORT,
-    });
-  }
 
   // Default MongoDB URI based on environment
   // NEVER use localhost in production/Vercel/containerized - require MONGODB_URI
@@ -85,17 +68,11 @@ export const configuration = () => {
     // Docker Compose development - use service name (matches MONGO_INITDB_DATABASE in docker-compose.dev.yaml)
     defaultMongoUri = 'mongodb://mongo:27017/everbloom';
   }
-  // For production/Vercel/containerized: defaultMongoUri remains empty (requires explicit MONGODB_URI)
 
   // In production/Vercel/containerized: ALWAYS use process.env directly
   // This bypasses any .env file loading issues
   // In development: allow fallback to defaultMongoUri
   const rawMongoUri = process.env.MONGODB_URI;
-
-  if (isDevLog) {
-    console.log(`[Config] BEFORE processing - rawMongoUri: ${rawMongoUri ? `set (${rawMongoUri.length} chars, starts with: ${rawMongoUri.substring(0, 20)}...)` : 'NOT SET'}`);
-    console.log(`[Config] Environment flags: isProduction=${isProduction}, isVercel=${isVercel}, isContainerized=${isContainerized}`);
-  }
 
   // Helper function to normalize MongoDB URI (fix malformed query strings)
   const normalizeMongoUri = (uri: string): string => {
@@ -123,71 +100,36 @@ export const configuration = () => {
     mongodbUri = rawMongoUri ? normalizeMongoUri(rawMongoUri) : defaultMongoUri;
   }
 
-  if (isDevLog && rawMongoUri && rawMongoUri !== mongodbUri) {
-    console.log('[Config] Normalized MongoDB URI (fixed malformed query string)');
-  }
-  const maskedUri = mongodbUri
-    ? mongodbUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')
-    : '(empty - will fail validation)';
-  if (isDevLog) {
-    console.log(`[Config] AFTER processing - mongodbUri: ${maskedUri}`);
-    console.log(`[Config] mongodbUri length: ${mongodbUri.length}`);
-    console.log(`[Config] Source: ${(isProduction || isVercel || isContainerized) ? 'process.env (forced)' : 'process.env or default'}`);
-  }
-
-  if ((isProduction || isVercel || isContainerized) && !mongodbUri) {
-    console.error('[Config] MONGODB_URI is required. Set in Vercel Dashboard → Environment Variables (or env).');
-  }
-
-  // Redis URL - optional; in production/Vercel require REDIS_URL if app uses Redis
-  const redisUrl =
-    process.env.REDIS_URL ||
-    (nodeEnv === 'production' || isVercel ? '' : 'redis://localhost:6379');
-
-  // JWT secrets - required, but allow dev defaults (must be at least 32 chars)
-  // Handle empty strings from env vars (treat as unset)
-  // CRITICAL: In production/Vercel, ALWAYS use process.env directly, never dev defaults
-  const jwtSecretEnv = process.env.JWT_SECRET?.trim();
-  const jwtRefreshSecretEnv = process.env.JWT_REFRESH_SECRET?.trim();
-
-  // In production/Vercel: use process.env directly, empty string if not set (validation will catch it)
-  // In development: allow dev defaults
-  let jwtSecret: string;
-  let jwtRefreshSecret: string;
-
-  if (isProduction || isVercel || isContainerized) {
-    jwtSecret = (jwtSecretEnv && jwtSecretEnv.length > 0) ? jwtSecretEnv : '';
-    jwtRefreshSecret = (jwtRefreshSecretEnv && jwtRefreshSecretEnv.length > 0) ? jwtRefreshSecretEnv : '';
-  } else {
-    // Development: allow dev defaults
-    jwtSecret = (jwtSecretEnv && jwtSecretEnv.length > 0)
-      ? jwtSecretEnv
-      : 'dev-secret-key-change-in-production-min-32-chars-long-enough';
-    jwtRefreshSecret = (jwtRefreshSecretEnv && jwtRefreshSecretEnv.length > 0)
-      ? jwtRefreshSecretEnv
-      : 'dev-refresh-secret-key-change-in-production-min-32-chars-long-enough';
-  }
-
-  // Final values - use as-is (already handled above)
-  const finalJwtSecret = jwtSecret;
-  const finalJwtRefreshSecret = jwtRefreshSecret;
-
   // CRITICAL: Ensure mongodbUri is never empty in production/Vercel if process.env.MONGODB_URI is set
   // NestJS ConfigModule may override this with environment variables, so we need to ensure
   // the value we return is correct and takes precedence
   // If process.env.MONGODB_URI is set but mongodbUri is empty, use the raw value
   let finalMongodbUri = mongodbUri;
   if ((isProduction || isVercel || isContainerized) && !finalMongodbUri && rawMongoUri) {
-    if (isDevLog) console.log('[Config] WARNING: mongodbUri is empty but process.env.MONGODB_URI is set. Using raw value.');
     finalMongodbUri = String(rawMongoUri).trim();
   }
   if (!finalMongodbUri && rawMongoUri) {
-    if (isDevLog) console.log('[Config] CRITICAL: Using process.env.MONGODB_URI directly as last resort.');
     finalMongodbUri = String(rawMongoUri).trim();
   }
-  if (isDevLog) {
-    console.log(`[Config] Final mongodbUri to return: ${finalMongodbUri ? `${finalMongodbUri.length} chars` : 'EMPTY'}`);
+
+  // Default Redis URL based on environment
+  let defaultRedisUrl = '';
+  if (!isProduction && !isVercel && !isContainerized) {
+    defaultRedisUrl = 'redis://localhost:6379';
+  } else if (isContainerized && !isProduction && !isVercel) {
+    // Docker Compose development - use service name
+    defaultRedisUrl = 'redis://redis:6379';
   }
+
+  const redisUrl = process.env.REDIS_URL || defaultRedisUrl;
+
+  // JWT secrets - required in all environments; no hardcoded dev defaults.
+  // Use process.env directly and let validation enforce a minimum length.
+  const jwtSecretEnv = process.env.JWT_SECRET?.trim();
+  const jwtRefreshSecretEnv = process.env.JWT_REFRESH_SECRET?.trim();
+
+  const jwtSecret = (jwtSecretEnv && jwtSecretEnv.length > 0) ? jwtSecretEnv : '';
+  const jwtRefreshSecret = (jwtRefreshSecretEnv && jwtRefreshSecretEnv.length > 0) ? jwtRefreshSecretEnv : '';
 
   const config = {
     nodeEnv: String(nodeEnv),
@@ -197,10 +139,10 @@ export const configuration = () => {
     corsOrigin: process.env.BACKEND_CORS_ORIGIN || process.env.CORS_ORIGIN,
     logLevel: String(logLevel),
     enableDebug: Boolean(enableDebug),
-    mongodbUri: String(finalMongodbUri), // Use final value - this MUST be set if process.env.MONGODB_URI is set
+    mongodbUri: String(finalMongodbUri),
     redisUrl: String(redisUrl),
-    jwtSecret: String(finalJwtSecret),
-    jwtRefreshSecret: String(finalJwtRefreshSecret),
+    jwtSecret: String(jwtSecret),
+    jwtRefreshSecret: String(jwtRefreshSecret),
     jwtExpiresIn: String(jwtExpiresIn),
     jwtRefreshExpiresIn: String(jwtRefreshExpiresIn),
     cloudinary: {
@@ -219,6 +161,5 @@ export const configuration = () => {
     smtpFrom: process.env.SMTP_FROM,
   };
 
-  // Log what we're returning (masked) for debugging
   return config;
 };
