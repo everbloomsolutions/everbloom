@@ -19,6 +19,7 @@ spec:
       containers:
       - name: web-public
         image: web-public:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http

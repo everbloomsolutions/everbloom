@@ -16,12 +16,22 @@ spec:
         app: api-core
         component: api
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: api-core
         image: api-core:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         env:
         - name: NODE_ENV
           valueFrom:
@@ -89,5 +99,5 @@ spec:
             port: 8080
           initialDelaySeconds: 0
           periodSeconds: 10
-          timeoutSeconds: 3
-          failureThreshold: 30
+          timeoutSeconds: 10
+          failureThreshold: 18

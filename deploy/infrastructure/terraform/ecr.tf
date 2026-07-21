@@ -4,6 +4,7 @@
 # ECR Repository for API Core
 resource "aws_ecr_repository" "api_core" {
   name                 = "everbloom/api-core"
+  # Use IMMUTABLE once CI tags images with git SHA instead of latest
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -54,6 +55,7 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
 # ECR Repository for Web Admin
 resource "aws_ecr_repository" "web_admin" {
   name                 = "everbloom/web-admin"
+  # Use IMMUTABLE once CI tags images with git SHA instead of latest
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -104,6 +106,7 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
 # ECR Repository for Web Public
 resource "aws_ecr_repository" "web_public" {
   name                 = "everbloom/web-public"
+  # Use IMMUTABLE once CI tags images with git SHA instead of latest
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -154,6 +157,50 @@ resource "aws_ecr_lifecycle_policy" "web_public" {
 # ECR Repository Policy for Cross-Account Access (if needed)
 resource "aws_ecr_repository_policy" "api_core" {
   repository = aws_ecr_repository.api_core.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPull"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository_policy" "web_admin" {
+  repository = aws_ecr_repository.web_admin.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPull"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository_policy" "web_public" {
+  repository = aws_ecr_repository.web_public.name
 
   policy = jsonencode({
     Version = "2012-10-17"

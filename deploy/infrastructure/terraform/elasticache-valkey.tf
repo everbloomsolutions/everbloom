@@ -37,6 +37,16 @@ resource "aws_security_group_rule" "elasticache_ingress_eks" {
   type                     = "ingress"
 }
 
+resource "aws_security_group_rule" "elasticache_ingress_eks_cluster_sg" {
+  description              = "Allow EKS cluster security group to access Valkey"
+  from_port                = 6379
+  to_port                  = 6379
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.elasticache.id
+  source_security_group_id = aws_eks_cluster.everbloom.vpc_config[0].cluster_security_group_id
+  type                     = "ingress"
+}
+
 resource "aws_security_group_rule" "elasticache_egress" {
   description       = "Allow egress from Valkey"
   from_port         = 0

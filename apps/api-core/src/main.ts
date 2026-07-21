@@ -149,7 +149,7 @@ async function bootstrap() {
 
   if (boundPort != null) {
     logger.log(`Server running on http://${host}:${boundPort}`);
-    logger.log(`Health check: http://${host}:${boundPort}/api/v1/health`);
+    logger.log(`Health check: http://${host}:${boundPort}/health`);
     if (boundPort !== basePort) {
       logger.warn(`Backend bound to port ${boundPort} (${basePort} was in use). Set VITE_BACKEND_PORT=${boundPort} in web-admin if using proxy.`);
     }

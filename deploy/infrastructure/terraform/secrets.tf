@@ -20,6 +20,10 @@ resource "aws_secretsmanager_secret_version" "mongodb" {
     username = var.mongodb_username
     password = var.mongodb_password
   })
+
+  lifecycle {
+    ignore_changes = [secret_string, version_stages]
+  }
 }
 
 # API Core Secrets
@@ -45,6 +49,10 @@ resource "aws_secretsmanager_secret_version" "api_core" {
     cloudinary-api-secret = var.cloudinary_api_secret
     google-maps-api-key = var.google_maps_api_key
   })
+
+  lifecycle {
+    ignore_changes = [secret_string, version_stages]
+  }
 }
 
 # Web Admin Secrets

@@ -8,6 +8,8 @@ resources:
   - service.yaml
   - ingress.yaml
   - configmap.yaml
+  - pdb.yaml
+  - hpa.yaml
   - external-secret.yaml
 
 commonLabels:

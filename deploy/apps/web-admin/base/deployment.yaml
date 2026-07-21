@@ -19,6 +19,7 @@ spec:
       containers:
       - name: web-admin
         image: web-admin:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           name: http

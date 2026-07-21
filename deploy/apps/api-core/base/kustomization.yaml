@@ -9,6 +9,8 @@ resources:
   - ingress.yaml
   - configmap.yaml
   - external-secret.yaml
+  - pdb.yaml
+  - hpa.yaml
 
 commonLabels:
   app: api-core

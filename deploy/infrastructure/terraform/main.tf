@@ -14,10 +14,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "~> 1.14"
-    }
     tls = {
       source  = "hashicorp/tls"
       version = "~> 4.0"
@@ -28,38 +24,31 @@ terraform {
     bucket = "everbloom-terraform-state"
     key    = "terraform.tfstate"
     region = "ap-south-2"
+    encrypt = true
   }
 }
 
 provider "kubernetes" {
-  config_path = var.kubeconfig_path
+  host                   = aws_eks_cluster.everbloom.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.everbloom.certificate_authority[0].data)
 
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
+    args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.everbloom.name, "--region", var.region]
   }
 }
 
 provider "helm" {
   kubernetes {
-    config_path = var.kubeconfig_path
+    host                   = aws_eks_cluster.everbloom.endpoint
+    cluster_ca_certificate = base64decode(aws_eks_cluster.everbloom.certificate_authority[0].data)
 
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
-      args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
+      args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.everbloom.name, "--region", var.region]
     }
-  }
-}
-
-provider "kubectl" {
-  config_path = var.kubeconfig_path
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
   }
 }
 

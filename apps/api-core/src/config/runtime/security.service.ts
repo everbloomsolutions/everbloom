@@ -71,6 +71,11 @@ export class SecurityService {
       if (req.path === '/health' || req.path === '/health/detailed' || req.path === '/health/cors-test') {
         return next();
       }
+
+      // Skip HTTPS redirect for ACME challenge paths
+      if (req.path.startsWith('/.well-known/acme-challenge/')) {
+        return next();
+      }
       
       if (req.header('x-forwarded-proto') !== 'https') {
         return res.redirect(301, `https://${req.header('host')}${req.url}`);

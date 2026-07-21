@@ -84,12 +84,3 @@ output "nat_gateway_public_ips" {
   value       = aws_eip.nat[*].public_ip
 }
 
-output "argocd_server_url" {
-  description = "URL of the ArgoCD server"
-  value       = "https://argocd.everbloom.com"
-}
-
-output "grafana_url" {
-  description = "URL of Grafana"
-  value       = "https://grafana.everbloom.com"
-}
