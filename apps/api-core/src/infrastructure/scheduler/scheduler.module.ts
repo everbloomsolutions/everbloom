@@ -50,32 +50,29 @@ function getQueueRedisConfig(): BullModuleOptions['redis'] {
   return typeof conn === 'string' ? conn : conn.redis;
 }
 
-const bullRedis = getQueueRedisConfig();
-
-const bullQueues = hasRedisEnabled()
-  ? [
-      BullModule.registerQueue(
-        { name: 'email', redis: bullRedis },
-        { name: 'cleanup', redis: bullRedis },
-        { name: 'analytics', redis: bullRedis },
-        { name: 'audit-cleanup', redis: bullRedis },
-        {
-          name: 'import',
-          redis: bullRedis,
-          defaultJobOptions: {
-            removeOnComplete: {
-              age: 24 * 3600,
-              count: 100,
-            },
-            removeOnFail: {
-              age: 7 * 24 * 3600,
-            },
-            attempts: 1,
-          },
+function buildBullQueues() {
+  const bullRedis = getQueueRedisConfig();
+  return BullModule.registerQueue(
+    { name: 'email', redis: bullRedis },
+    { name: 'cleanup', redis: bullRedis },
+    { name: 'analytics', redis: bullRedis },
+    { name: 'audit-cleanup', redis: bullRedis },
+    {
+      name: 'import',
+      redis: bullRedis,
+      defaultJobOptions: {
+        removeOnComplete: {
+          age: 24 * 3600,
+          count: 100,
         },
-      ),
-    ]
-  : [];
+        removeOnFail: {
+          age: 7 * 24 * 3600,
+        },
+        attempts: 1,
+      },
+    },
+  );
+}
 
 /**
  * Scheduler (Bull/Redis) module. Must be imported via SchedulerModule.forRoot() in all consumers
@@ -105,7 +102,9 @@ export class SchedulerModule {
           { provide: SchedulerQueueService, useClass: SchedulerQueueServiceNoOp },
         ];
 
-    const imports = [...baseImports, ...(hasRedis ? bullQueues : [])];
+    const imports = hasRedis
+      ? [...baseImports, buildBullQueues()]
+      : [...baseImports];
     const exports = hasRedis
       ? [SchedulerService, SchedulerQueueService, BullModule]
       : [SchedulerService, SchedulerQueueService];
