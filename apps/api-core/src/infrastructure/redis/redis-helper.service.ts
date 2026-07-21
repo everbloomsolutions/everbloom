@@ -14,7 +14,7 @@ export type BullRedisConnection = string | {
     connectTimeout?: number;
     lazyConnect?: boolean;
   };
-};
+} | null;
 
 export function getBullRedisConnectionFromUrl(rawUrl: string): BullRedisConnection {
   const redisUrl = rawUrl.trim();
