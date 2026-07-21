@@ -12,6 +12,15 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: development
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true

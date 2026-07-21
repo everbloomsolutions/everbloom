@@ -21,9 +21,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "everbloom-terraform-state"
-    key    = "terraform.tfstate"
-    region = "ap-south-2"
+    bucket  = "everbloom-terraform-state"
+    key     = "terraform.tfstate"
+    region  = "ap-south-2"
     encrypt = true
   }
 }
@@ -62,15 +62,15 @@ resource "kubernetes_namespace" "production" {
   }
 }
 
-# ArgoCD Installation (if using GitOps) - uncomment when ready for GitOps
-# resource "helm_release" "argocd" {
-#   name             = "argocd"
-#   repository       = "https://argoproj.github.io/argo-helm"
-#   chart            = "argo-cd"
-#   version          = "5.51.6"
-#   namespace        = "argocd"
-#   create_namespace = true
-# }
+# ArgoCD Installation (GitOps)
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "5.51.6"
+  namespace        = "argocd"
+  create_namespace = true
+}
 
 # Monitoring Stack (Prometheus + Grafana) - uncomment when ready for monitoring
 # resource "helm_release" "monitoring" {

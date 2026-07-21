@@ -160,9 +160,9 @@ resource "aws_vpc_endpoint" "ecr_api" {
 }
 
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id           = aws_vpc.everbloom.id
-  service_name     = "com.amazonaws.ap-south-2.s3"
-  route_table_ids  = aws_route_table.private[*].id
+  vpc_id          = aws_vpc.everbloom.id
+  service_name    = "com.amazonaws.ap-south-2.s3"
+  route_table_ids = aws_route_table.private[*].id
 
   tags = {
     Name        = "everbloom-s3-endpoint"

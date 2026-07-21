@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     paths:
       - 'apps/web-admin/**'
       - 'docker/Dockerfile.web-admin'

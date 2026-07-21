@@ -81,39 +81,72 @@ resource "aws_elasticache_parameter_group" "everbloom" {
 
 # ElastiCache Replication Group for Valkey (Multi-AZ)
 resource "aws_elasticache_replication_group" "everbloom" {
-  replication_group_id          = "everbloom-valkey"
-  description                   = "Everbloom Valkey replication group"
-  node_type                     = "cache.t3.medium"
-  num_cache_clusters            = 2
-  port                          = 6379
-  engine                        = "valkey"
-  engine_version                = "7.2"
-  parameter_group_name          = aws_elasticache_parameter_group.everbloom.name
-  subnet_group_name             = aws_elasticache_subnet_group.everbloom.name
-  security_group_ids            = [aws_security_group.elasticache.id]
+  replication_group_id = "everbloom-valkey"
+  description          = "Everbloom Valkey replication group"
+  node_type            = "cache.t3.medium"
+  num_cache_clusters   = 2
+  port                 = 6379
+  engine               = "valkey"
+  engine_version       = "7.2"
+  parameter_group_name = aws_elasticache_parameter_group.everbloom.name
+  subnet_group_name    = aws_elasticache_subnet_group.everbloom.name
+  security_group_ids   = [aws_security_group.elasticache.id]
 
-  automatic_failover_enabled    = true
-  multi_az_enabled              = true
-  at_rest_encryption_enabled    = true
-  transit_encryption_enabled    = true
-  auth_token                    = var.valkey_auth_token
+  automatic_failover_enabled = true
+  multi_az_enabled           = true
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token                 = var.valkey_auth_token
 
   # Snapshot configuration
-  snapshot_retention_limit      = 7
-  snapshot_window               = "03:00-05:00"
+  snapshot_retention_limit = 7
+  snapshot_window          = "03:00-05:00"
 
   # Maintenance window (must not overlap with snapshot window)
-  maintenance_window            = "sun:06:00-sun:07:00"
+  maintenance_window = "sun:06:00-sun:07:00"
 
   # Notification configuration
-  notification_topic_arn        = aws_sns_topic.elasticache_alerts.arn
+  notification_topic_arn = aws_sns_topic.elasticache_alerts.arn
 
   # Cluster mode disabled for single primary/replica setup
-  cluster_mode                  = "disabled"
+  cluster_mode = "disabled"
 
   tags = {
     Name        = "everbloom-valkey"
     Environment = "production"
+    ManagedBy   = "terraform"
+  }
+
+  depends_on = [
+    aws_security_group_rule.elasticache_ingress_eks,
+    aws_security_group_rule.elasticache_egress
+  ]
+}
+
+# ElastiCache Replication Group for Valkey (Development)
+resource "aws_elasticache_replication_group" "everbloom_dev" {
+  replication_group_id = "everbloom-valkey-dev"
+  description          = "Everbloom Valkey replication group for development"
+  node_type            = "cache.t3.small"
+  num_cache_clusters   = 1
+  port                 = 6379
+  engine               = "valkey"
+  engine_version       = "7.2"
+  parameter_group_name = aws_elasticache_parameter_group.everbloom.name
+  subnet_group_name    = aws_elasticache_subnet_group.everbloom.name
+  security_group_ids   = [aws_security_group.elasticache.id]
+
+  automatic_failover_enabled = false
+  multi_az_enabled           = false
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token                 = var.valkey_auth_token
+
+  snapshot_retention_limit = 0
+
+  tags = {
+    Name        = "everbloom-valkey-dev"
+    Environment = "development"
     ManagedBy   = "terraform"
   }
 

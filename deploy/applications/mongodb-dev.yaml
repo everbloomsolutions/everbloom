@@ -1,22 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: web-admin-dev
+  name: mongodb-dev
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/everbloom/everbloom.git
     targetRevision: develop
-    path: deploy/environments/development/web-admin
+    path: deploy/environments/development/mongodb
   destination:
     server: https://kubernetes.default.svc
     namespace: development
   ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
     - group: apps
       kind: StatefulSet
       jsonPointers:

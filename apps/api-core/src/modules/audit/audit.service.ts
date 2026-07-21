@@ -185,7 +185,7 @@ export class AuditService {
           count: { $sum: 1 },
         },
       },
-      { $sort: { '_id.period.y': 1 as 1 } },
+      { $sort: { '_id.period.y': 1 as const } },
     ];
 
     const rows = await this.auditLogModel.aggregate(pipeline as any).exec();

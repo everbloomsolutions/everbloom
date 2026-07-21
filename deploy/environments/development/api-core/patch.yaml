@@ -7,9 +7,6 @@ spec:
     spec:
       containers:
       - name: api-core
-        env:
-        - name: NODE_ENV
-          value: development
         resources:
           requests:
             cpu: 50m

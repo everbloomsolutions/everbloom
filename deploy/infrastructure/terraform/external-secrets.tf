@@ -79,11 +79,11 @@ resource "aws_iam_role_policy_attachment" "external_secrets" {
 
 # Helm release for External Secrets Operator
 resource "helm_release" "external_secrets" {
-  name       = "external-secrets"
-  repository = "https://charts.external-secrets.io"
-  chart      = "external-secrets"
-  version    = "0.9.16"
-  namespace  = "external-secrets"
+  name             = "external-secrets"
+  repository       = "https://charts.external-secrets.io"
+  chart            = "external-secrets"
+  version          = "0.9.16"
+  namespace        = "external-secrets"
   create_namespace = true
 
   set {

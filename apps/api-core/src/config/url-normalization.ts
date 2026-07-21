@@ -1,11 +1,10 @@
 import fs from 'fs';
 
-export type RuntimePlatform = 'local' | 'railway' | 'vercel' | 'container';
+export type RuntimePlatform = 'local' | 'vercel' | 'container';
 
 export interface RuntimePolicy {
   platform: RuntimePlatform;
   isVercel: boolean;
-  isRailway: boolean;
   isContainerized: boolean;
   isProductionLike: boolean;
   defaultProtocol: 'http' | 'https';
@@ -13,14 +12,6 @@ export interface RuntimePolicy {
 
 export const detectRuntimePlatform = (): RuntimePlatform => {
   if (process.env.VERCEL) return 'vercel';
-  if (
-    process.env.RAILWAY ||
-    process.env.RAILWAY_ENVIRONMENT ||
-    process.env.RAILWAY_SERVICE_NAME ||
-    process.env.RAILWAY_PROJECT_NAME
-  ) {
-    return 'railway';
-  }
   if (isContainerizedRuntime()) return 'container';
   return 'local';
 };
@@ -36,15 +27,13 @@ export const getRuntimePolicy = (nodeEnv?: string): RuntimePolicy => {
   const env = nodeEnv || process.env.NODE_ENV || 'development';
   const platform = detectRuntimePlatform();
   const isVercel = platform === 'vercel';
-  const isRailway = platform === 'railway';
-  const isContainerized = platform === 'container' || isRailway;
+  const isContainerized = platform === 'container';
   const isProductionLike = env === 'production' || isVercel;
   const defaultProtocol: 'http' | 'https' = isProductionLike ? 'https' : 'http';
 
   return {
     platform,
     isVercel,
-    isRailway,
     isContainerized,
     isProductionLike,
     defaultProtocol,

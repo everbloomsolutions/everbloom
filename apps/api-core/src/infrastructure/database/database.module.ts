@@ -56,7 +56,6 @@ import * as path from 'path';
             processEnvMongoUri: maskedEnvVar,
             processEnvMongoUriLength: rawEnvVar?.length || 0,
             cwd: process.cwd(),
-            railwayEnv: process.env.RAILWAY_ENVIRONMENT,
             envFilesFound: envFiles.length > 0 ? envFiles : 'none',
           });
         }

@@ -34,19 +34,12 @@ import { MiddlewareService } from './config/runtime/middleware.service';
       isGlobal: true,
       validate: validateConfig,
       // Explicitly control .env file loading
-      // In production/Railway: completely disable .env file loading
+      // In production/Vercel: completely disable .env file loading
       // In development: allow .env files
       envFilePath: (() => {
         const isVercel = !!process.env.VERCEL;
-        const isRailway = !!(
-          process.env.RAILWAY ||
-          process.env.RAILWAY_ENVIRONMENT ||
-          process.env.RAILWAY_SERVICE_NAME ||
-          process.env.RAILWAY_PROJECT_NAME ||
-          (process.env.PORT && process.cwd() === '/app')
-        );
         const isProduction = process.env.NODE_ENV === 'production';
-        if (isProduction || isVercel || isRailway) {
+        if (isProduction || isVercel) {
           // Return false to explicitly disable .env file loading
           // This prevents NestJS from auto-discovering .env files
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ConfigModule envFile type does not accept false
@@ -60,18 +53,11 @@ import { MiddlewareService } from './config/runtime/middleware.service';
           '.env.development',
         ].filter(Boolean) as string[];
       })(),
-      // Explicitly ignore .env files in production/Railway
+      // Explicitly ignore .env files in production/Vercel
       ignoreEnvFile: (() => {
         const isVercel = !!process.env.VERCEL;
-        const isRailway = !!(
-          process.env.RAILWAY ||
-          process.env.RAILWAY_ENVIRONMENT ||
-          process.env.RAILWAY_SERVICE_NAME ||
-          process.env.RAILWAY_PROJECT_NAME ||
-          (process.env.PORT && process.cwd() === '/app')
-        );
         const isProduction = process.env.NODE_ENV === 'production';
-        return isProduction || isVercel || isRailway;
+        return isProduction || isVercel;
       })(),
       // Don't expand variables from process.env - use only what configuration() returns
       // This ensures our configuration function's values take precedence

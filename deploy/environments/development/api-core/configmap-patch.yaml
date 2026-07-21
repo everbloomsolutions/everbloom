@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-core-config
+  labels:
+    app: api-core
+data:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  admin-panel-url: https://dev-web-admin.everbloom.com
+  cors-origin: https://dev-web-admin.everbloom.com
+  REDIS_HOST: ""
+  REDIS_PORT: ""

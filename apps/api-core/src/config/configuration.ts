@@ -1,19 +1,17 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 import { detectRuntimePlatform, getRuntimePolicy, normalizeUrl } from './url-normalization';
 
 // Load environment variables manually before NestJS ConfigModule
-// Skip .env in production/Railway/Vercel - use platform environment variables only
+// Skip .env in production/Vercel - use platform environment variables only
 const cwd = process.cwd();
 const nodeEnv = process.env.NODE_ENV || 'development';
 const runtimePlatform = detectRuntimePlatform();
 const isVercel = runtimePlatform === 'vercel';
-const isRailway = runtimePlatform === 'railway';
 const isProduction = nodeEnv === 'production' || isVercel;
 
-// Only load .env files in development and when not on Railway/Vercel
-if (!isProduction && !isRailway && !isVercel) {
+// Only load .env files in development and when not on Vercel
+if (!isProduction && !isVercel) {
   // In monorepo, cwd may be apps/api-core; load root .env first so MONGODB_URI etc. are available
   const maybeRoot = path.resolve(cwd, '../..');
   const isMonorepoApp = path.basename(cwd) === 'api-core' && path.basename(path.dirname(cwd)) === 'apps';
@@ -38,17 +36,15 @@ export const configuration = () => {
   const runtimePlatform = detectRuntimePlatform();
   const isVercel = runtimePlatform === 'vercel';
 
-  // Detect Railway environment - Railway sets PORT automatically
-  const isRailway = runtimePlatform === 'railway';
-
+  
   const runtimePolicy = getRuntimePolicy(nodeEnv);
 
-  // Detect if running in a containerized environment (Docker/Kubernetes/Railway)
+  // Detect if running in a containerized environment (Docker/Kubernetes)
   // Centralized in RuntimePolicy to avoid logic drift.
   const isContainerized = runtimePolicy.isContainerized;
   const port = parseInt(process.env.PORT || process.env.BACKEND_PORT || '8080', 10);
   const host =
-    process.env.PORT || process.env.RAILWAY || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL
+    process.env.PORT || process.env.VERCEL
       ? '0.0.0.0'
       : process.env.BACKEND_HOST || process.env.HOST || 'localhost';
   const protocol = isProduction || isVercel ? 'https' : 'http';
@@ -63,8 +59,8 @@ export const configuration = () => {
   const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 
   // MongoDB URI - required, but allow empty in production for validation to catch it
-  // In production/Railway/containerized environments, MONGODB_URI must be set as environment variable
-  // NEVER use localhost defaults in containerized environments (Docker/Railway/Kubernetes)
+  // In production/Vercel/containerized environments, MONGODB_URI must be set as environment variable
+  // NEVER use localhost defaults in containerized environments (Docker/Kubernetes)
 
   const isDevLog = nodeEnv === 'development' && !isVercel;
   if (isDevLog) {
@@ -72,36 +68,33 @@ export const configuration = () => {
       nodeEnv,
       isProduction,
       isVercel,
-      isRailway,
       isContainerized,
       cwd: process.cwd(),
       hasMongoEnvVar: !!process.env.MONGODB_URI,
       mongoEnvVarLength: process.env.MONGODB_URI?.length || 0,
       port: process.env.PORT,
-      railway: process.env.RAILWAY,
-      railwayEnv: process.env.RAILWAY_ENVIRONMENT,
     });
   }
 
   // Default MongoDB URI based on environment
-  // NEVER use localhost in production/Vercel/Railway/containerized - require MONGODB_URI
+  // NEVER use localhost in production/Vercel/containerized - require MONGODB_URI
   let defaultMongoUri = '';
-  if (!isProduction && !isVercel && !isRailway && !isContainerized) {
+  if (!isProduction && !isVercel && !isContainerized) {
     defaultMongoUri = 'mongodb://localhost:27017/everbloom';
-  } else if (isContainerized && !isProduction && !isVercel && !isRailway) {
+  } else if (isContainerized && !isProduction && !isVercel) {
     // Docker Compose development - use service name (matches MONGO_INITDB_DATABASE in docker-compose.dev.yaml)
     defaultMongoUri = 'mongodb://mongo:27017/everbloom';
   }
-  // For production/Railway/containerized: defaultMongoUri remains empty (requires explicit MONGODB_URI)
+  // For production/Vercel/containerized: defaultMongoUri remains empty (requires explicit MONGODB_URI)
 
-  // In production/Railway/containerized: ALWAYS use process.env directly
+  // In production/Vercel/containerized: ALWAYS use process.env directly
   // This bypasses any .env file loading issues
   // In development: allow fallback to defaultMongoUri
   const rawMongoUri = process.env.MONGODB_URI;
 
   if (isDevLog) {
     console.log(`[Config] BEFORE processing - rawMongoUri: ${rawMongoUri ? `set (${rawMongoUri.length} chars, starts with: ${rawMongoUri.substring(0, 20)}...)` : 'NOT SET'}`);
-    console.log(`[Config] Environment flags: isProduction=${isProduction}, isVercel=${isVercel}, isRailway=${isRailway}, isContainerized=${isContainerized}`);
+    console.log(`[Config] Environment flags: isProduction=${isProduction}, isVercel=${isVercel}, isContainerized=${isContainerized}`);
   }
 
   // Helper function to normalize MongoDB URI (fix malformed query strings)
@@ -121,9 +114,9 @@ export const configuration = () => {
     return trimmed;
   };
 
-  // CRITICAL: In production/Vercel/Railway/containerized, require process.env.MONGODB_URI
+  // CRITICAL: In production/Vercel/containerized, require process.env.MONGODB_URI
   let mongodbUri: string;
-  if (isProduction || isVercel || isRailway || isContainerized) {
+  if (isProduction || isVercel || isContainerized) {
     mongodbUri = rawMongoUri ? normalizeMongoUri(rawMongoUri) : '';
   } else {
     // Development: allow fallback to default
@@ -139,11 +132,11 @@ export const configuration = () => {
   if (isDevLog) {
     console.log(`[Config] AFTER processing - mongodbUri: ${maskedUri}`);
     console.log(`[Config] mongodbUri length: ${mongodbUri.length}`);
-    console.log(`[Config] Source: ${(isProduction || isVercel || isRailway || isContainerized) ? 'process.env (forced)' : 'process.env or default'}`);
+    console.log(`[Config] Source: ${(isProduction || isVercel || isContainerized) ? 'process.env (forced)' : 'process.env or default'}`);
   }
 
-  if ((isProduction || isVercel || isRailway || isContainerized) && !mongodbUri) {
-    console.error('[Config] MONGODB_URI is required. Set in Vercel Dashboard → Environment Variables (or Railway/env).');
+  if ((isProduction || isVercel || isContainerized) && !mongodbUri) {
+    console.error('[Config] MONGODB_URI is required. Set in Vercel Dashboard → Environment Variables (or env).');
   }
 
   // Redis URL - optional; in production/Vercel require REDIS_URL if app uses Redis
@@ -153,16 +146,16 @@ export const configuration = () => {
 
   // JWT secrets - required, but allow dev defaults (must be at least 32 chars)
   // Handle empty strings from env vars (treat as unset)
-  // CRITICAL: In production/Railway, ALWAYS use process.env directly, never dev defaults
+  // CRITICAL: In production/Vercel, ALWAYS use process.env directly, never dev defaults
   const jwtSecretEnv = process.env.JWT_SECRET?.trim();
   const jwtRefreshSecretEnv = process.env.JWT_REFRESH_SECRET?.trim();
 
-  // In production/Railway: use process.env directly, empty string if not set (validation will catch it)
+  // In production/Vercel: use process.env directly, empty string if not set (validation will catch it)
   // In development: allow dev defaults
   let jwtSecret: string;
   let jwtRefreshSecret: string;
 
-  if (isProduction || isVercel || isRailway || isContainerized) {
+  if (isProduction || isVercel || isContainerized) {
     jwtSecret = (jwtSecretEnv && jwtSecretEnv.length > 0) ? jwtSecretEnv : '';
     jwtRefreshSecret = (jwtRefreshSecretEnv && jwtRefreshSecretEnv.length > 0) ? jwtRefreshSecretEnv : '';
   } else {
@@ -179,12 +172,12 @@ export const configuration = () => {
   const finalJwtSecret = jwtSecret;
   const finalJwtRefreshSecret = jwtRefreshSecret;
 
-  // CRITICAL: Ensure mongodbUri is never empty in production/Railway if process.env.MONGODB_URI is set
+  // CRITICAL: Ensure mongodbUri is never empty in production/Vercel if process.env.MONGODB_URI is set
   // NestJS ConfigModule may override this with environment variables, so we need to ensure
   // the value we return is correct and takes precedence
   // If process.env.MONGODB_URI is set but mongodbUri is empty, use the raw value
   let finalMongodbUri = mongodbUri;
-  if ((isProduction || isVercel || isRailway || isContainerized) && !finalMongodbUri && rawMongoUri) {
+  if ((isProduction || isVercel || isContainerized) && !finalMongodbUri && rawMongoUri) {
     if (isDevLog) console.log('[Config] WARNING: mongodbUri is empty but process.env.MONGODB_URI is set. Using raw value.');
     finalMongodbUri = String(rawMongoUri).trim();
   }

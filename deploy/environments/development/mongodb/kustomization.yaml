@@ -4,17 +4,8 @@ kind: Kustomization
 namespace: development
 
 resources:
-  - ../../../apps/api-core/base
-
-replicas:
-  - name: api-core
-    count: 1
+  - ../../../apps/mongodb/base
 
 patchesStrategicMerge:
   - patch.yaml
-  - configmap-patch.yaml
   - external-secret-patch.yaml
-
-images:
-  - name: api-core
-    newTag: staging

@@ -12,6 +12,8 @@ replicas:
 
 patchesStrategicMerge:
   - patch.yaml
+  - configmap-patch.yaml
+  - external-secret-patch.yaml
 
 images:
   - name: web-admin

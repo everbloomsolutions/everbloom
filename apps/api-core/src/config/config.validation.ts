@@ -105,7 +105,7 @@ export function validateConfig(config: Record<string, unknown>) {
 
   // CRITICAL: If config.mongodbUri is empty but process.env.MONGODB_URI is set,
   // use process.env.MONGODB_URI directly (NestJS ConfigModule may have overridden it)
-  // This should work in ALL environments, not just production/Railway
+  // This should work in ALL environments, not just production
   const rawMongoUri = process.env.MONGODB_URI;
   const configMongodbUri = config.mongodbUri ? String(config.mongodbUri).trim() : '';
   // Always use process.env.MONGODB_URI if config.mongodbUri is empty but env var is set
@@ -180,7 +180,7 @@ export function validateConfig(config: Record<string, unknown>) {
     const envVarInfo = actualEnvVar
       ? `process.env.MONGODB_URI is set (length: ${actualEnvVar.length}) but config.mongodbUri is empty. This suggests .env files may be overriding it.`
       : 'process.env.MONGODB_URI is not set in the environment.';
-    throw new Error(`MONGODB_URI is required in production/Vercel. ${envVarInfo} Set in Vercel Dashboard → Environment Variables or Railway.`);
+    throw new Error(`MONGODB_URI is required in production/Vercel. ${envVarInfo} Set in Vercel Dashboard → Environment Variables.`);
   }
   if (mongodbUri.length > 0 && !/^mongodb(\+srv)?:\/\//.test(mongodbUri)) {
     throw new Error('MONGODB_URI must be a valid MongoDB connection string');
@@ -241,7 +241,7 @@ export function validateConfig(config: Record<string, unknown>) {
     throw new Error('JWT_SECRET should be at least 32 characters for security');
   }
   if (isProduction && jwtSecret.includes('dev-secret-key-change-in-production')) {
-    throw new Error('JWT_SECRET must be set in production/Vercel (cannot use dev default). Set in Vercel Dashboard → Environment Variables or Railway.');
+    throw new Error('JWT_SECRET must be set in production/Vercel (cannot use dev default). Set in Vercel Dashboard → Environment Variables.');
   }
 
   // JWT Refresh Secret validation
@@ -249,7 +249,7 @@ export function validateConfig(config: Record<string, unknown>) {
     throw new Error('JWT_REFRESH_SECRET should be at least 32 characters for security');
   }
   if (isProduction && jwtRefreshSecret.includes('dev-refresh-secret-key-change-in-production')) {
-    throw new Error('JWT_REFRESH_SECRET must be set in production/Vercel (cannot use dev default). Set in Vercel Dashboard → Environment Variables or Railway.');
+    throw new Error('JWT_REFRESH_SECRET must be set in production/Vercel (cannot use dev default). Set in Vercel Dashboard → Environment Variables.');
   }
 
   // Update validatedConfig with corrected values

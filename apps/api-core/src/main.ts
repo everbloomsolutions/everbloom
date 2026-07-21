@@ -120,7 +120,7 @@ async function bootstrap() {
     throw error;
   }
 
-  // Railway/containers require binding to 0.0.0.0 and using the injected PORT.
+  // Containers require binding to 0.0.0.0 and using the injected PORT.
   // If we bind to localhost, the app will start but will not be reachable externally.
   const runtimePolicy = getRuntimePolicy(process.env.NODE_ENV);
   const envPort = process.env.PORT ? Number(process.env.PORT) : undefined;

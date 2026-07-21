@@ -48,7 +48,7 @@ interface AuthenticatedSocket extends Socket {
     methods: ['GET', 'POST'],
   },
   transports: ['websocket', 'polling'],
-  // Proxy-friendly defaults (Railway, Nginx, etc.)
+  // Proxy-friendly defaults (Nginx, etc.)
   pingTimeout: 20000,
   pingInterval: 25000,
   maxHttpBufferSize: 1e6,

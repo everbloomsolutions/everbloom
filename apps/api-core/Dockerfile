@@ -73,27 +73,23 @@ USER nodejs
 ENV NODE_PATH=/app/node_modules
 
 # =============================================================================
-# Railway Port Configuration
+# Container Port Configuration
 # =============================================================================
 #
-# Railway automatically sets the PORT environment variable at runtime.
 # The application reads PORT from environment and binds to 0.0.0.0.
 #
 # Port Resolution (in order of priority):
-# 1. PORT (Railway sets this automatically) - Highest priority
+# 1. PORT - Highest priority (set by container platforms)
 # 2. BACKEND_PORT (Manual override, if set)
 # 3. Default: 8080 (Development fallback)
 #
-# IMPORTANT: Railway maps its dynamic PORT to the container's exposed port.
-# We expose 8080 as a common default, but Railway will use its own PORT value.
 # The application code handles this automatically - no manual configuration needed.
 #
 # =============================================================================
 EXPOSE 8080
 
-# Health check endpoint for Railway
-# Uses PORT env var (Railway provides) or falls back to 8080
-# Railway uses this to determine service health
+# Health check endpoint
+# Uses PORT env var or falls back to 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || '8080') + '/api/v1/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 

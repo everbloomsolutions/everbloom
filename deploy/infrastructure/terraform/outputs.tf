@@ -53,9 +53,9 @@ output "eks_node_role_arn" {
 output "ecr_repository_urls" {
   description = "URLs of ECR repositories"
   value = {
-    api_core    = aws_ecr_repository.api_core.repository_url
-    web_admin   = aws_ecr_repository.web_admin.repository_url
-    web_public  = aws_ecr_repository.web_public.repository_url
+    api_core   = aws_ecr_repository.api_core.repository_url
+    web_admin  = aws_ecr_repository.web_admin.repository_url
+    web_public = aws_ecr_repository.web_public.repository_url
   }
 }
 
@@ -68,6 +68,12 @@ output "elasticache_endpoint" {
 output "elasticache_port" {
   description = "ElastiCache Valkey port"
   value       = aws_elasticache_replication_group.everbloom.port
+}
+
+output "elasticache_dev_endpoint" {
+  description = "ElastiCache Valkey development primary endpoint"
+  value       = aws_elasticache_replication_group.everbloom_dev.primary_endpoint_address
+  sensitive   = true
 }
 
 output "secrets_manager_arns" {

@@ -77,13 +77,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=min
 
-  update-gitops:
+  update-prod-gitops:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/_update-image-tags.yml
     with:
       image_tag: ${{ github.sha }}
       kustomization_paths: ${{ inputs.kustomization_path }}
+      update_gitops: true
+    permissions:
+      contents: write
+
+  update-dev-gitops:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/_update-image-tags.yml
+    with:
+      image_tag: staging
+      kustomization_paths: deploy/environments/development/${{ inputs.app_name }}/kustomization.yaml
       update_gitops: true
     permissions:
       contents: write

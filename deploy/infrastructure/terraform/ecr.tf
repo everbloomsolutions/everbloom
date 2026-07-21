@@ -3,7 +3,7 @@
 
 # ECR Repository for API Core
 resource "aws_ecr_repository" "api_core" {
-  name                 = "everbloom/api-core"
+  name = "everbloom/api-core"
   # Kept MUTABLE because develop branch still pushes a mutable "staging" tag.
   # Switch to IMMUTABLE only when staging also moves to git-SHA tags or a separate staging repo is used.
   image_tag_mutability = "MUTABLE"
@@ -28,10 +28,10 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
         rulePriority = 1
         description  = "Delete untagged images older than 1 day"
         selection = {
-          tagStatus     = "untagged"
-          countType     = "sinceImagePushed"
-          countUnit     = "days"
-          countNumber   = 1
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
         }
         action = {
           type = "expire"
@@ -41,9 +41,9 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
         rulePriority = 2
         description  = "Keep last 10 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 10
         }
         action = {
           type = "expire"
@@ -55,7 +55,7 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
 
 # ECR Repository for Web Admin
 resource "aws_ecr_repository" "web_admin" {
-  name                 = "everbloom/web-admin"
+  name = "everbloom/web-admin"
   # Kept MUTABLE because develop branch still pushes a mutable "staging" tag.
   # Switch to IMMUTABLE only when staging also moves to git-SHA tags or a separate staging repo is used.
   image_tag_mutability = "MUTABLE"
@@ -80,10 +80,10 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
         rulePriority = 1
         description  = "Delete untagged images older than 1 day"
         selection = {
-          tagStatus     = "untagged"
-          countType     = "sinceImagePushed"
-          countUnit     = "days"
-          countNumber   = 1
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
         }
         action = {
           type = "expire"
@@ -93,9 +93,9 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
         rulePriority = 2
         description  = "Keep last 10 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 10
         }
         action = {
           type = "expire"
@@ -107,7 +107,7 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
 
 # ECR Repository for Web Public
 resource "aws_ecr_repository" "web_public" {
-  name                 = "everbloom/web-public"
+  name = "everbloom/web-public"
   # Kept MUTABLE because develop branch still pushes a mutable "staging" tag.
   # Switch to IMMUTABLE only when staging also moves to git-SHA tags or a separate staging repo is used.
   image_tag_mutability = "MUTABLE"
@@ -132,10 +132,10 @@ resource "aws_ecr_lifecycle_policy" "web_public" {
         rulePriority = 1
         description  = "Delete untagged images older than 1 day"
         selection = {
-          tagStatus     = "untagged"
-          countType     = "sinceImagePushed"
-          countUnit     = "days"
-          countNumber   = 1
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
         }
         action = {
           type = "expire"
@@ -145,9 +145,9 @@ resource "aws_ecr_lifecycle_policy" "web_public" {
         rulePriority = 2
         description  = "Keep last 10 images"
         selection = {
-          tagStatus     = "any"
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = 10
         }
         action = {
           type = "expire"
