@@ -1,7 +1,5 @@
 # External Secrets Operator with IRSA for AWS Secrets Manager
 
-data "aws_caller_identity" "current" {}
-
 # OIDC Provider for EKS IRSA
 data "tls_certificate" "eks_oidc" {
   url = aws_eks_cluster.everbloom.identity[0].oidc[0].issuer
