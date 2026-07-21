@@ -1,15 +1,47 @@
 name: Build Web Public
 
-# Disabled until the web-public application is implemented.
-# Once implemented, replace this file with a workflow similar to build-web-admin.yml.
-
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web-public/**'
+      - 'docker/Dockerfile.web-public'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
+      - '.github/workflows/build-web-public.yml'
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/web-public/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'turbo.json'
+      - '.github/workflows/build-web-public.yml'
+      - '.github/workflows/_build-and-push.yml'
+      - '.github/workflows/_update-image-tags.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  placeholder:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Placeholder
-        run: echo "web-public is not implemented yet; CI is disabled."
+  build-and-push:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/_build-and-push.yml
+    with:
+      app_name: web-public
+      dockerfile: docker/Dockerfile.web-public
+      ecr_repository: everbloom/web-public
+      kustomization_path: deploy/apps/web-public/base/kustomization.yaml
+    secrets: inherit
+    permissions:
+      contents: write
+      id-token: write
