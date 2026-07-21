@@ -14,7 +14,8 @@ patchesStrategicMerge:
   - patch.yaml
   - configmap-patch.yaml
   - external-secret-patch.yaml
+  - hpa-delete.yaml
 
 images:
-  - name: web-admin
+  - name: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-admin
     newTag: staging
