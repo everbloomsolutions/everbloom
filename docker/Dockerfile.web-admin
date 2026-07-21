@@ -1,5 +1,5 @@
 # web-admin: build from monorepo root (Option A)
-# Build: docker build -f docker/Dockerfile.web-admin -t ghcr.io/everbloom/web-admin:latest .
+# Build: docker build -f docker/Dockerfile.web-admin -t 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-admin:latest .
 # Context must be repo root (.)
 
 # Stage 1: Build
@@ -22,15 +22,38 @@ RUN set -e; \
 ENV NODE_OPTIONS=--max-old-space-size=8192
 RUN pnpm turbo run build --filter=@everbloom/web-admin
 
-# Stage 2: Production (nginx)
+# Stage 2: Production (nginx running as non-root)
 FROM nginx:alpine
 
 RUN apk add --no-cache gettext wget
 
+# Create writable directories for the nginx user (uid 101)
+RUN mkdir -p /tmp/nginx/client_temp /tmp/nginx/proxy_temp \
+             /tmp/nginx/fastcgi_temp /tmp/nginx/uwsgi_temp \
+             /tmp/nginx/scgi_temp && \
+    chown -R nginx:nginx /tmp/nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /usr/share/nginx/html && \
+    chmod -R 755 /tmp/nginx
+
+# Run nginx as non-root: move pid and temp paths to writable locations
+RUN sed -i 's|pid        /run/nginx.pid;|pid        /tmp/nginx/nginx.pid;|' /etc/nginx/nginx.conf && \
+    sed -i '/^user /d' /etc/nginx/nginx.conf
+RUN { \
+      echo 'client_body_temp_path /tmp/nginx/client_temp;'; \
+      echo 'proxy_temp_path /tmp/nginx/proxy_temp;'; \
+      echo 'fastcgi_temp_path /tmp/nginx/fastcgi_temp;'; \
+      echo 'uwsgi_temp_path /tmp/nginx/uwsgi_temp;'; \
+      echo 'scgi_temp_path /tmp/nginx/scgi_temp;'; \
+      echo 'access_log /dev/stdout main;'; \
+      echo 'error_log /dev/stderr notice;'; \
+    } > /etc/nginx/conf.d/runtime_paths.conf
+
 COPY --from=builder /app/apps/web-admin/dist /usr/share/nginx/html
 COPY --from=builder /app/apps/web-admin/docker/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/apps/web-admin/docker/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh && \
+    chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d /etc/nginx/templates
+
+USER nginx
 
 EXPOSE 8080
 ENTRYPOINT ["/docker-entrypoint.sh"]

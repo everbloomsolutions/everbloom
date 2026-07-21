@@ -79,15 +79,6 @@ jobs:
           VITE_APP_NAME: ${{ secrets.VITE_APP_NAME || 'Everbloom Admin' }}
           VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION || '0.0.0' }}
 
-      - name: Set image tag for branch
-        id: tag
-        run: |
-          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          else
-            echo "tag=staging" >> $GITHUB_OUTPUT
-          fi
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -99,15 +90,22 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set image tags
+        id: tags
+        run: |
+          if [ "${{ github.ref }}" = 'refs/heads/main' ]; then
+            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }},${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:staging" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.web-admin
           push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.tag }}
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -123,7 +121,7 @@ jobs:
         continue-on-error: true
 
       - name: Update GitOps repository
-        if: env.UPDATE_GITOPS == 'true'
+        if: env.UPDATE_GITOPS == 'true' && github.ref == 'refs/heads/main'
         run: |
           sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/apps/web-admin/base/kustomization.yaml
           git config user.name "github-actions"

@@ -25,7 +25,7 @@ spec:
           name: http
         env:
         - name: PORT
-          value: "8080"
+          value: '8080'
         - name: VITE_API_BASE_URL
           valueFrom:
             configMapKeyRef:
@@ -55,3 +55,12 @@ spec:
             port: 8080
           initialDelaySeconds: 10
           periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
