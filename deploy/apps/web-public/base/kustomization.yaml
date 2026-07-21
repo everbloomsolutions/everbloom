@@ -19,4 +19,4 @@ commonLabels:
 images:
   - name: web-public
     newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public
-    newTag: latest
+    newTag: 19ac93d1216016d45d04d59ebb601ec5cf5fcb07
