@@ -4,6 +4,59 @@ import { RedisClientType } from 'redis';
 import { RedisService } from './redis.service';
 import { LoggerService } from '../logger/logger.service';
 
+export type BullRedisConnection = string | {
+  redis: {
+    host: string;
+    port: number;
+    username?: string;
+    password?: string;
+    tls?: Record<string, unknown>;
+    connectTimeout?: number;
+    lazyConnect?: boolean;
+  };
+};
+
+export function getBullRedisConnectionFromUrl(rawUrl: string): BullRedisConnection {
+  const redisUrl = rawUrl.trim();
+  if (!redisUrl) {
+    return null;
+  }
+
+  const isUpstash = redisUrl.includes('upstash.io') || redisUrl.includes('upstash.com');
+  const isTls = redisUrl.startsWith('rediss://');
+
+  if (isUpstash || isTls) {
+    try {
+      const url = new URL(redisUrl);
+      const host = url.hostname;
+      const port = parseInt(url.port || (isTls ? '6380' : '6379'), 10);
+
+      let password: string | undefined;
+      if (url.password) {
+        password = url.password;
+      } else if (url.username && url.username !== 'default' && url.username !== '') {
+        password = url.username;
+      }
+
+      return {
+        redis: {
+          host,
+          port,
+          username: url.username || 'default',
+          password: password ? decodeURIComponent(password) : undefined,
+          tls: {},
+          connectTimeout: 10000,
+          lazyConnect: false,
+        },
+      };
+    } catch {
+      return redisUrl;
+    }
+  }
+
+  return redisUrl;
+}
+
 /**
  * Redis Helper Service
  *
@@ -37,70 +90,16 @@ export class RedisHelperService {
    * Get Bull-compatible Redis connection options, or null when Redis is not configured.
    * Bull v4 uses ioredis, which needs explicit TLS configuration for rediss:// URLs.
    */
-  getBullRedisConnection(): string | {
-    redis: {
-      host: string;
-      port: number;
-      username?: string;
-      password?: string;
-      tls?: Record<string, unknown>;
-      connectTimeout?: number;
-      lazyConnect?: boolean;
-    };
-  } | null {
+  getBullRedisConnection(): BullRedisConnection {
     const raw = this.configService.get<string>('redisUrl');
     const redisUrl = typeof raw === 'string' ? raw.trim() : '';
     if (!redisUrl) {
       return null;
     }
-
-    // Detect Upstash by domain
-    const isUpstash = redisUrl.includes('upstash.io') || redisUrl.includes('upstash.com');
-    const isTls = redisUrl.startsWith('rediss://');
-
-    // For Upstash or TLS connections, parse URL and return object config
-    if (isUpstash || isTls) {
-      try {
-        // Parse Redis URL: rediss://:password@host:port or redis://:password@host:port
-        // Upstash format: rediss://default:PASSWORD@HOST:PORT
-        const url = new URL(redisUrl);
-        const host = url.hostname;
-        // Default ports: 6380 for TLS, 6379 for non-TLS
-        const port = parseInt(url.port || (isTls ? '6380' : '6379'), 10);
-
-        // Extract password from URL
-        // Password can be in: url.password (after : and before @) or url.username if no password field
-        let password: string | undefined;
-        if (url.password) {
-          password = url.password;
-        } else if (url.username && url.username !== 'default' && url.username !== '') {
-          // Some Upstash URLs might have password as username
-          password = url.username;
-        }
-
-        // Log connection details (without password) for debugging
-        this.logger.log(`Configuring Bull queue with Upstash/TLS Redis: ${host}:${port} (TLS enabled)`);
-
-        // Return object config with redis property for Bull
-        return {
-          redis: {
-            host,
-            port,
-            username: url.username || 'default',
-            password: password ? decodeURIComponent(password) : undefined,
-            tls: {}, // Empty object enables TLS with default settings for ioredis
-            connectTimeout: 10000, // 10 seconds timeout
-            lazyConnect: false, // Connect immediately
-          },
-        };
-      } catch (error) {
-        this.logger.warn('Failed to parse Redis URL for Bull connection, using URL string:', error);
-        // Fallback to URL string if parsing fails
-        return redisUrl;
-      }
+    const conn = getBullRedisConnectionFromUrl(redisUrl);
+    if (conn && typeof conn === 'object') {
+      this.logger.log(`Configuring Bull queue with Upstash/TLS Redis: ${conn.redis.host}:${conn.redis.port} (TLS enabled)`);
     }
-
-    // For non-TLS connections, return URL string (ioredis can handle this)
-    return redisUrl;
+    return conn;
   }
 }

@@ -1,8 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { BullModule, BullModuleAsyncOptions, BullModuleOptions } from '@nestjs/bull';
+import { BullModule, BullModuleOptions } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { RedisHelperService } from '../redis/redis-helper.service';
+import { getBullRedisConnectionFromUrl } from '../redis/redis-helper.service';
 import { RedisModule } from '../redis/redis.module';
 import { LoggerModule } from '../logger/logger.module';
 import { MailModule } from '../mail/mail.module';
@@ -29,43 +29,39 @@ const baseImports = [
   MailModule,
 ];
 
-function getQueueRedisConfig(redisHelper: RedisHelperService): BullModuleOptions['redis'] {
-  const conn = redisHelper.getBullRedisConnection();
+/** Same Redis URL logic as configuration() so scheduler and config stay in sync (e.g. Vercel no-op when REDIS_URL unset). */
+function hasRedisEnabled(): boolean {
+  const isVercel = !!process.env.VERCEL;
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const redisUrl =
+    process.env.REDIS_URL ??
+    (nodeEnv === 'production' || isVercel ? '' : 'redis://localhost:6379');
+  return String(redisUrl).trim().length > 0;
+}
+
+function getQueueRedisConfig(): BullModuleOptions['redis'] {
+  const redisUrl = process.env.REDIS_URL ?? '';
+  const conn = getBullRedisConnectionFromUrl(redisUrl);
   if (!conn) {
     throw new Error(
       'Redis URL is not configured. On Vercel, leave REDIS_URL unset to use the no-op scheduler (no queues).',
     );
   }
-  const redis = typeof conn === 'string' ? conn : conn.redis;
-  // eslint-disable-next-line no-console
-  console.log(`[SchedulerModule] queue redis config for Bull: ${JSON.stringify(typeof redis === 'string' ? redis : { ...redis, password: '***' })}`);
-  return redis;
+  return typeof conn === 'string' ? conn : conn.redis;
 }
 
-function createQueueAsyncOption(
-  name: string,
-  extraOptions: Omit<BullModuleOptions, 'name' | 'redis'> = {},
-): BullModuleAsyncOptions {
-  return {
-    name,
-    imports: [RedisModule],
-    useFactory: (redisHelper: RedisHelperService) => ({
-      name,
-      redis: getQueueRedisConfig(redisHelper),
-      ...extraOptions,
-    }),
-    inject: [RedisHelperService],
-  };
-}
+const bullRedis = getQueueRedisConfig();
 
-const bullQueueAsync = hasRedisEnabled()
+const bullQueues = hasRedisEnabled()
   ? [
-      BullModule.registerQueueAsync(
-        createQueueAsyncOption('email'),
-        createQueueAsyncOption('cleanup'),
-        createQueueAsyncOption('analytics'),
-        createQueueAsyncOption('audit-cleanup'),
-        createQueueAsyncOption('import', {
+      BullModule.registerQueue(
+        { name: 'email', redis: bullRedis },
+        { name: 'cleanup', redis: bullRedis },
+        { name: 'analytics', redis: bullRedis },
+        { name: 'audit-cleanup', redis: bullRedis },
+        {
+          name: 'import',
+          redis: bullRedis,
           defaultJobOptions: {
             removeOnComplete: {
               age: 24 * 3600,
@@ -76,20 +72,10 @@ const bullQueueAsync = hasRedisEnabled()
             },
             attempts: 1,
           },
-        }),
+        },
       ),
     ]
   : [];
-
-/** Same Redis URL logic as configuration() so scheduler and config stay in sync (e.g. Vercel no-op when REDIS_URL unset). */
-function hasRedisEnabled(): boolean {
-  const isVercel = !!process.env.VERCEL;
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  const redisUrl =
-    process.env.REDIS_URL ??
-    (nodeEnv === 'production' || isVercel ? '' : 'redis://localhost:6379');
-  return String(redisUrl).trim().length > 0;
-}
 
 /**
  * Scheduler (Bull/Redis) module. Must be imported via SchedulerModule.forRoot() in all consumers
@@ -119,7 +105,7 @@ export class SchedulerModule {
           { provide: SchedulerQueueService, useClass: SchedulerQueueServiceNoOp },
         ];
 
-    const imports = [...baseImports, ...(hasRedis ? bullQueueAsync : [])];
+    const imports = [...baseImports, ...(hasRedis ? bullQueues : [])];
     const exports = hasRedis
       ? [SchedulerService, SchedulerQueueService, BullModule]
       : [SchedulerService, SchedulerQueueService];
