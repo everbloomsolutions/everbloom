@@ -38,7 +38,7 @@ function getQueueRedisConfig(redisHelper: RedisHelperService): BullModuleOptions
   }
   const redis = typeof conn === 'string' ? conn : conn.redis;
   // eslint-disable-next-line no-console
-  console.log(`[SchedulerModule] queue redis config for Bull: ${JSON.stringify({ ...redis, password: '***' })}`);
+  console.log(`[SchedulerModule] queue redis config for Bull: ${JSON.stringify(typeof redis === 'string' ? redis : { ...redis, password: '***' })}`);
   return redis;
 }
 
