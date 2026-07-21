@@ -16,5 +16,5 @@ commonLabels:
 
 images:
   - name: api-core
-    newName: <account-id>.dkr.ecr.ap-south-2.amazonaws.com/everbloom/api-core
+    newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/api-core
     newTag: latest

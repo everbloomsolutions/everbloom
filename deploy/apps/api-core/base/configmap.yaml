@@ -14,5 +14,5 @@ data:
   MONGODB_PORT: "27017"
   MONGODB_DATABASE: everbloom
   # ElastiCache Valkey Configuration
-  REDIS_HOST: everbloom-valkey.xxxxxx.use1.cache.amazonaws.com
+  REDIS_HOST: master.everbloom-valkey.q6yhht.aps2.cache.amazonaws.com
   REDIS_PORT: "6379"

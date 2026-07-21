@@ -220,9 +220,9 @@ resource "aws_eks_node_group" "application" {
   subnet_ids     = aws_subnet.private[*].id
 
   scaling_config {
-    desired_size = 3
+    desired_size = 4
     min_size     = 2
-    max_size     = 5
+    max_size     = 6
   }
 
   instance_types = ["t3.medium"]

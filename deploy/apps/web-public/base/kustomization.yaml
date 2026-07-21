@@ -16,5 +16,5 @@ commonLabels:
 
 images:
   - name: web-public
-    newName: <account-id>.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public
+    newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public
     newTag: latest

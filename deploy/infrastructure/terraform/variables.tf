@@ -75,6 +75,12 @@ variable "google_maps_api_key" {
   sensitive   = true
 }
 
+variable "kubeconfig_path" {
+  description = "Path to kubeconfig file"
+  type        = string
+  default     = "~/.kube/config"
+}
+
 # cert-manager Variables
 variable "letsencrypt_email" {
   description = "Email for Let's Encrypt notifications"

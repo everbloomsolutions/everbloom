@@ -18,6 +18,10 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "~> 1.14"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 
   backend "s3" {
@@ -27,53 +31,49 @@ terraform {
   }
 }
 
-# Kubernetes providers - will be configured after EKS cluster is created
-# Commented out for initial infrastructure deployment
-# Uncomment after EKS cluster is available and kubeconfig is configured
+provider "kubernetes" {
+  config_path = var.kubeconfig_path
 
-# provider "kubernetes" {
-#   config_path = var.kubeconfig_path
-#   exec {
-#     api_version = "client.authentication.k8s.io/v1beta1"
-#     command     = "aws"
-#     args = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
-#   }
-# }
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
+  }
+}
 
-# provider "helm" {
-#   kubernetes {
-#     config_path = var.kubeconfig_path
-#     exec {
-#       api_version = "client.authentication.k8s.io/v1beta1"
-#       command     = "aws"
-#       args = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
-#     }
-#   }
-# }
+provider "helm" {
+  kubernetes {
+    config_path = var.kubeconfig_path
 
-# provider "kubectl" {
-#   config_path = var.kubeconfig_path
-#   exec {
-#     api_version = "client.authentication.k8s.io/v1beta1"
-#     command     = "aws"
-#     args = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
-#   }
-# }
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
+    }
+  }
+}
+
+provider "kubectl" {
+  config_path = var.kubeconfig_path
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", "everbloom-production", "--region", "ap-south-2"]
+  }
+}
 
 # Kubernetes resources - will be deployed after EKS cluster is created
-# Commented out for initial infrastructure deployment
-# Uncomment after EKS cluster is available and kubeconfig is configured
+resource "kubernetes_namespace" "production" {
+  metadata {
+    name = "production"
+    labels = {
+      environment = "production"
+    }
+  }
+}
 
-# resource "kubernetes_namespace" "production" {
-#   metadata {
-#     name = "production"
-#     labels = {
-#       environment = "production"
-#     }
-#   }
-# }
-
-# # ArgoCD Installation (if using GitOps)
+# ArgoCD Installation (if using GitOps) - uncomment when ready for GitOps
 # resource "helm_release" "argocd" {
 #   name             = "argocd"
 #   repository       = "https://argoproj.github.io/argo-helm"
@@ -83,7 +83,7 @@ terraform {
 #   create_namespace = true
 # }
 
-# # Monitoring Stack (Prometheus + Grafana)
+# Monitoring Stack (Prometheus + Grafana) - uncomment when ready for monitoring
 # resource "helm_release" "monitoring" {
 #   name             = "monitoring"
 #   repository       = "https://prometheus-community.github.io/helm-charts"
@@ -93,26 +93,12 @@ terraform {
 #   create_namespace = true
 # }
 
-# # Ingress Controller (NGINX)
-# resource "helm_release" "ingress" {
-#   name             = "ingress-nginx"
-#   repository       = "https://kubernetes.github.io/ingress-nginx"
-#   chart            = "ingress-nginx"
-#   version          = "4.8.3"
-#   namespace        = "ingress-nginx"
-#   create_namespace = true
-# }
-
-variable "kubeconfig_path" {
-  description = "Path to kubeconfig file"
-  type        = string
-  default     = "~/.kube/config"
-}
-
-output "argocd_server_url" {
-  value = "https://argocd.everbloom.com"
-}
-
-output "grafana_url" {
-  value = "https://grafana.everbloom.com"
+# Ingress Controller (NGINX)
+resource "helm_release" "ingress" {
+  name             = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  version          = "4.8.3"
+  namespace        = "ingress-nginx"
+  create_namespace = true
 }
