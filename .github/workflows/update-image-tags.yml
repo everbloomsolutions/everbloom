@@ -3,6 +3,16 @@ name: Update Image Tags
 on:
   workflow_dispatch:
     inputs:
+      app_name:
+        description: 'Application to update'
+        required: true
+        type: choice
+        options:
+          - api-core
+          - web-admin
+          - web-public
+          - all
+        default: all
       image_tag:
         description: 'Image tag to set in deploy base kustomization (default: git SHA)'
         required: false
@@ -17,8 +27,9 @@ jobs:
   update-tags:
     uses: ./.github/workflows/_update-image-tags.yml
     with:
-      image_tag: ${{ github.event.inputs.image_tag || github.sha }}
-      kustomization_paths: deploy/apps/api-core/base/kustomization.yaml,deploy/apps/web-admin/base/kustomization.yaml,deploy/apps/web-public/base/kustomization.yaml
-      update_gitops: ${{ fromJSON(github.event.inputs.update_gitops || 'false') }}
+      image_tag: ${{ inputs.image_tag || github.sha }}
+      kustomization_paths: ${{ inputs.app_name == 'all' && 'deploy/apps/api-core/base/kustomization.yaml,deploy/apps/web-admin/base/kustomization.yaml,deploy/apps/web-public/base/kustomization.yaml' || format('deploy/apps/{0}/base/kustomization.yaml', inputs.app_name) }}
+      image_uris: ${{ inputs.app_name == 'all' && '361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/api-core,361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-admin,361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-public' || format('361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/{0}', inputs.app_name) }}
+      update_gitops: ${{ inputs.update_gitops }}
     permissions:
       contents: write

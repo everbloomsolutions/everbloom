@@ -69,8 +69,7 @@ resource "aws_iam_policy" "external_secrets" {
           aws_secretsmanager_secret.mongodb.arn,
           aws_secretsmanager_secret.api_core.arn,
           aws_secretsmanager_secret.web_admin.arn,
-          aws_secretsmanager_secret.web_public.arn,
-          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:everbloom/development/*"
+          aws_secretsmanager_secret.web_public.arn
         ]
       }
     ]

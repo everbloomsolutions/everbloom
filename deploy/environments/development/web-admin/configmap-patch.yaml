@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: web-admin-config
-  labels:
-    app: web-admin
-data:
-  vite-api-base-url: https://dev-api.everbloom.com/api/v1
-  vite-socket-url: wss://dev-api.everbloom.com

@@ -54,24 +54,19 @@ Deployments are managed through GitOps, where:
 
 ## Environment-Specific Deployments
 
-### Development
-- Low-resource configurations
-- Fast iteration
-- Local development support
-
-### Staging
-- Production-like environment
-- Testing and validation
-- Pre-production checks
+### Local Development
+- Uses Docker Compose for MongoDB and Redis (`docker-compose.dev.yaml`)
+- Generate local secrets with `./scripts/create-local-env.sh`
+- Run `api-core` and `web-admin` via `pnpm dev`
 
 ### Production
-- High availability
+- High availability on AWS EKS
 - Production-grade resources
 - Monitoring and alerting
 
 ## CI/CD (GitHub Actions)
 
-- **Image build**: Push to `main` pushes `:sha` and `:latest`; push to `develop` pushes `:sha` and `:staging`. Images: `ghcr.io/<owner>/api-core`, `web-admin`, `web-public`.
+- **Image build**: Push to `main` builds, pushes `:sha` and `:latest`, and updates GitOps. Push to `develop` runs `pnpm` checks and a local smoke test; no image push.
 - **Opt-in**: Set in GitHub Environment or repository variables:
   - `UPDATE_GITOPS=true` — build workflows commit newTag to `deploy/apps/*/base/kustomization.yaml` after push (Argo CD then syncs).
   - `DEPLOY_TO=vercel` — web-admin workflow runs Vercel deploy (needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`). Step uses `continue-on-error: true` if Vercel is not configured.
@@ -84,17 +79,17 @@ Set these in GitHub so build workflows can update GitOps or deploy to Vercel:
 1. **Repository**: Settings → Secrets and variables → Actions → Variables. Add `UPDATE_GITOPS` (value `true`) and/or `DEPLOY_TO` (value `vercel`) if you want them for all runs.
 2. **Environment**: Settings → Environments → e.g. `production` → Environment variables. Add `UPDATE_GITOPS=true` so only production runs commit tag updates. Add `DEPLOY_TO=vercel` for web-admin in that environment.
 
-Build workflows use the job’s `environment` (production/staging from branch or workflow_dispatch input), so variables set on the `production` environment apply only when that environment is used.
+Build workflows use the job’s `environment` (production from branch or workflow_dispatch input), so variables set on the `production` environment apply only when that environment is used.
 
 ## Deployment Workflow Summary
 
 | Component | What it does |
 |-----------|---------------|
-| **build-api-core** | Push main/develop (api-core paths): root pnpm install, lint, type-check, test → build-push image. Main → `:sha`, `:latest`; develop → `:sha`, `:staging`. Optional: `UPDATE_GITOPS=true` commits newTag to deploy base. |
-| **build-web-admin** | Same pattern; optional Vercel deploy if `DEPLOY_TO=vercel`; optional GitOps update. |
-| **build-web-public** | Same pattern (no lint/test); optional GitOps update. |
+| **build-api-core** | PR/develop: `pnpm` lint, type-check, test, build + smoke test. Main: build, push `:sha`/`:latest` to ECR and update base `newTag` via GitOps. |
+| **build-web-admin** | Same pattern for PR/develop; main builds/pushes to ECR and updates GitOps. Optional Vercel deploy if `DEPLOY_TO=vercel`. |
+| **build-web-public** | Same pattern (gated until implemented). |
 | **update-image-tags** | Manual: set image tag in all three bases; input `update_gitops` to commit and push. |
-| **Argo CD** | *-prod apps: `targetRevision: main`, path `deploy/environments/production/<app>`, inherit base newTag (SHA when UPDATE_GITOPS used). *-dev apps: `targetRevision: develop`, path `deploy/environments/development/<app>`, newTag `staging`. Staging overlays: newTag `staging`. |
+| **Argo CD** | *-prod apps: `targetRevision: main`, path `deploy/environments/production/<app>`, inherit base `newTag` (SHA from CI). |
 
 ## Naming Conventions
 
@@ -103,10 +98,10 @@ Build workflows use the job’s `environment` (production/staging from branch or
 | Workflow file | kebab-case | `build-api-core.yml`, `update-image-tags.yml` |
 | Job name | kebab-case | `build-and-push`, `update-tags` |
 | Step name | Title Case, short | `Checkout`, `Lint`, `Build and push Docker image` |
-| Argo Application | `<app>-<env>` | `api-core-prod`, `web-admin-dev` |
-| Kustomize path | `deploy/apps/<app>/base`, `deploy/environments/<env>/<app>` | `api-core`, `web-admin`, `production`, `staging` |
+| Argo Application | `<app>-<env>` | `api-core-prod`, `web-admin-prod` |
+| Kustomize path | `deploy/apps/<app>/base`, `deploy/environments/<env>/<app>` | `api-core`, `web-admin`, `production` |
 | Image name | kebab-case, matches app | `api-core`, `web-admin`, `web-public` |
-| Image tag | `latest` (main), `staging` (develop), or SHA | Pushed by CI per branch |
+| Image tag | `latest` (main) or SHA | Pushed by CI on `main` |
 | Commit message (deploy) | `chore(deploy): <description>` | `chore(deploy): update api-core image to <sha>` |
 | Base image newName | `ghcr.io/everbloom/<app>` | Matches CI `github.repository_owner` when repo is everbloom; for forks, set owner or update base kustomization. |
 
@@ -152,6 +147,3 @@ argocd app rollback api-core-prod
 - **Logs**: Centralized logging
 - **Alerts**: Prometheus alerts
 
-## Optional Improvements
-
-- **Staging Argo apps**: Add `api-core-staging`, `web-admin-staging`, `web-public-staging` with `targetRevision: develop` and path `deploy/environments/staging/<app>` if you want a dedicated staging app.

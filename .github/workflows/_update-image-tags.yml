@@ -12,7 +12,12 @@ on:
         required: true
         type: string
       image_uri:
-        description: Full image repository URI (without tag) to match in the kustomization images list. If omitted, all newTag values are updated.
+        description: Full image repository URI (without tag) to match in every kustomization images list. If omitted, all newTag values are updated.
+        required: false
+        type: string
+        default: ''
+      image_uris:
+        description: Comma-separated list of image URIs, one per kustomization_paths entry, used to match each path individually. Overrides image_uri when provided and matches the number of paths.
         required: false
         type: string
         default: ''
@@ -42,14 +47,17 @@ jobs:
           import yaml
 
           paths = [p.strip() for p in "${{ inputs.kustomization_paths }}".split(',') if p.strip()]
-          image_uri = "${{ inputs.image_uri }}".strip()
+          image_uri_global = "${{ inputs.image_uri }}".strip()
+          image_uris = [u.strip() for u in "${{ inputs.image_uris }}".split(',') if u.strip()]
           image_tag = "${{ inputs.image_tag }}".strip()
 
           if not paths or not image_tag:
               print("Missing required inputs: image_tag and kustomization_paths")
               sys.exit(1)
 
-          for p in paths:
+          per_path_uris = image_uris if len(image_uris) == len(paths) else []
+
+          for i, p in enumerate(paths):
               path = pathlib.Path(p)
               if not path.exists():
                   print(f"File not found: {p}")
@@ -63,6 +71,7 @@ jobs:
                   print(f"No images block in {p}; nothing to update")
                   continue
 
+              image_uri = per_path_uris[i] if per_path_uris else image_uri_global
               updated = False
               for entry in images:
                   # Match by the image `name` or `newName` when a specific URI is provided.
@@ -86,6 +95,6 @@ jobs:
 
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add ${{ inputs.kustomization_paths }}
+          git add $(echo "${{ inputs.kustomization_paths }}" | tr ',' '\n')
           git diff --staged --quiet || git commit -m "chore(deploy): update image tags to ${{ inputs.image_tag }}"
-          git push || exit 0
+          git push

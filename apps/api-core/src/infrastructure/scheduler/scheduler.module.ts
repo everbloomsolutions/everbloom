@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { BullModule, BullModuleOptions } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
+import { configuration } from '../../config/configuration';
 import { getBullRedisConnectionFromUrl } from '../redis/redis-helper.service';
 import { RedisModule } from '../redis/redis.module';
 import { LoggerModule } from '../logger/logger.module';
@@ -29,18 +30,17 @@ const baseImports = [
   MailModule,
 ];
 
-/** Same Redis URL logic as configuration() so scheduler and config stay in sync (e.g. Vercel no-op when REDIS_URL unset). */
+/** Resolves the Redis URL from the central configuration so the scheduler and app config stay in sync. */
+function getResolvedRedisUrl(): string {
+  return configuration().redisUrl;
+}
+
 function hasRedisEnabled(): boolean {
-  const isVercel = !!process.env.VERCEL;
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  const redisUrl =
-    process.env.REDIS_URL ??
-    (nodeEnv === 'production' || isVercel ? '' : 'redis://localhost:6379');
-  return String(redisUrl).trim().length > 0;
+  return getResolvedRedisUrl().trim().length > 0;
 }
 
 function getQueueRedisConfig(): BullModuleOptions['redis'] {
-  const redisUrl = process.env.REDIS_URL ?? '';
+  const redisUrl = getResolvedRedisUrl();
   const conn = getBullRedisConnectionFromUrl(redisUrl);
   if (!conn) {
     throw new Error(

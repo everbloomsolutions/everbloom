@@ -123,39 +123,6 @@ resource "aws_elasticache_replication_group" "everbloom" {
   ]
 }
 
-# ElastiCache Replication Group for Valkey (Development)
-resource "aws_elasticache_replication_group" "everbloom_dev" {
-  replication_group_id = "everbloom-valkey-dev"
-  description          = "Everbloom Valkey replication group for development"
-  node_type            = "cache.t3.small"
-  num_cache_clusters   = 1
-  port                 = 6379
-  engine               = "valkey"
-  engine_version       = "7.2"
-  parameter_group_name = aws_elasticache_parameter_group.everbloom.name
-  subnet_group_name    = aws_elasticache_subnet_group.everbloom.name
-  security_group_ids   = [aws_security_group.elasticache.id]
-
-  automatic_failover_enabled = false
-  multi_az_enabled           = false
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
-  auth_token                 = var.valkey_auth_token
-
-  snapshot_retention_limit = 0
-
-  tags = {
-    Name        = "everbloom-valkey-dev"
-    Environment = "development"
-    ManagedBy   = "terraform"
-  }
-
-  depends_on = [
-    aws_security_group_rule.elasticache_ingress_eks,
-    aws_security_group_rule.elasticache_egress
-  ]
-}
-
 # SNS Topic for ElastiCache Notifications
 resource "aws_sns_topic" "elasticache_alerts" {
   name = "everbloom-elasticache-alerts"

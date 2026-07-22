@@ -70,12 +70,6 @@ output "elasticache_port" {
   value       = aws_elasticache_replication_group.everbloom.port
 }
 
-output "elasticache_dev_endpoint" {
-  description = "ElastiCache Valkey development primary endpoint"
-  value       = aws_elasticache_replication_group.everbloom_dev.primary_endpoint_address
-  sensitive   = true
-}
-
 output "secrets_manager_arns" {
   description = "ARNs of Secrets Manager secrets"
   value = {
