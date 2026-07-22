@@ -27,23 +27,9 @@ interface AuthenticatedSocket extends Socket {
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: (origin, callback) => {
-      // Allow same-origin / non-browser clients
-      if (!origin) return callback(null, true);
-
-      // Use explicit origins when configured; otherwise allow all.
-      // This prevents silent websocket handshake drops due to browser CORS.
-      const allowedOrigins = (globalThis as any).__socketAllowedOrigins as string[] | true | undefined;
-      if (allowedOrigins === true || !allowedOrigins) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error('CORS origin not allowed'));
-    },
+    // Fail closed by default; afterInit binds the real origin validator.
+    origin: ((_origin: string, callback: (err?: Error, allow?: boolean) => void) =>
+      callback(new Error('CORS origin not allowed'), false)) as any,
     credentials: true,
     methods: ['GET', 'POST'],
   },
@@ -74,6 +60,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private totalDisconnects = 0;
   private totalAuthSuccess = 0;
   private totalAuthFailure = 0;
+  private allowedOrigins: string[] = [];
 
   constructor(
     private readonly configService: ConfigService,
@@ -86,12 +73,12 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   afterInit(server: Server): void {
-    // Cache allowed origins for the CORS callback above
-    const allowedOrigins = this.getAllowedOrigins();
-    (globalThis as any).__socketAllowedOrigins = allowedOrigins;
+    // Resolve allowed origins through DI and bind the CORS validator to this instance.
+    this.allowedOrigins = this.getAllowedOrigins();
+    (server as any).opts.cors.origin = this.handleCorsOrigin.bind(this);
 
     this.loggerService.log('Socket.io server initialized', {
-      allowedOrigins: formatAllowedOriginsForLog(allowedOrigins),
+      allowedOrigins: formatAllowedOriginsForLog(this.allowedOrigins),
     });
 
     // Authentication middleware for socket connections
@@ -144,88 +131,82 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           return next(new Error('Authentication required'));
         }
 
-        // Create timeout promise for database operations
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error('Authentication timeout'));
-          }, AUTH_TIMEOUT_MS);
-        });
+        // Authenticate with a cancellable timeout
+        await this.withTimeout(async (signal) => {
+          // Check if token is blacklisted
+          const nowMs = Date.now();
+          const cached = this.blacklistCache.get(token);
+          let isBlacklisted: boolean;
+          const blacklistStartMs = Date.now();
+          if (cached && cached.expiresAtMs > nowMs) {
+            isBlacklisted = cached.value;
+          } else {
+            isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(token);
+            if (signal.aborted) throw new Error('Authentication timeout');
+            this.blacklistCache.set(token, {
+              value: isBlacklisted,
+              expiresAtMs: nowMs + this.BLACKLIST_CACHE_TTL_MS,
+            });
+          }
+          const blacklistDurationMs = Date.now() - blacklistStartMs;
+          if (isBlacklisted) {
+            throw new Error('Token has been revoked');
+          }
 
-        // Race between authentication and timeout
-        await Promise.race([
-          (async () => {
-            // Check if token is blacklisted
-            const nowMs = Date.now();
-            const cached = this.blacklistCache.get(token);
-            let isBlacklisted: boolean;
-            const blacklistStartMs = Date.now();
-            if (cached && cached.expiresAtMs > nowMs) {
-              isBlacklisted = cached.value;
-            } else {
-              isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(token);
-              this.blacklistCache.set(token, {
-                value: isBlacklisted,
-                expiresAtMs: nowMs + this.BLACKLIST_CACHE_TTL_MS,
-              });
-            }
-            const blacklistDurationMs = Date.now() - blacklistStartMs;
-            if (isBlacklisted) {
-              throw new Error('Token has been revoked');
-            }
+          const decoded = this.jwtService.verifyToken(token);
+          const userId = decoded.userId;
 
-            const decoded = this.jwtService.verifyToken(token);
-            const userId = decoded.userId;
+          const nowUserMs = Date.now();
+          const cachedUser = this.userCache.get(userId);
+          const userStartMs = Date.now();
+          const user =
+            cachedUser && cachedUser.expiresAtMs > nowUserMs
+              ? cachedUser.value
+              : await this.userModel
+                  .findById(userId)
+                  .select('_id role isActive email')
+                  .lean()
+                  .exec();
+          if (signal.aborted) throw new Error('Authentication timeout');
+          const userDurationMs = Date.now() - userStartMs;
 
-            const nowUserMs = Date.now();
-            const cachedUser = this.userCache.get(userId);
-            const userStartMs = Date.now();
-            const user =
-              cachedUser && cachedUser.expiresAtMs > nowUserMs
-                ? cachedUser.value
-                : await this.userModel
-                    .findById(userId)
-                    .select('_id role isActive email')
-                    .lean()
-                    .exec();
-            const userDurationMs = Date.now() - userStartMs;
+          if (!user) {
+            recordFailure(budgetKey);
+            throw new Error('User not found');
+          }
 
-            if (!user) {
-              recordFailure(budgetKey);
-              throw new Error('User not found');
-            }
+          if (!user.isActive) {
+            recordFailure(budgetKey);
+            throw new Error('User account is inactive');
+          }
 
-            if (!user.isActive) {
-              recordFailure(budgetKey);
-              throw new Error('User account is inactive');
-            }
+          if (!cachedUser || cachedUser.expiresAtMs <= nowUserMs) {
+            this.userCache.set(userId, {
+              value: user as unknown as SocketUser,
+              expiresAtMs: nowUserMs + this.USER_CACHE_TTL_MS,
+            });
+          }
 
-            if (!cachedUser || cachedUser.expiresAtMs <= nowUserMs) {
-              this.userCache.set(userId, {
-                value: user as unknown as SocketUser,
-                expiresAtMs: nowUserMs + this.USER_CACHE_TTL_MS,
-              });
-            }
+          if (signal.aborted) throw new Error('Authentication timeout');
 
-            socket.user = user as unknown as SocketUser;
+          socket.user = user as unknown as SocketUser;
 
-            const authDurationMs = Date.now() - authStartMs;
-            this.totalAuthSuccess += 1;
-            if (!isProduction() || authDurationMs > 250) {
-              this.loggerService.log('socket_auth_ok', {
-                event: 'socket_auth_ok',
-                socketId: socket.id,
-                userId,
-                role: (socket.user as any)?.role,
-                durationMs: authDurationMs,
-                blacklistDurationMs,
-                userDurationMs,
-                blacklistCacheHit: Boolean(cached && cached.expiresAtMs > nowMs),
-                userCacheHit: Boolean(cachedUser && cachedUser.expiresAtMs > nowUserMs),
-              });
-            }
-          })(),
-          timeoutPromise,
-        ]);
+          const authDurationMs = Date.now() - authStartMs;
+          this.totalAuthSuccess += 1;
+          if (!isProduction() || authDurationMs > 250) {
+            this.loggerService.log('socket_auth_ok', {
+              event: 'socket_auth_ok',
+              socketId: socket.id,
+              userId,
+              role: (socket.user as any)?.role,
+              durationMs: authDurationMs,
+              blacklistDurationMs,
+              userDurationMs,
+              blacklistCacheHit: Boolean(cached && cached.expiresAtMs > nowMs),
+              userCacheHit: Boolean(cachedUser && cachedUser.expiresAtMs > nowUserMs),
+            });
+          }
+        }, AUTH_TIMEOUT_MS, 'Authentication timeout');
 
         next();
       } catch (error) {
@@ -345,9 +326,76 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   /**
+   * Run an async operation with a timeout. The timer is cleared when the
+   * operation finishes first, preventing unhandled rejections.
+   */
+  private withTimeout<T>(
+    operation: (signal: AbortSignal) => Promise<T>,
+    ms: number,
+    errorMessage: string,
+  ): Promise<T> {
+    const controller = new AbortController();
+    let timer: NodeJS.Timeout | undefined;
+    let settled = false;
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timer = setTimeout(() => {
+        settled = true;
+        controller.abort();
+        reject(new Error(errorMessage));
+      }, ms);
+    });
+
+    const guardedPromise = operation(controller.signal)
+      .then((value) => {
+        if (!settled) {
+          settled = true;
+          if (timer) clearTimeout(timer);
+        }
+        return value;
+      })
+      .catch((error) => {
+        if (!settled) {
+          settled = true;
+          if (timer) clearTimeout(timer);
+          throw error;
+        }
+        return undefined as unknown as T;
+      });
+
+    return Promise.race([guardedPromise, timeoutPromise]);
+  }
+
+  /**
+   * CORS origin validator bound to this instance.
+   */
+  private handleCorsOrigin(
+    origin: string | undefined,
+    callback: (err?: Error, allow?: boolean) => void,
+  ): void {
+    if (!origin) return callback(undefined, true);
+
+    if (this.allowedOrigins.length === 0) {
+      this.loggerService.warn('Socket CORS rejected: no origins configured', {
+        origin,
+      });
+      return callback(new Error('CORS origin not allowed'), false);
+    }
+
+    if (this.allowedOrigins.includes(origin)) {
+      return callback(undefined, true);
+    }
+
+    this.loggerService.warn('Socket CORS rejected: origin not allowed', {
+      origin,
+    });
+    return callback(new Error('CORS origin not allowed'), false);
+  }
+
+  /**
    * Get allowed origins for CORS
    */
-  private getAllowedOrigins(): string[] | true {
+  private getAllowedOrigins(): string[] {
     const adminPanelUrl = this.configService.get<string>('adminPanelUrl');
     const corsOrigin = this.configService.get<string>('corsOrigin');
     const resolved = resolveAllowedOrigins({
@@ -356,7 +404,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       defaultProtocol: 'https',
     });
 
-    // If nothing is configured, allow all origins (safer default for avoiding silent drops)
-    return resolved.length > 0 ? resolved : true;
+    // Fail closed when no origins are configured.
+    return resolved;
   }
 }

@@ -73,7 +73,7 @@ export class BootstrapService {
   configureInterceptors(app: INestApplication): void {
     app.useGlobalInterceptors(
       new LoggingInterceptor(),
-      new TransformInterceptor(),
+      new TransformInterceptor(this.logger),
     );
     this.logger.log('Global interceptors configured');
   }

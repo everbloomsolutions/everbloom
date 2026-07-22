@@ -26,6 +26,7 @@ import * as locationAssignmentService from '../location/location.assignment.serv
 import { ProjectService } from '../project/project.service';
 import { LocationService } from '../location/location.service';
 import { archiveDuplicateUsers } from './user-admin.service';
+import { LoggerService } from '../../infrastructure/logger/logger.service';
 
 @Controller('admin')
 @UseGuards(AuthGuard)
@@ -35,7 +36,10 @@ export class AdminController {
     private readonly userAdminService: UserAdminService,
     private readonly projectService: ProjectService,
     private readonly locationService: LocationService,
-  ) {}
+    private readonly logger: LoggerService,
+  ) {
+    this.logger.setContext('AdminController');
+  }
 
   @Get('stats')
   @UseGuards(RolesGuard)
@@ -135,7 +139,7 @@ export class AdminController {
 
     // Log for debugging (remove in production if needed)
     if (typeof safeData.collections === 'undefined' || safeData.collections === null) {
-      console.warn('[AdminController] Collections is undefined/null in getTodayActivity:', {
+      this.logger.warn('Collections is undefined/null in getTodayActivity', {
         todayData,
         safeData,
       });

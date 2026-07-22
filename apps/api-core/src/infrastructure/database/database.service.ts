@@ -75,15 +75,43 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return isLocalMongo && nodeEnv !== 'production' ? 3000 : 15000;
   }
 
+  private withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> {
+    let timer: NodeJS.Timeout | undefined;
+    let settled = false;
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timer = setTimeout(() => {
+        settled = true;
+        reject(new Error(errorMessage));
+      }, ms);
+    });
+
+    const guardedPromise = promise
+      .then((value) => {
+        if (!settled) {
+          settled = true;
+          if (timer) clearTimeout(timer);
+        }
+        return value;
+      })
+      .catch((error) => {
+        if (!settled) {
+          settled = true;
+          if (timer) clearTimeout(timer);
+          throw error;
+        }
+        return undefined as unknown as T;
+      });
+
+    return Promise.race([guardedPromise, timeoutPromise]);
+  }
+
   private async verifyPingOrThrow(context: string): Promise<void> {
     const timeoutMs = this.getPingTimeoutMs();
-    const pingPromise = this.connection.db?.admin().ping();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Ping timeout')), timeoutMs)
-    );
+    const pingPromise = Promise.resolve(this.connection.db?.admin().ping());
 
     try {
-      await Promise.race([pingPromise, timeoutPromise]);
+      await this.withTimeout(pingPromise, timeoutMs, 'Ping timeout');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       throw new Error(`${context}: ping_failed (${errorMsg})`);

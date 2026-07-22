@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { LoggerService } from '../../infrastructure/logger/logger.service';
 
 export interface Response<T> {
   success: boolean;
@@ -16,6 +17,10 @@ export interface Response<T> {
 @Injectable()
 export class TransformInterceptor<T>
   implements NestInterceptor<T, Response<T>> {
+  constructor(private readonly logger: LoggerService) {
+    this.logger.setContext('TransformInterceptor');
+  }
+
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -67,7 +72,7 @@ export class TransformInterceptor<T>
             dashboardData.collections = collectionsValue;
 
             // Debug logging to see what we're working with
-            console.log('[TransformInterceptor] Processing /dashboard/today:', {
+            this.logger.log('Processing /dashboard/today', {
               url,
               originalDashboardData: JSON.parse(JSON.stringify(dashboardData)),
               collectionsValue,
@@ -75,7 +80,7 @@ export class TransformInterceptor<T>
 
             // Debug logging (remove in production if needed)
             if (typeof dashboardData.collections === 'undefined' || dashboardData.collections === null || isNaN(dashboardData.collections)) {
-              console.error('[TransformInterceptor] Collections is invalid for /dashboard/today:', {
+              this.logger.warn('Collections is invalid for /dashboard/today', {
                 url,
                 originalData: dashboardData,
                 collectionsValue,
@@ -127,7 +132,7 @@ export class TransformInterceptor<T>
             }
 
             // Log final structure for debugging (after creating all nested structures)
-            console.log('[TransformInterceptor] Final response structure for /dashboard/today:', {
+            this.logger.log('Final response structure for /dashboard/today', {
               url,
               responseStructure: {
                 success: response.success,

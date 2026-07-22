@@ -3,13 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from './database.service';
 import { QueryBuilderService } from './query-builder.service';
-import * as fs from 'fs';
-import * as path from 'path';
+import { LoggerService, LoggerModule } from '../logger';
 
 @Module({
   imports: [
+    LoggerModule,
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService, loggerService: LoggerService) => {
         // Helper function to normalize MongoDB URI (fix malformed query strings)
         const normalizeMongoUri = (uri: string): string => {
           if (!uri) return uri;
@@ -35,6 +35,8 @@ import * as path from 'path';
           mongodbUri = normalizeMongoUri(mongodbUri);
         }
 
+        loggerService.setContext('DatabaseModule');
+
         // Log detailed debugging information
         const maskedUri = mongodbUri
           ? mongodbUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')
@@ -45,31 +47,27 @@ import * as path from 'path';
           : '(not set)';
 
         const isDevLog = (nodeEnv || process.env.NODE_ENV || 'development') === 'development' && !process.env.VERCEL;
-        const envFiles = ['.env', '.env.local', '.env.production', '.env.prod'].map(f =>
-          fs.existsSync(path.join(process.cwd(), f)) ? f : null
-        ).filter(Boolean);
 
         if (isDevLog) {
-          console.log('[DatabaseModule] ConfigService values:', {
+          loggerService.log('ConfigService values', {
             mongodbUri: maskedUri,
             nodeEnv,
             processEnvMongoUri: maskedEnvVar,
             processEnvMongoUriLength: rawEnvVar?.length || 0,
             cwd: process.cwd(),
-            envFilesFound: envFiles.length > 0 ? envFiles : 'none',
           });
         }
 
         if (mongodbUri?.includes('localhost') || mongodbUri?.includes('127.0.0.1')) {
           if (rawEnvVar && !rawEnvVar.includes('localhost') && !rawEnvVar.includes('127.0.0.1')) {
             if (isDevLog) {
-              console.error('[DatabaseModule] CRITICAL: ConfigService returned localhost but process.env.MONGODB_URI has correct value. Using process.env.');
+              loggerService.error('CRITICAL: ConfigService returned localhost but process.env.MONGODB_URI has correct value. Using process.env.');
             }
             const correctedUri = normalizeMongoUri(rawEnvVar);
             if (!correctedUri || correctedUri.trim() === '') {
               throw new Error('MongoDB URI is not configured. Please set MONGODB_URI environment variable.');
             }
-            if (isDevLog) console.log('[DatabaseModule] Normalized MongoDB URI (fixed query string)');
+            if (isDevLog) loggerService.log('Normalized MongoDB URI (fixed query string)');
             return {
               uri: correctedUri,
               serverSelectionTimeoutMS: 60000,
@@ -86,8 +84,8 @@ import * as path from 'path';
         }
 
         if (!mongodbUri || mongodbUri.trim() === '') {
-          console.error('[DatabaseModule] ERROR: MongoDB URI is empty or not configured!');
-          console.error('[DatabaseModule] Please set MONGODB_URI environment variable.');
+          loggerService.error('MongoDB URI is empty or not configured!');
+          loggerService.error('Please set MONGODB_URI environment variable.');
           throw new Error('MongoDB URI is not configured. Please set MONGODB_URI environment variable.');
         }
 
@@ -113,7 +111,7 @@ import * as path from 'path';
           heartbeatFrequencyMS: isLocalMongo ? 5000 : 10000,
         };
       },
-      inject: [ConfigService],
+      inject: [ConfigService, LoggerService],
     }),
   ],
   providers: [DatabaseService, QueryBuilderService],

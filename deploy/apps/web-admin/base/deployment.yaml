@@ -6,7 +6,6 @@ metadata:
     app: web-admin
     component: frontend
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: web-admin

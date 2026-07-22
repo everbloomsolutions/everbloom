@@ -6,7 +6,6 @@ metadata:
     app: web-public
     component: frontend
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: web-public
