@@ -12,12 +12,20 @@ import { LoggerModule } from '../logger/logger.module';
     {
       provide: 'REDIS_CLIENT',
       useFactory: async (configService: ConfigService): Promise<RedisClientType | null> => {
+        const logger = new Logger('RedisModule');
         const redisUrl = configService.get<string>('redisUrl');
         if (!redisUrl) {
           return null;
         }
 
         try {
+          const reconnectStrategy = (retries: number) => {
+            if (retries > 20) {
+              logger.error(`Redis reconnection failed after ${retries} retries`);
+              return new Error('Redis reconnection failed');
+            }
+            return Math.min(retries * 100, 5000);
+          };
           const isUpstash = redisUrl.includes('upstash.io') || redisUrl.includes('upstash.com');
           const isTls = redisUrl.startsWith('rediss://');
 
@@ -28,28 +36,32 @@ import { LoggerModule } from '../logger/logger.module';
             password: decodeURIComponent(parsedUrl.password),
           };
 
-          if (isUpstash) {
+          if (isUpstash || isTls) {
             (clientConfig as Record<string, unknown>).socket = {
               tls: true,
-              reconnectStrategy: (retries: number) => {
-                if (retries > 10) {
-                  return new Error('Redis reconnection failed');
-                }
-                return Math.min(retries * 50, 1000);
-              },
-            };
-          } else if (isTls) {
-            (clientConfig as Record<string, unknown>).socket = {
-              tls: true,
+              reconnectStrategy,
+              keepAlive: 10000,
             };
           }
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- createClient options vary by Redis driver
           const client = createClient(clientConfig as any) as RedisClientType;
+
+          client.on('error', (err) => {
+            logger.error(`Redis client error: ${err.message}`, err);
+          });
+
+          client.on('end', () => {
+            logger.warn('Redis client connection ended');
+          });
+
+          client.on('reconnecting', () => {
+            logger.warn('Redis client reconnecting');
+          });
+
           await client.connect();
           return client;
         } catch (error) {
-          const logger = new Logger('RedisModule');
           logger.warn('Redis connection failed, continuing without cache:', error);
           return null;
         }
