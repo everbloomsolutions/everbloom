@@ -12,10 +12,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - api.everbloom.com
+    - api.vartulaa.com
     secretName: api-core-tls
   rules:
-  - host: api.everbloom.com
+  - host: api.vartulaa.com
     http:
       paths:
       - path: /

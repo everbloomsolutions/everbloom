@@ -69,8 +69,8 @@ resource "aws_secretsmanager_secret" "web_admin" {
 resource "aws_secretsmanager_secret_version" "web_admin" {
   secret_id = aws_secretsmanager_secret.web_admin.id
   secret_string = jsonencode({
-    api-base-url = "https://api.everbloom.com"
-    socket-url   = "wss://api.everbloom.com"
+    api-base-url = "https://api.vartulaa.com"
+    socket-url   = "wss://api.vartulaa.com"
   })
 }
 
@@ -88,8 +88,8 @@ resource "aws_secretsmanager_secret" "web_public" {
 resource "aws_secretsmanager_secret_version" "web_public" {
   secret_id = aws_secretsmanager_secret.web_public.id
   secret_string = jsonencode({
-    api-base-url = "https://api.everbloom.com"
-    socket-url   = "wss://api.everbloom.com"
+    api-base-url = "https://api.vartulaa.com"
+    socket-url   = "wss://api.vartulaa.com"
   })
 }
 

@@ -82,6 +82,69 @@ resource "helm_release" "argocd" {
 #   create_namespace = true
 # }
 
+# AWS Load Balancer Controller
+resource "aws_iam_role" "aws_load_balancer_controller" {
+  name = "everbloom-aws-load-balancer-controller"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
+  role       = aws_iam_role.aws_load_balancer_controller.name
+  policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
+}
+
+resource "helm_release" "aws_load_balancer_controller" {
+  name             = "aws-load-balancer-controller"
+  repository       = "https://aws.github.io/eks-charts"
+  chart            = "aws-load-balancer-controller"
+  version          = "1.7.2" # or latest compatible
+  namespace        = "kube-system"
+  create_namespace = false
+
+  set {
+    name  = "clusterName"
+    value = aws_eks_cluster.everbloom.name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.aws_load_balancer_controller.arn
+  }
+
+  depends_on = [
+    aws_eks_cluster.everbloom,
+    aws_iam_role.aws_load_balancer_controller
+  ]
+}
+
 # Ingress Controller (NGINX)
 resource "helm_release" "ingress" {
   name             = "ingress-nginx"
@@ -90,4 +153,22 @@ resource "helm_release" "ingress" {
   version          = "4.15.1"
   namespace        = "ingress-nginx"
   create_namespace = true
+
+  values = [
+    yamlencode({
+      controller = {
+        service = {
+          annotations = {
+            "service.beta.kubernetes.io/aws-load-balancer-type"                              = "nlb"
+            "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
+            "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internet-facing"
+            "service.beta.kubernetes.io/aws-load-balancer-attributes"                        = "load_balancing.cross_zone.enabled=true"
+            "service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags"          = "Environment=production,ManagedBy=terraform"
+          }
+        }
+      }
+    })
+  ]
+
+  depends_on = [helm_release.aws_load_balancer_controller]
 }

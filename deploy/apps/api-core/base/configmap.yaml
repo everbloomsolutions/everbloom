@@ -7,8 +7,8 @@ metadata:
 data:
   NODE_ENV: production
   LOG_LEVEL: info
-  admin-panel-url: https://web-admin.vercel.app
-  cors-origin: https://web-admin.vercel.app
+  admin-panel-url: https://admin.vartulaa.com
+  cors-origin: https://admin.vartulaa.com,https://www.vartulaa.com
   # MongoDB Self-hosted Configuration
   MONGODB_HOST: mongodb
   MONGODB_PORT: "27017"

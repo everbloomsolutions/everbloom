@@ -6,3 +6,5 @@ metadata:
     app: web-public
 data:
   NODE_ENV: production
+  vite-api-base-url: https://api.vartulaa.com/api/v1
+  vite-socket-url: wss://api.vartulaa.com

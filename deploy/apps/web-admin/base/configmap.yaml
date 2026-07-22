@@ -5,5 +5,5 @@ metadata:
   labels:
     app: web-admin
 data:
-  vite-api-base-url: https://api.everbloom.com/api/v1
-  vite-socket-url: wss://api.everbloom.com
+  vite-api-base-url: https://api.vartulaa.com/api/v1
+  vite-socket-url: wss://api.vartulaa.com

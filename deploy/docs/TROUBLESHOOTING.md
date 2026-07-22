@@ -71,7 +71,7 @@ Common issues and solutions for GitOps deployments.
 
 3. Verify API URL is accessible:
    ```bash
-   curl https://api.everbloom.com/api/v1/health
+   curl https://api.vartulaa.com/api/v1/health
    ```
 
 ### Issue: Environment variables not working
@@ -186,10 +186,10 @@ Common issues and solutions for GitOps deployments.
 ### Check Application Health
 ```bash
 # Backend
-curl https://api.everbloom.com/health
+curl https://api.vartulaa.com/health
 
 # Admin Panel
-curl https://adminpanel.vercel.app/health
+curl https://admin.vartulaa.com/health
 ```
 
 ### View Logs

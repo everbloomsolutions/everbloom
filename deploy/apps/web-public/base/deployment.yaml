@@ -26,6 +26,16 @@ spec:
         env:
         - name: PORT
           value: '8080'
+        - name: VITE_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: web-public-config
+              key: vite-api-base-url
+        - name: VITE_SOCKET_URL
+          valueFrom:
+            configMapKeyRef:
+              name: web-public-config
+              key: vite-socket-url
         resources:
           requests:
             cpu: 50m

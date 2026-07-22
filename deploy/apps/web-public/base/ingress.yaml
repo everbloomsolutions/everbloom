@@ -11,10 +11,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - www.everbloom.com
+    - www.vartulaa.com
     secretName: web-public-tls
   rules:
-  - host: www.everbloom.com
+  - host: www.vartulaa.com
     http:
       paths:
       - path: /
