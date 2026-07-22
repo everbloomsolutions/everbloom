@@ -18,7 +18,10 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
+        runAsGroup: 1001
         fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: api-core
         image: api-core:latest
@@ -28,9 +31,13 @@ spec:
           name: http
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 1001
           capabilities:
             drop:
               - ALL
+          seccompProfile:
+            type: RuntimeDefault
         env:
         - name: NODE_ENV
           valueFrom:
@@ -39,6 +46,8 @@ spec:
               key: NODE_ENV
         - name: PORT
           value: "8080"
+        - name: DB_STARTUP_TIMEOUT_MS
+          value: "15000"
         - name: MONGODB_URI
           valueFrom:
             secretKeyRef:
@@ -78,7 +87,7 @@ spec:
             memory: 512Mi
         livenessProbe:
           httpGet:
-            path: /health
+            path: /health/live
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -86,7 +95,7 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /health
+            path: /health/ready
             port: 8080
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -94,9 +103,20 @@ spec:
           failureThreshold: 3
         startupProbe:
           httpGet:
-            path: /health
+            path: /health/live
             port: 8080
           initialDelaySeconds: 0
           periodSeconds: 10
           timeoutSeconds: 10
           failureThreshold: 18
+        lifecycle:
+          preStop:
+            exec:
+              command: ['sh', '-c', 'sleep 10']
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: tmp
+        emptyDir: {}

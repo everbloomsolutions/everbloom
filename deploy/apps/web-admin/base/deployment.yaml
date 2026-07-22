@@ -56,10 +56,21 @@ spec:
           periodSeconds: 5
         securityContext:
           allowPrivilegeEscalation: false
+          runAsGroup: 101
           capabilities:
             drop:
             - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        lifecycle:
+          preStop:
+            exec:
+              command: ['sh', '-c', 'sleep 10']
+      terminationGracePeriodSeconds: 60
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
+        runAsGroup: 101
         fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault

@@ -1,8 +1,8 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { LoggerService } from '../../infrastructure/logger/logger.service';
 
@@ -29,16 +29,36 @@ export class HealthController {
     };
   }
 
+  @Get('live')
+  getLive() {
+    return {
+      success: true,
+      message: 'Alive',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('ready')
+  async getReady(@Res({ passthrough: true }) res: Response) {
+    return this.runReadinessCheck(res);
+  }
+
   @Get('detailed')
-  async getDetailedHealth() {
+  async getDetailedHealth(@Res({ passthrough: true }) res: Response) {
+    return this.runReadinessCheck(res);
+  }
+
+  private runReadinessCheck(res: Response) {
     const dbHealth = this.mongooseConnection.readyState === 1;
     const redisHealth = this.redisService.isConnected();
+    const isReady = dbHealth && redisHealth;
+    const status = isReady ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
 
-    const _status = dbHealth ? 200 : 503;
+    res.status(status);
 
     return {
-      success: dbHealth,
-      message: dbHealth ? 'Server is healthy' : 'Server is unhealthy',
+      success: isReady,
+      message: isReady ? 'Server is healthy' : 'Server is unhealthy',
       timestamp: new Date().toISOString(),
       environment: this.configService.get<string>('nodeEnv'),
       services: {

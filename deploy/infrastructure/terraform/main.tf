@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4"
+    }
   }
 
   backend "s3" {
@@ -106,14 +110,60 @@ resource "aws_iam_role" "aws_load_balancer_controller" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
-  role       = aws_iam_role.aws_load_balancer_controller.name
-  policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
+data "http" "aws_lb_controller_iam_policy" {
+  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json"
 }
 
-resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller_ec2" {
-  role       = aws_iam_role.aws_load_balancer_controller.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+resource "aws_iam_role_policy" "aws_load_balancer_controller" {
+  name   = "AWSLoadBalancerControllerIAMPolicy"
+  role   = aws_iam_role.aws_load_balancer_controller.id
+  policy = data.http.aws_lb_controller_iam_policy.response_body
+}
+
+# Fluent Bit (CloudWatch logs shipper)
+resource "aws_iam_role" "fluent_bit" {
+  name = "everbloom-fluent-bit"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:production:fluent-bit"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "fluent_bit_cloudwatch" {
+  name = "FluentBitCloudWatchLogs"
+  role = aws_iam_role.fluent_bit.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 resource "helm_release" "aws_load_balancer_controller" {
@@ -157,8 +207,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   depends_on = [
     aws_eks_cluster.everbloom,
     aws_iam_role.aws_load_balancer_controller,
-    aws_iam_role_policy_attachment.aws_load_balancer_controller,
-    aws_iam_role_policy_attachment.aws_load_balancer_controller_ec2,
+    aws_iam_role_policy.aws_load_balancer_controller,
   ]
 }
 

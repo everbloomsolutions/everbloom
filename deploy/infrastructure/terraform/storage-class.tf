@@ -14,5 +14,7 @@ resource "kubernetes_storage_class" "gp3" {
     type      = "gp3"
     fsType    = "ext4"
     encrypted = "true"
+    iops      = "3000"
+    throughput = "125"
   }
 }

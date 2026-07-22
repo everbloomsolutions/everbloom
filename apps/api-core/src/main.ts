@@ -6,6 +6,7 @@ import { BootstrapService } from './config/runtime/bootstrap.service';
 import { SecurityService } from './config/runtime/security.service';
 import { MiddlewareService } from './config/runtime/middleware.service';
 import { LoggerService } from './infrastructure/logger/logger.service';
+import { createLogger } from './infrastructure/logger';
 import { getRuntimePolicy } from './config/url-normalization';
 
 /**
@@ -20,6 +21,32 @@ import { getRuntimePolicy } from './config/url-normalization';
  * - Single Responsibility: Each service handles one concern
  * - Separation of Concerns: Security, middleware, and bootstrap config are separated
  */
+
+const processLogger = createLogger(
+  process.env.NODE_ENV,
+  process.env.LOG_LEVEL,
+  process.env.ENABLE_DEBUG === 'true',
+);
+
+process.on('uncaughtException', (err) => {
+  processLogger.error('Uncaught exception', {
+    message: err.message,
+    stack: err.stack,
+  });
+  // Give console output a moment to flush before exiting so Kubernetes restarts the container.
+  setTimeout(() => process.exit(1), 100);
+});
+
+process.on('unhandledRejection', (reason) => {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  const stack = reason instanceof Error ? reason.stack : undefined;
+  processLogger.error('Unhandled rejection', {
+    reason: message,
+    stack,
+  });
+  setTimeout(() => process.exit(1), 100);
+});
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
@@ -65,8 +92,8 @@ async function bootstrap() {
 
     if (readyStateNum !== 1) {
       logger.warn('Database connection not ready, waiting...');
-      // Wait up to 60 seconds for connection
-      const maxWait = 60000;
+      // Wait briefly for the connection; Kubernetes startupProbe will retry the pod if needed.
+      const maxWait = Number(process.env.DB_STARTUP_TIMEOUT_MS) || 15000;
       const startTime = Date.now();
       let lastLoggedState = readyStateNum;
 
@@ -149,11 +176,24 @@ async function bootstrap() {
 
   if (boundPort != null) {
     logger.log(`Server running on http://${host}:${boundPort}`);
-    logger.log(`Health check: http://${host}:${boundPort}/health`);
+    logger.log(`Health checks: live=${boundPort}/health/live ready=${boundPort}/health/ready`);
     if (boundPort !== basePort) {
       logger.warn(`Backend bound to port ${boundPort} (${basePort} was in use). Set VITE_BACKEND_PORT=${boundPort} in web-admin if using proxy.`);
     }
   }
+
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM received, starting graceful shutdown');
+    try {
+      await app.close();
+      logger.log('Graceful shutdown complete');
+      process.exit(0);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`Graceful shutdown failed: ${errorMsg}`);
+      process.exit(1);
+    }
+  });
 }
 
 bootstrap();

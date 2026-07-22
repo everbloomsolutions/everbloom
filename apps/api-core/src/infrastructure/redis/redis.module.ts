@@ -34,15 +34,13 @@ import { LoggerModule } from '../logger/logger.module';
             url: redisUrl,
             username: parsedUrl.username || 'default',
             password: decodeURIComponent(parsedUrl.password),
-          };
-
-          if (isUpstash || isTls) {
-            (clientConfig as Record<string, unknown>).socket = {
-              tls: true,
+            socket: {
+              keepAlive: true,
+              keepAliveInitialDelay: 10000,
               reconnectStrategy,
-              keepAlive: 10000,
-            };
-          }
+              ...(isUpstash || isTls ? { tls: true } : {}),
+            },
+          };
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- createClient options vary by Redis driver
           const client = createClient(clientConfig as any) as RedisClientType;

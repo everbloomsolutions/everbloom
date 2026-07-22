@@ -7,14 +7,29 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      if ($host = 'vartulaa.com') {
+        return 301 https://www.vartulaa.com$request_uri;
+      }
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
     - www.vartulaa.com
+    - vartulaa.com
     secretName: web-public-tls
   rules:
   - host: www.vartulaa.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-public
+            port:
+              number: 80
+  - host: vartulaa.com
     http:
       paths:
       - path: /

@@ -7,6 +7,7 @@ resources:
   - secret-store.yaml
   - cluster-issuer.yaml
   - ../../apps/mongodb/base
+  - ../../apps/fluent-bit/base
   - ./api-core
   - ./web-admin
   - ./web-public

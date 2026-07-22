@@ -1,5 +1,3 @@
-import fs from 'fs';
-
 export type RuntimePlatform = 'local' | 'vercel' | 'container';
 
 export interface RuntimePolicy {
@@ -17,11 +15,10 @@ export const detectRuntimePlatform = (): RuntimePlatform => {
 };
 
 export const isContainerizedRuntime = (): boolean =>
-  process.cwd() === '/app' ||
+  !!process.env.KUBERNETES_SERVICE_HOST ||
+  process.env.IN_CONTAINER === 'true' ||
   process.env.DOCKER === 'true' ||
-  process.env.IN_DOCKER === 'true' ||
-  fs.existsSync('/.dockerenv') ||
-  !!process.env.KUBERNETES_SERVICE_HOST;
+  process.env.IN_DOCKER === 'true';
 
 export const getRuntimePolicy = (nodeEnv?: string): RuntimePolicy => {
   const env = nodeEnv || process.env.NODE_ENV || 'development';
