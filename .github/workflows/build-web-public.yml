@@ -51,9 +51,36 @@ jobs:
             echo "is_ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+  test:
+    needs: check-ready
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')) && needs.check-ready.outputs.is_ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo
+
+      - name: Lint
+        working-directory: ./apps/web-public
+        run: pnpm lint
+
+      - name: Type-check
+        working-directory: ./apps/web-public
+        run: pnpm type-check
+
+      - name: Test
+        working-directory: ./apps/web-public
+        run: pnpm test
+
+      - name: Build
+        working-directory: ./apps/web-public
+        run: pnpm build
+
   build-and-push:
     needs: check-ready
-    if: github.event_name == 'push' && needs.check-ready.outputs.is_ready == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check-ready.outputs.is_ready == 'true'
     uses: ./.github/workflows/_build-and-push.yml
     with:
       app_name: web-public

@@ -19,11 +19,14 @@ if (!isProduction && !isVercel) {
     dotenv.config({ path: path.join(maybeRoot, '.env'), override: false });
     dotenv.config({ path: path.join(maybeRoot, '.env.local'), override: false });
     dotenv.config({ path: path.join(maybeRoot, '.env.development'), override: false });
+    dotenv.config({ path: path.join(maybeRoot, '.env.development.local'), override: false });
   }
   const backendEnvDevPath = path.resolve(cwd, '.env.development');
+  const backendEnvDevLocalPath = path.resolve(cwd, '.env.development.local');
   const backendEnvPath = path.resolve(cwd, '.env');
   const backendEnvLocalPath = path.resolve(cwd, '.env.local');
   dotenv.config({ path: backendEnvDevPath, override: false });
+  dotenv.config({ path: backendEnvDevLocalPath, override: false });
   dotenv.config({ path: backendEnvPath, override: false });
   dotenv.config({ path: backendEnvLocalPath, override: false });
 }
@@ -136,7 +139,12 @@ export const configuration = () => {
     port: Number(port),
     host: String(host),
     protocol: String(protocol),
-    corsOrigin: process.env.BACKEND_CORS_ORIGIN || process.env.CORS_ORIGIN,
+    corsOrigin:
+      process.env.BACKEND_CORS_ORIGIN ||
+      process.env.CORS_ORIGIN ||
+      (!isProduction && !isVercel && !isContainerized
+        ? 'http://localhost:3000,http://localhost:3001'
+        : ''),
     logLevel: String(logLevel),
     enableDebug: Boolean(enableDebug),
     mongodbUri: String(finalMongodbUri),

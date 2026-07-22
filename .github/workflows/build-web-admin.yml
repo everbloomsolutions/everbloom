@@ -37,9 +37,9 @@ concurrency:
 
 jobs:
   test:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -68,7 +68,7 @@ jobs:
           VITE_APP_VERSION: ${{ vars.VITE_APP_VERSION || '0.0.0' }}
 
   build-and-push:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/_build-and-push.yml
     with:
       app_name: web-admin

@@ -37,9 +37,9 @@ concurrency:
 
 jobs:
   test:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -62,8 +62,25 @@ jobs:
         working-directory: ./apps/api-core
         run: pnpm build
 
+      - name: Smoke test
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        working-directory: ./apps/api-core
+        run: |
+          docker compose -f ../../docker-compose.dev.yaml up -d
+          ../../scripts/create-local-env.sh
+          pnpm start &
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8080/health >/dev/null 2>&1; then
+              echo "Smoke test passed"
+              break
+            fi
+            sleep 2
+          done
+          kill %1 || true
+          docker compose -f ../../docker-compose.dev.yaml down
+
   build-and-push:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/_build-and-push.yml
     with:
       app_name: api-core

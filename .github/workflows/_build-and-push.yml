@@ -40,16 +40,12 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    if: github.ref == 'refs/heads/main'
     outputs:
       registry: ${{ steps.login-ecr.outputs.registry }}
-      short_sha: ${{ steps.short-sha.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set short SHA
-        id: short-sha
-        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -73,8 +69,6 @@ jobs:
           tags: |
             type=sha,prefix=,format=long
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=staging-${{ steps.short-sha.outputs.sha }},enable=${{ github.ref == 'refs/heads/develop' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -100,14 +94,3 @@ jobs:
     permissions:
       contents: write
 
-  update-dev-gitops:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/develop'
-    uses: ./.github/workflows/_update-image-tags.yml
-    with:
-      image_tag: staging-${{ needs.build-and-push.outputs.short_sha }}
-      kustomization_paths: deploy/environments/development/${{ inputs.app_name }}/kustomization.yaml
-      image_uri: ${{ needs.build-and-push.outputs.registry }}/${{ inputs.ecr_repository }}
-      update_gitops: true
-    permissions:
-      contents: write
