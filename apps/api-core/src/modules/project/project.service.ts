@@ -4,9 +4,6 @@ import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument } from './schemas/project.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { SendQuoteDto } from './dto/send-quote.dto';
-import { UpdateProgressDto } from './dto/update-progress.dto';
-import { AcceptQuoteDto } from './dto/accept-quote.dto';
 import { ValidationService } from '../../common/validation/validation.service';
 import { PaginationService } from '../../common/pagination/pagination.service';
 import { PAGINATION } from '../../config/constants';
@@ -245,11 +242,6 @@ export class ProjectService {
     return project.save();
   }
 
-  async getUserProjects(_userId: string, _filters?: { status?: string; serviceType?: string }): Promise<ProjectDocument[]> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.getUserProjects: Full NestJS implementation needed.');
-  }
-
   async getProjectById(projectId: string, userId: string): Promise<ProjectDocument | null> {
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 
@@ -271,16 +263,6 @@ export class ProjectService {
     }
 
     return project;
-  }
-
-  async acceptQuote(_projectId: string, _userId: string, _data: AcceptQuoteDto): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.acceptQuote: Full NestJS implementation needed.');
-  }
-
-  async rejectQuote(_projectId: string, _userId: string): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.rejectQuote: Full NestJS implementation needed.');
   }
 
   async getAllProjects(filters?: any): Promise<any> {
@@ -438,26 +420,6 @@ export class ProjectService {
     }
 
     return null;
-  }
-
-  async sendQuote(_projectId: string, _quotedBy: string, _data: SendQuoteDto): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.sendQuote: Full NestJS implementation needed.');
-  }
-
-  async startProject(_projectId: string, _userId: string): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.startProject: Full NestJS implementation needed.');
-  }
-
-  async updateProgress(_projectId: string, _userId: string, _data: UpdateProgressDto): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.updateProgress: Full NestJS implementation needed.');
-  }
-
-  async completeProject(_projectId: string, _userId: string): Promise<ProjectDocument> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.completeProject: Full NestJS implementation needed.');
   }
 
   async createCollection(data: CreateProjectDto, userId: string, userRole: string, req?: any): Promise<ProjectDocument> {
@@ -1340,11 +1302,6 @@ export class ProjectService {
     };
   }
 
-  async getProjectAuditLogs(_projectId: string, _userId: string, _userRole: string): Promise<any> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.getProjectAuditLogs: Full NestJS implementation needed.');
-  }
-
   async getDeletedCollections(filters?: any): Promise<{
     projects: ProjectDocument[];
     total: number;
@@ -1430,11 +1387,6 @@ export class ProjectService {
     if (!result.deletedCount) {
       throw new NotFoundException('Collection not found');
     }
-  }
-
-  async exportCollections(_filters?: any): Promise<any> {
-    // TODO: Implement full NestJS logic
-    throw new Error('ProjectService.exportCollections: Full NestJS implementation needed.');
   }
 
   async validateCollectionsImport(
@@ -1562,3 +1514,4 @@ export const getCollectionAnalytics = async (filters?: any): Promise<any> => {
   const instance = getProjectServiceInstance();
   return instance.getCollectionAnalytics(filters);
 };
+

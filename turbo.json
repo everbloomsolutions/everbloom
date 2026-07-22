@@ -65,20 +65,6 @@
       "cache": false,
       "persistent": true
     },
-    "seed": {
-      "cache": false,
-      "env": [
-        "MONGODB_URI",
-        "NODE_ENV"
-      ]
-    },
-    "migrate": {
-      "cache": false,
-      "env": [
-        "MONGODB_URI",
-        "NODE_ENV"
-      ]
-    },
     "create-admin": {
       "cache": false,
       "env": [

@@ -76,19 +76,3 @@ export class JwtService {
   }
 }
 
-// Keep old functions for backward compatibility during migration
-export const generateToken = (_payload: TokenPayload): string => {
-  throw new Error('Use JwtService instead');
-};
-
-export const generateRefreshToken = (_payload: TokenPayload): string => {
-  throw new Error('Use JwtService instead');
-};
-
-export const verifyToken = (_token: string, _type: TokenType = 'access'): TokenPayload => {
-  throw new Error('Use JwtService instead');
-};
-
-export const verifyRefreshToken = (_token: string): TokenPayload => {
-  throw new Error('Use JwtService instead');
-};

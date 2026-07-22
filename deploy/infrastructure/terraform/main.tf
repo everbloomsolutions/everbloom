@@ -111,6 +111,11 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
   policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller_ec2" {
+  role       = aws_iam_role.aws_load_balancer_controller.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+}
+
 resource "helm_release" "aws_load_balancer_controller" {
   name             = "aws-load-balancer-controller"
   repository       = "https://aws.github.io/eks-charts"
@@ -122,6 +127,16 @@ resource "helm_release" "aws_load_balancer_controller" {
   set {
     name  = "clusterName"
     value = aws_eks_cluster.everbloom.name
+  }
+
+  set {
+    name  = "region"
+    value = var.region
+  }
+
+  set {
+    name  = "vpcId"
+    value = aws_vpc.everbloom.id
   }
 
   set {
@@ -141,7 +156,9 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   depends_on = [
     aws_eks_cluster.everbloom,
-    aws_iam_role.aws_load_balancer_controller
+    aws_iam_role.aws_load_balancer_controller,
+    aws_iam_role_policy_attachment.aws_load_balancer_controller,
+    aws_iam_role_policy_attachment.aws_load_balancer_controller_ec2,
   ]
 }
 
