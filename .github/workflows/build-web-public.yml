@@ -34,8 +34,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-ready:
+    runs-on: ubuntu-latest
+    outputs:
+      is_ready: ${{ steps.check.outputs.is_ready }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check if web-public is implemented
+        id: check
+        run: |
+          if grep -q "not yet implemented" docker/Dockerfile.web-public; then
+            echo "is_ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-push:
-    if: github.event_name == 'push'
+    needs: check-ready
+    if: github.event_name == 'push' && needs.check-ready.outputs.is_ready == 'true'
     uses: ./.github/workflows/_build-and-push.yml
     with:
       app_name: web-public
