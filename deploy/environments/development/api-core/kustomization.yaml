@@ -14,4 +14,4 @@ patchesStrategicMerge:
 - hpa-delete.yaml
 images:
 - name: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/api-core
-  newTag: staging
+  newTag: staging-1ba4275
