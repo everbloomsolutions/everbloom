@@ -40,6 +40,7 @@ describe('Receipt Generation Integration Tests (NestJS)', () => {
       serviceType: 'recycling',
       title: 'Test Collection',
       description: 'Test description',
+      location: { address: 'Test Address' },
       collectionItems: [{
         materialType: 'paper',
         weight: 10,
@@ -82,6 +83,7 @@ describe('Receipt Generation Integration Tests (NestJS)', () => {
       serviceType: 'recycling',
       title: 'Test Collection',
       description: 'Test description',
+      location: { address: 'Test Address' },
       collectionItems: [{
         materialType: 'paper',
         weight: 10,
@@ -113,6 +115,7 @@ describe('Receipt Generation Integration Tests (NestJS)', () => {
       serviceType: 'recycling',
       title: 'Test Collection',
       description: 'Test description',
+      location: { address: 'Test Address' },
       collectionItems: [{
         materialType: 'paper',
         weight: 10,

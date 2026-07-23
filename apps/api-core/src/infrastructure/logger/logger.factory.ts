@@ -24,7 +24,7 @@ export class LoggerFactory {
    * @returns Logger instance
    */
   static create(
-    nodeEnv: string = process.env.NODE_ENV || 'development',
+    nodeEnv: string = 'development',
     logLevel?: string,
     enableDebug: boolean = false,
   ): ILogger {

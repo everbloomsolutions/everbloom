@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { Receipt, ReceiptDocument } from './schemas/receipt.schema';
 import { GenerateReceiptDto } from './dto/generate-receipt.dto';
 import { ReceiptQueryDto } from './dto/receipt-query.dto';
+import { ReceiptSequence } from './receipt-sequence.model';
 
 @Injectable()
 export class ReceiptService {
@@ -257,5 +258,101 @@ export class ReceiptService {
   // Get the Mongoose model instance (for compatibility)
   getModel(): Model<ReceiptDocument> {
     return this.receiptModel;
+  }
+}
+
+class Mutex {
+  private promise: Promise<void> = Promise.resolve();
+
+  async acquire(): Promise<() => void> {
+    let release: () => void = () => {};
+    const newPromise = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const wait = this.promise;
+    this.promise = this.promise.then(() => newPromise);
+    await wait;
+    return release;
+  }
+}
+
+const receiptMutex = new Mutex();
+
+export async function generateReceipt(input: {
+  collectionId: string;
+  generatedBy: string;
+  upiTransactionId: string;
+}): Promise<any> {
+  const release = await receiptMutex.acquire();
+
+  try {
+    const { collectionId, generatedBy, upiTransactionId } = input;
+
+    if (!/^\d{12}$/.test(String(upiTransactionId).trim())) {
+      throw new BadRequestException('UPI Transaction ID/UTR must be exactly 12 digits');
+    }
+
+    const collectionObjectId = new Types.ObjectId(collectionId);
+    const generatedByObjectId = new Types.ObjectId(generatedBy);
+
+    const ReceiptModel = mongoose.model('Receipt');
+    const ProjectModel = mongoose.model('Project');
+
+    const collection: any = await ProjectModel.findOne({
+      _id: collectionObjectId,
+      isDeleted: { $ne: true },
+      deletedAt: { $exists: false },
+    }).lean().exec();
+
+    if (!collection) {
+      throw new BadRequestException('Collection not found');
+    }
+
+    const existing = await ReceiptModel.findOne({
+      collectionId: collectionObjectId,
+      generatedBy: generatedByObjectId,
+    }).exec();
+    if (existing) {
+      return existing;
+    }
+
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const seqDoc = await ReceiptSequence.findOneAndUpdate(
+      { date },
+      { $inc: { sequence: 1 } },
+      { new: true, upsert: true },
+    ).exec();
+
+    const seq = seqDoc?.sequence || 1;
+    const receiptNumber = `EBR-${date}-${String(seq).padStart(4, '0')}`;
+
+    const items = Array.isArray(collection.collectionItems) ? collection.collectionItems : [];
+    const subTotal = typeof collection.subTotal === 'number' ? collection.subTotal : items.reduce((sum: number, item: any) => sum + (item.amount || 0), 1);
+    const totalWeight = typeof collection.totalWeight === 'number' ? collection.totalWeight : items.reduce((sum: number, item: any) => sum + (item.weight || 0), 1);
+    const gstRate = typeof collection.gstRate === 'number' ? collection.gstRate : 0;
+    const gstAmount = typeof collection.gstAmount === 'number' ? collection.gstAmount : Math.round(subTotal * (gstRate / 100) * 100) / 100;
+    const totalAmount = typeof collection.totalAmount === 'number' ? collection.totalAmount : Math.max(1, subTotal + gstAmount);
+
+    const receipt = new ReceiptModel({
+      receiptNumber,
+      collectionId: collectionObjectId,
+      companyName: 'Ever Blooming Recycling Solutions Pvt ltd',
+      locationType: collection.locationType,
+      locationName: collection.locationName,
+      address: collection.location,
+      collectionItems: items,
+      totalWeight,
+      subTotal,
+      gstRate,
+      gstAmount,
+      totalAmount,
+      collectionDate: collection.collectionDate || collection.createdAt || new Date(),
+      generatedBy: generatedByObjectId,
+      upiTransactionId: String(upiTransactionId).trim(),
+    });
+
+    return receipt.save();
+  } finally {
+    release();
   }
 }

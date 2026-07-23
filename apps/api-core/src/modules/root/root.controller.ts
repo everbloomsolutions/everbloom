@@ -1,10 +1,14 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Req, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { LoggerService } from '../../infrastructure/logger/logger.service';
 
 @Controller()
 export class RootController {
-  constructor(private readonly logger: LoggerService) {
+  constructor(
+    @Inject(LoggerService) private readonly logger: LoggerService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+  ) {
     this.logger.setContext('RootController');
   }
 
@@ -48,8 +52,8 @@ export class RootController {
         originalUrl: (req as Request & { originalUrl?: string }).originalUrl,
       },
       env: {
-        VERCEL: !!process.env.VERCEL,
-        NODE_ENV: process.env.NODE_ENV,
+        VERCEL: this.configService.get<boolean>('isVercel') ?? false,
+        NODE_ENV: this.configService.get<string>('nodeEnv'),
       },
     };
   }

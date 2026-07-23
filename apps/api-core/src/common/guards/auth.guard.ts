@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -16,8 +17,8 @@ import { TokenBlacklistService } from '../services/token-blacklist.service';
 export class AuthGuard implements CanActivate {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private tokenBlacklistService: TokenBlacklistService,
-    private jwtService: JwtService,
+    @Inject(TokenBlacklistService) private tokenBlacklistService: TokenBlacklistService,
+    @Inject(JwtService) private jwtService: JwtService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

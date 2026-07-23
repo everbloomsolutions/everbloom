@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { LoggerService } from '../logger/logger.service';
@@ -11,7 +11,7 @@ export class SchedulerService implements OnModuleInit {
   constructor(
     @InjectQueue('cleanup') private cleanupQueue: Queue<CleanupJobData>,
     @InjectQueue('audit-cleanup') private auditCleanupQueue: Queue<AuditCleanupJobData>,
-    private readonly logger: LoggerService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('SchedulerService');
   }

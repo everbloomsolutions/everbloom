@@ -1,10 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import swc from 'unplugin-swc';
 
 export default defineConfig({
+  plugins: [swc.vite()],
   test: {
     globals: true,
     environment: 'node',
+    // Run test files sequentially because they share a single test MongoDB database
+    fileParallelism: false,
     // Set test environment variables for logging
     env: {
       NODE_ENV: 'test',

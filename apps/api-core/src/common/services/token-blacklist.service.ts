@@ -32,4 +32,11 @@ export class TokenBlacklistService {
       this.logger.error('Error blacklisting token:', error);
     }
   }
+
+  // Alias for test compatibility and external callers
+  async addToBlacklist(token: string, _userId?: string): Promise<void> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+    return this.blacklistToken(token, expiresAt);
+  }
 }

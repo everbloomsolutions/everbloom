@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Job } from 'bull';
 import { InjectModel } from '@nestjs/mongoose';
@@ -56,7 +57,7 @@ async function cleanupAuditLogs(
 export class AuditCleanupProcessor {
   constructor(
     @InjectModel(AuditLog.name) private auditLogModel: Model<AuditLog>,
-    private readonly logger: LoggerService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('AuditCleanupProcessor');
   }

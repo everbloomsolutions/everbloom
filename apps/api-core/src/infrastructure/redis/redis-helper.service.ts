@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { RedisClientType } from 'redis';
+import { configuration } from '../../config/configuration';
 import { RedisService } from './redis.service';
 import { LoggerService } from '../logger/logger.service';
 
@@ -67,9 +67,8 @@ export function getBullRedisConnectionFromUrl(rawUrl: string): BullRedisConnecti
 export class RedisHelperService {
   constructor(
     @Inject('REDIS_CLIENT') private readonly redisClient: RedisClientType | null,
-    private readonly redisService: RedisService,
-    private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(RedisService) private readonly redisService: RedisService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) { }
 
   /**
@@ -91,7 +90,7 @@ export class RedisHelperService {
    * Bull v4 uses ioredis, which needs explicit TLS configuration for rediss:// URLs.
    */
   getBullRedisConnection(): BullRedisConnection {
-    const raw = this.configService.get<string>('redisUrl');
+    const raw = configuration().redisUrl;
     const redisUrl = typeof raw === 'string' ? raw.trim() : '';
     if (!redisUrl) {
       return null;

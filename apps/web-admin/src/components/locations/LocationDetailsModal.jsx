@@ -145,7 +145,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                 Recent Collections
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {location.recentCollections.map((collection) => (
+                {(location.recentCollections || []).map((collection) => (
                   <div
                     key={collection._id}
                     className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex justify-between items-center"

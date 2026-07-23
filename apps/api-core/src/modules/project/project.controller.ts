@@ -16,6 +16,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProjectService } from './project.service';
@@ -32,7 +34,7 @@ import { Response } from 'express';
 @Controller('projects')
 @UseGuards(AuthGuard)
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(@Inject(ProjectService) private readonly projectService: ProjectService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -60,20 +62,76 @@ export class ProjectController {
     };
   }
 
+  @Get()
+  async getUserProjects(
+    @CurrentUser() user: UserDocument,
+    @Query() query: any,
+  ) {
+    const projects = await this.projectService.getUserProjects(
+      user._id.toString(),
+      query,
+    );
+    return {
+      success: true,
+      data: { projects },
+    };
+  }
+
   @Get(':id')
   async getProjectById(@Param('id') id: string, @CurrentUser() user: UserDocument) {
     const project = await this.projectService.getProjectById(id, user._id.toString());
-    
+
     if (!project) {
-      return {
-        success: false,
-        message: 'Project not found',
-      };
+      throw new NotFoundException('Project not found');
     }
-    
+
     return {
       success: true,
       data: project,
+    };
+  }
+
+  @Post(':id/accept-quote')
+  @HttpCode(HttpStatus.OK)
+  async acceptQuote(
+    @Param('id') id: string,
+    @Body() body: { notes?: string },
+    @CurrentUser() user: UserDocument,
+  ) {
+    const existing = await this.projectService.getProjectById(id, user._id.toString());
+    if (!existing || (existing as any).status !== 'quoted') {
+      throw new BadRequestException('Project must be quoted before accepting');
+    }
+    const project = await this.projectService.updateCollection(
+      id,
+      user._id.toString(),
+      user.role,
+      { status: 'accepted' },
+    );
+    return {
+      success: true,
+      data: project,
+      message: 'Quote accepted successfully',
+    };
+  }
+
+  @Post(':id/reject-quote')
+  @HttpCode(HttpStatus.OK)
+  async rejectQuote(
+    @Param('id') id: string,
+    @Body() body: { notes?: string },
+    @CurrentUser() user: UserDocument,
+  ) {
+    const project = await this.projectService.updateCollection(
+      id,
+      user._id.toString(),
+      user.role,
+      { status: 'rejected' },
+    );
+    return {
+      success: true,
+      data: project,
+      message: 'Quote rejected successfully',
     };
   }
 }
@@ -85,7 +143,7 @@ export class ProjectAdminController {
   constructor(private readonly projectService: ProjectService) {}
 
   @Get()
-  @Roles('admin', 'super_admin', 'agent', 'user')
+  @Roles('admin', 'super_admin')
   async getAllProjects(@Query() query: any, @CurrentUser() user: UserDocument, @Req() _req: any) {
     return this.projectService.getAllProjects({
       ...query,

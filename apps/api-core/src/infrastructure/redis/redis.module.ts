@@ -1,6 +1,6 @@
 import { Module, Global, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createClient, RedisClientType } from 'redis';
+import { configuration } from '../../config/configuration';
 import { RedisService } from './redis.service';
 import { RedisHelperService } from './redis-helper.service';
 import { LoggerModule } from '../logger/logger.module';
@@ -11,9 +11,9 @@ import { LoggerModule } from '../logger/logger.module';
   providers: [
     {
       provide: 'REDIS_CLIENT',
-      useFactory: async (configService: ConfigService): Promise<RedisClientType | null> => {
+      useFactory: async (): Promise<RedisClientType | null> => {
         const logger = new Logger('RedisModule');
-        const redisUrl = configService.get<string>('redisUrl');
+        const redisUrl = configuration().redisUrl;
         if (!redisUrl) {
           return null;
         }
@@ -64,7 +64,6 @@ import { LoggerModule } from '../logger/logger.module';
           return null;
         }
       },
-      inject: [ConfigService],
     },
     RedisService,
     RedisHelperService,

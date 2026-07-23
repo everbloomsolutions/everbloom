@@ -8,13 +8,22 @@ export class PasswordResetToken {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId!: Types.ObjectId;
 
-  @Prop({ required: true, unique: true })
+  @Prop({
+    type: String,
+    required: true, unique: true
+})
   token!: string;
 
-  @Prop({ required: true })
+  @Prop({
+    type: Date,
+    required: true
+})
   expiresAt!: Date;
 
-  @Prop({ default: false })
+  @Prop({
+    type: Boolean,
+    default: false
+})
   used!: boolean;
 }
 

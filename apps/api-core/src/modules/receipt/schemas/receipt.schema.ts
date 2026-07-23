@@ -6,25 +6,35 @@ export type ReceiptDocument = Receipt & Document;
 
 @Schema({ timestamps: true })
 export class Receipt {
-  @Prop({ required: true, unique: true, trim: true })
+  @Prop({
+    type: String,
+    required: true, unique: true, trim: true
+})
   receiptNumber!: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Project', required: true })
   collectionId!: Types.ObjectId;
 
-  @Prop({ required: true, default: 'Ever Blooming Recycling Solutions Pvt ltd' })
+  @Prop({
+    type: String,
+    required: true, default: 'Ever Blooming Recycling Solutions Pvt ltd'
+})
   companyName!: string;
 
   @Prop({
+    type: String,
     enum: [
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
-    ],
-  })
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
+    ]
+})
   locationType?: string;
 
-  @Prop({ trim: true })
+  @Prop({
+    type: String,
+    trim: true
+})
   locationName?: string;
 
   @Prop({
@@ -60,34 +70,58 @@ export class Receipt {
     amount: number;
   }>;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({
+    type: Number,
+    required: true, min: 0
+})
   totalWeight!: number;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({
+    type: Number,
+    required: true, min: 0
+})
   subTotal!: number;
 
-  @Prop({ required: true, min: 0, max: 100 })
+  @Prop({
+    type: Number,
+    required: true, min: 0, max: 100
+})
   gstRate!: number;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({
+    type: Number,
+    required: true, min: 0
+})
   gstAmount!: number;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({
+    type: Number,
+    required: true, min: 0
+})
   totalAmount!: number;
 
-  @Prop({ required: true })
+  @Prop({
+    type: Date,
+    required: true
+})
   collectionDate!: Date;
 
-  @Prop({ required: true, default: Date.now })
+  @Prop({
+    type: Date,
+    required: true, default: Date.now
+})
   generatedAt!: Date;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   generatedBy!: Types.ObjectId;
 
-  @Prop({ required: true, trim: true })
+  @Prop({
+    type: String,
+    required: true, trim: true
+})
   upiTransactionId!: string;
 
-  @Prop()
+  @Prop({ type: String })
   pdfUrl?: string;
 }
 

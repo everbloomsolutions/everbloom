@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import * as authService from '../../src/modules/auth/auth.service';
 import { User } from '../../src/modules/user/user.model';
 import { Project } from '../../src/modules/project/project.model';
 import { Notification } from '../../src/modules/notification/notification.model';
@@ -17,6 +16,18 @@ export interface TestUser {
 }
 
 /**
+ * Generate access and refresh tokens for a test user
+ */
+export const generateTokens = (userId: string, email: string, role: string = 'user'): { token: string; refreshToken: string } => {
+  const jwtService = new JwtService();
+  const payload = { userId, email, role };
+  return {
+    token: jwtService.generateToken(payload),
+    refreshToken: jwtService.generateRefreshToken(payload),
+  };
+};
+
+/**
  * Create a test user and return user data with tokens
  */
 export const createTestUser = async (data?: {
@@ -26,30 +37,30 @@ export const createTestUser = async (data?: {
   role?: 'user' | 'admin' | 'agent';
 }): Promise<TestUser> => {
   const userData = {
-    email: data?.email || `test${Date.now()}@example.com`,
+    email: (data?.email || `test${Date.now()}@example.com`).toLowerCase(),
     password: data?.password || 'Password123',
     name: data?.name || 'Test User',
+    role: 'user' as const,
   };
 
-  const result = await authService.registerUser(userData);
-  const userId = result.user._id.toString();
+  const user = await User.create(userData);
 
   // Update role if needed
   if (data?.role === 'admin' || data?.role === 'agent') {
-    const user = await User.findById(userId);
-    if (user) {
-      user.role = data.role;
-      await user.save();
-    }
+    user.role = data.role;
+    await user.save();
   }
+
+  const userId = user._id.toString();
+  const tokens = generateTokens(userId, user.email, user.role);
 
   return {
     _id: userId,
-    email: result.user.email,
-    name: result.user.name || '',
+    email: user.email,
+    name: user.name || '',
     role: (data?.role || 'agent') as 'admin' | 'agent',
-    token: result.token,
-    refreshToken: result.refreshToken || '',
+    token: tokens.token,
+    refreshToken: tokens.refreshToken,
   };
 };
 
@@ -83,6 +94,9 @@ export const createTestProject = async (userId: string, data?: {
     title: data?.title || 'Test Project',
     description: data?.description || 'Test Description',
     status: data?.status || 'pending',
+    location: {
+      address: '123 Test Street, Test City',
+    },
   };
 
   // Add collection-specific fields if serviceType is recycling

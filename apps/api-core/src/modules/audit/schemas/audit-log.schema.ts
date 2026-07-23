@@ -33,6 +33,7 @@ export type AuditLogDocument = AuditLog & Document;
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class AuditLog {
   @Prop({
+    type: String,
     enum: ['project', 'receipt', 'user', 'location', 'contact', 'other'],
     required: true,
     index: true,
@@ -43,6 +44,7 @@ export class AuditLog {
   entityId!: Types.ObjectId;
 
   @Prop({
+    type: String,
     enum: [
       'created',
       'updated',
@@ -67,7 +69,10 @@ export class AuditLog {
   })
   action!: AuditAction;
 
-  @Prop({ maxlength: 500 })
+  @Prop({
+    type: String,
+    maxlength: 500
+})
   description?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
@@ -76,25 +81,40 @@ export class AuditLog {
   @Prop({ type: Object })
   changes?: Record<string, { old: unknown; new: unknown }>;
 
-  @Prop({ maxlength: 1000 })
+  @Prop({
+    type: String,
+    maxlength: 1000
+})
   notes?: string;
 
-  @Prop({ index: true })
+  @Prop({
+    type: String,
+    index: true
+})
   ipAddress?: string;
 
-  @Prop()
+  @Prop({ type: String })
   userAgent?: string;
 
-  @Prop({ index: true })
+  @Prop({
+    type: String,
+    index: true
+})
   requestId?: string;
 
-  @Prop({ index: true })
+  @Prop({
+    type: String,
+    index: true
+})
   sessionId?: string;
 
-  @Prop()
+  @Prop({ type: String })
   endpoint?: string;
 
-  @Prop({ enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] })
+  @Prop({
+    type: String,
+    enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+})
   method?: string;
 }
 

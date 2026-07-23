@@ -7,7 +7,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '../../common/services/jwt.service';
 import { TokenBlacklistService } from '../../common/services/token-blacklist.service';
@@ -15,7 +15,6 @@ import { LoggerService } from '../logger/logger.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../../modules/user/schemas/user.schema';
-import { isProduction } from '../../config/helpers';
 import { formatAllowedOriginsForLog, resolveAllowedOrigins } from '../../config/url-normalization';
 
 type SocketUser = Pick<UserDocument, '_id' | 'role' | 'isActive' | 'email'>;
@@ -45,15 +44,15 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private readonly logger = new Logger(SocketGateway.name);
 
+  private readonly isProduction: boolean;
+  private readonly BLACKLIST_CACHE_TTL_MS: number;
+  private readonly USER_CACHE_TTL_MS: number;
+  private readonly AUTH_FAIL_WINDOW_MS: number;
+  private readonly AUTH_FAIL_LIMIT: number;
+
   private readonly blacklistCache = new Map<string, { value: boolean; expiresAtMs: number }>();
-  private readonly BLACKLIST_CACHE_TTL_MS = isProduction() ? 30_000 : 5_000;
-
   private readonly userCache = new Map<string, { value: SocketUser; expiresAtMs: number }>();
-  private readonly USER_CACHE_TTL_MS = isProduction() ? 30_000 : 5_000;
-
   private readonly authFailBudget = new Map<string, { count: number; resetAtMs: number }>();
-  private readonly AUTH_FAIL_WINDOW_MS = isProduction() ? 60_000 : 30_000;
-  private readonly AUTH_FAIL_LIMIT = isProduction() ? 10 : 25;
 
   private activeConnections = 0;
   private totalConnections = 0;
@@ -63,13 +62,18 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private allowedOrigins: string[] = [];
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
-    private readonly tokenBlacklistService: TokenBlacklistService,
-    private readonly loggerService: LoggerService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(TokenBlacklistService) private readonly tokenBlacklistService: TokenBlacklistService,
+    @Inject(LoggerService) private readonly loggerService: LoggerService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {
     this.loggerService.setContext('SocketGateway');
+    this.isProduction = this.configService.get<boolean>('isProduction') ?? false;
+    this.BLACKLIST_CACHE_TTL_MS = this.isProduction ? 30_000 : 5_000;
+    this.USER_CACHE_TTL_MS = this.isProduction ? 30_000 : 5_000;
+    this.AUTH_FAIL_WINDOW_MS = this.isProduction ? 60_000 : 30_000;
+    this.AUTH_FAIL_LIMIT = this.isProduction ? 10 : 25;
   }
 
   afterInit(server: Server): void {
@@ -83,7 +87,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
     // Authentication middleware for socket connections
     server.use(async (socket: AuthenticatedSocket, next) => {
-      const AUTH_TIMEOUT_MS = isProduction() ? 15000 : 5000;
+      const AUTH_TIMEOUT_MS = this.isProduction ? 15000 : 5000;
 
       try {
         const authStartMs = Date.now();
@@ -193,7 +197,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
           const authDurationMs = Date.now() - authStartMs;
           this.totalAuthSuccess += 1;
-          if (!isProduction() || authDurationMs > 250) {
+          if (!this.isProduction || authDurationMs > 250) {
             this.loggerService.log('socket_auth_ok', {
               event: 'socket_auth_ok',
               socketId: socket.id,
@@ -335,7 +339,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     errorMessage: string,
   ): Promise<T> {
     const controller = new AbortController();
-    let timer: NodeJS.Timeout | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
 
     const timeoutPromise = new Promise<T>((_, reject) => {

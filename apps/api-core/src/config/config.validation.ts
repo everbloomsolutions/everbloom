@@ -85,34 +85,56 @@ class Config {
 }
 
 export function validateConfig(config: Record<string, unknown>) {
-  // Use process.env.NODE_ENV directly to avoid using a stale config.nodeEnv value.
-  const actualNodeEnv = process.env.NODE_ENV || 'development';
-  const actualIsProduction = actualNodeEnv === 'production' || !!process.env.VERCEL;
+  // ConfigModule.forRoot passes the raw process.env/.env object with UPPER_SNAKE_CASE keys.
+  // configuration() passes a normalized camelCase object. Support both by mapping.
+  const normalized: Record<string, unknown> = { ...config };
+  const mapEnv = (envKey: string, configKey: string) => {
+    if (envKey in config && !(configKey in normalized)) {
+      normalized[configKey] = config[envKey];
+    }
+  };
 
-  // CRITICAL: If config.mongodbUri is empty but process.env.MONGODB_URI is set,
-  // use process.env.MONGODB_URI directly (NestJS ConfigModule may have overridden it).
-  const rawMongoUri = process.env.MONGODB_URI;
-  const configMongodbUri = config.mongodbUri ? String(config.mongodbUri).trim() : '';
-  const finalMongodbUri = (!configMongodbUri && rawMongoUri)
-    ? String(rawMongoUri).trim()
-    : configMongodbUri;
+  mapEnv('NODE_ENV', 'nodeEnv');
+  mapEnv('PORT', 'port');
+  mapEnv('BACKEND_PORT', 'port');
+  mapEnv('BACKEND_HOST', 'host');
+  mapEnv('HOST', 'host');
+  mapEnv('PROTOCOL', 'protocol');
+  mapEnv('LOG_LEVEL', 'logLevel');
+  mapEnv('MONGODB_URI', 'mongodbUri');
+  mapEnv('REDIS_URL', 'redisUrl');
+  mapEnv('JWT_SECRET', 'jwtSecret');
+  mapEnv('JWT_REFRESH_SECRET', 'jwtRefreshSecret');
+  mapEnv('JWT_EXPIRES_IN', 'jwtExpiresIn');
+  mapEnv('JWT_REFRESH_EXPIRES_IN', 'jwtRefreshExpiresIn');
+  mapEnv('BACKEND_CORS_ORIGIN', 'corsOrigin');
+  mapEnv('CORS_ORIGIN', 'corsOrigin');
+  mapEnv('ADMIN_PANEL_URL', 'adminPanelUrl');
+
+  const nodeEnv = String(normalized.nodeEnv || 'development');
+  const isVercel = Boolean(normalized.isVercel);
+  const isProduction = Boolean(normalized.isProduction) || isVercel;
+
+  const configMongodbUri = normalized.mongodbUri ? String(normalized.mongodbUri).trim() : '';
+  const finalMongodbUri = configMongodbUri || (isProduction ? '' : 'mongodb://localhost:27017/everbloom');
 
   const configWithDefaults = {
-    nodeEnv: config.nodeEnv ?? actualNodeEnv,
-    port: config.port ?? 8080,
-    host: config.host ?? 'localhost',
-    protocol: config.protocol ?? 'http',
-    logLevel: config.logLevel ?? 'info',
-    mongodbUri: finalMongodbUri || (actualIsProduction ? '' : 'mongodb://localhost:27017/everbloom'),
-    redisUrl: config.redisUrl ?? (actualIsProduction ? '' : 'redis://localhost:6379'),
-    jwtSecret: config.jwtSecret ?? '',
-    jwtRefreshSecret: config.jwtRefreshSecret ?? '',
-    jwtExpiresIn: config.jwtExpiresIn ?? '7d',
-    jwtRefreshExpiresIn: config.jwtRefreshExpiresIn ?? '30d',
-    adminPanelUrl: config.adminPanelUrl ?? (actualIsProduction ? '' : 'http://localhost:3001'),
-    corsOrigin: config.corsOrigin,
-    cloudinary: config.cloudinary,
-    googleMaps: config.googleMaps,
+    ...normalized,
+    nodeEnv,
+    port: normalized.port ?? 8080,
+    host: normalized.host ?? 'localhost',
+    protocol: normalized.protocol ?? 'http',
+    logLevel: normalized.logLevel ?? 'info',
+    mongodbUri: finalMongodbUri,
+    redisUrl: normalized.redisUrl ?? (isProduction ? '' : 'redis://localhost:6379'),
+    jwtSecret: normalized.jwtSecret ?? '',
+    jwtRefreshSecret: normalized.jwtRefreshSecret ?? '',
+    jwtExpiresIn: normalized.jwtExpiresIn ?? '7d',
+    jwtRefreshExpiresIn: normalized.jwtRefreshExpiresIn ?? '30d',
+    adminPanelUrl: normalized.adminPanelUrl ?? (isProduction ? '' : 'http://localhost:3001'),
+    corsOrigin: normalized.corsOrigin,
+    cloudinary: normalized.cloudinary,
+    googleMaps: normalized.googleMaps,
   };
 
   const validatedConfig = plainToInstance(Config, configWithDefaults, {
@@ -135,25 +157,12 @@ export function validateConfig(config: Record<string, unknown>) {
   }
 
   // Additional validations after basic type checks (Vercel = production-like)
-  const isProduction = validatedConfig.nodeEnv === 'production' || !!process.env.VERCEL;
 
   // MongoDB URI validation
   let mongodbUri = validatedConfig.mongodbUri ? String(validatedConfig.mongodbUri).trim() : '';
 
-  if (!mongodbUri && process.env.MONGODB_URI) {
-    const rawMongoUri = String(process.env.MONGODB_URI).trim();
-    if (rawMongoUri) {
-      mongodbUri = rawMongoUri;
-      (validatedConfig as unknown as Record<string, unknown>).mongodbUri = mongodbUri;
-    }
-  }
-
   if (isProduction && mongodbUri.length === 0) {
-    const actualEnvVar = process.env.MONGODB_URI;
-    const envVarInfo = actualEnvVar
-      ? `process.env.MONGODB_URI is set (length: ${actualEnvVar.length}) but config.mongodbUri is empty. This suggests .env files may be overriding it.`
-      : 'process.env.MONGODB_URI is not set in the environment.';
-    throw new Error(`MONGODB_URI is required in production/Vercel. ${envVarInfo}`);
+    throw new Error('MONGODB_URI is required in production/Vercel.');
   }
   if (mongodbUri.length > 0 && !/^mongodb(\+srv)?:\/\//.test(mongodbUri)) {
     throw new Error('MONGODB_URI must be a valid MongoDB connection string');
@@ -161,13 +170,6 @@ export function validateConfig(config: Record<string, unknown>) {
 
   // Redis URL validation (optional, but if provided must be valid)
   let redisUrl = String(validatedConfig.redisUrl || '').trim();
-  if (!redisUrl && process.env.REDIS_URL) {
-    const rawRedisUrl = String(process.env.REDIS_URL).trim();
-    if (rawRedisUrl) {
-      redisUrl = rawRedisUrl;
-      (validatedConfig as unknown as Record<string, unknown>).redisUrl = redisUrl;
-    }
-  }
   if (redisUrl.length > 0 && !/^redis(s)?:\/\//.test(redisUrl)) {
     throw new Error('REDIS_URL must be a valid Redis connection string');
   }
@@ -175,17 +177,6 @@ export function validateConfig(config: Record<string, unknown>) {
   // JWT Secret validation
   let jwtSecret = validatedConfig.jwtSecret ? String(validatedConfig.jwtSecret).trim() : '';
   let jwtRefreshSecret = validatedConfig.jwtRefreshSecret ? String(validatedConfig.jwtRefreshSecret).trim() : '';
-
-  // If config is empty, try process.env as a fallback.
-  const rawJwtSecret = process.env.JWT_SECRET?.trim() || '';
-  const rawJwtRefreshSecret = process.env.JWT_REFRESH_SECRET?.trim() || '';
-
-  if (!jwtSecret && rawJwtSecret) {
-    jwtSecret = rawJwtSecret;
-  }
-  if (!jwtRefreshSecret && rawJwtRefreshSecret) {
-    jwtRefreshSecret = rawJwtRefreshSecret;
-  }
 
   if (!jwtSecret || jwtSecret.length < 32) {
     throw new Error('JWT_SECRET should be at least 32 characters for security');
@@ -202,13 +193,11 @@ export function validateConfig(config: Record<string, unknown>) {
     throw new Error('JWT_REFRESH_SECRET must not be a placeholder/default value. Set a real secret via environment variables.');
   }
 
-  // Update validatedConfig with corrected values
-  if (jwtSecret !== validatedConfig.jwtSecret) {
-    (validatedConfig as unknown as Record<string, unknown>).jwtSecret = jwtSecret;
-  }
-  if (jwtRefreshSecret !== validatedConfig.jwtRefreshSecret) {
-    (validatedConfig as unknown as Record<string, unknown>).jwtRefreshSecret = jwtRefreshSecret;
-  }
-
-  return validatedConfig;
+  // Preserve original config extras (runtimePolicy, flags, timeouts) alongside validated fields
+  return Object.assign({}, normalized, validatedConfig, {
+    mongodbUri,
+    redisUrl,
+    jwtSecret,
+    jwtRefreshSecret,
+  }) as Config;
 }

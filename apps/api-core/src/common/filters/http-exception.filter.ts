@@ -6,11 +6,14 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  constructor(private readonly configService: ConfigService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -51,7 +54,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Include stack trace in development only
-    if (process.env.NODE_ENV === 'development' && exception instanceof Error) {
+    const isDevelopment = this.configService.get<boolean>('isDevelopment') ?? false;
+    if (isDevelopment && exception instanceof Error) {
       errorResponse.stack = exception.stack;
     }
 

@@ -6,8 +6,7 @@ import { detectRuntimePlatform, getRuntimePolicy, normalizeUrl } from './url-nor
 // Skip .env in production/Vercel - use platform environment variables only
 const cwd = process.cwd();
 const nodeEnv = process.env.NODE_ENV || 'development';
-const runtimePlatform = detectRuntimePlatform();
-const isVercel = runtimePlatform === 'vercel';
+const isVercel = !!process.env.VERCEL;
 const isProduction = nodeEnv === 'production' || isVercel;
 
 // Only load .env files in development and when not on Vercel
@@ -33,25 +32,30 @@ if (!isProduction && !isVercel) {
 
 export const configuration = () => {
   const nodeEnv = process.env.NODE_ENV || 'development';
-  const isProduction = nodeEnv === 'production';
 
-  // Vercel serverless: require env vars, no localhost defaults
-  const runtimePlatform = detectRuntimePlatform();
-  const isVercel = runtimePlatform === 'vercel';
+  const runtimeEnv = {
+    VERCEL: process.env.VERCEL,
+    KUBERNETES_SERVICE_HOST: process.env.KUBERNETES_SERVICE_HOST,
+    IN_CONTAINER: process.env.IN_CONTAINER,
+    DOCKER: process.env.DOCKER,
+    IN_DOCKER: process.env.IN_DOCKER,
+    NODE_ENV: process.env.NODE_ENV,
+  };
 
-  const runtimePolicy = getRuntimePolicy(nodeEnv);
-
-  // Detect if running in a containerized environment (Docker/Kubernetes)
-  // Centralized in RuntimePolicy to avoid logic drift.
+  const runtimePolicy = getRuntimePolicy(nodeEnv, runtimeEnv);
+  const isVercel = runtimePolicy.isVercel;
+  const isProduction = runtimePolicy.isProductionLike;
   const isContainerized = runtimePolicy.isContainerized;
+  const isDevelopment = !isProduction;
+
   const port = parseInt(process.env.PORT || process.env.BACKEND_PORT || '8080', 10);
   const host =
-    process.env.PORT || process.env.VERCEL
+    process.env.PORT || isProduction
       ? '0.0.0.0'
       : process.env.BACKEND_HOST || process.env.HOST || 'localhost';
-  const protocol = isProduction || isVercel ? 'https' : 'http';
-  const logLevel = process.env.LOG_LEVEL || (isProduction || isVercel ? 'info' : 'debug');
-  const enableDebug = process.env.ENABLE_DEBUG === 'true' || (!isProduction && !isVercel);
+  const protocol = runtimePolicy.defaultProtocol;
+  const logLevel = process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug');
+  const enableDebug = process.env.ENABLE_DEBUG === 'true' || isDevelopment;
 
   // Admin panel URL: required in production/Vercel/containerized environments;
   // non-containerized local dev may fall back to localhost.
@@ -124,7 +128,8 @@ export const configuration = () => {
     defaultRedisUrl = 'redis://redis:6379';
   }
 
-  const redisUrl = process.env.REDIS_URL || defaultRedisUrl;
+  // Honor an explicitly empty REDIS_URL (e.g. in tests) as a signal to disable Redis
+  const redisUrl = process.env.REDIS_URL !== undefined ? process.env.REDIS_URL : defaultRedisUrl;
 
   // JWT secrets - required in all environments; no hardcoded dev defaults.
   // Use process.env directly and let validation enforce a minimum length.
@@ -142,11 +147,15 @@ export const configuration = () => {
     corsOrigin:
       process.env.BACKEND_CORS_ORIGIN ||
       process.env.CORS_ORIGIN ||
-      (!isProduction && !isVercel && !isContainerized
+      (isDevelopment && !isContainerized
         ? 'http://localhost:3000,http://localhost:3001'
         : ''),
     logLevel: String(logLevel),
     enableDebug: Boolean(enableDebug),
+    dbPingTimeoutMs: parseInt(process.env.DB_PING_TIMEOUT_MS || '5000', 10),
+    dbReadyTimeoutMs: parseInt(process.env.DB_READY_TIMEOUT_MS || '0', 10),
+    dbCooldownMs: parseInt(process.env.DB_COOLDOWN_MS || '0', 10),
+    dbStartupTimeoutMs: parseInt(process.env.DB_STARTUP_TIMEOUT_MS || '15000', 10),
     mongodbUri: String(finalMongodbUri),
     redisUrl: String(redisUrl),
     jwtSecret: String(jwtSecret),
@@ -167,6 +176,11 @@ export const configuration = () => {
     smtpUser: process.env.SMTP_USER,
     smtpPass: process.env.SMTP_PASS,
     smtpFrom: process.env.SMTP_FROM,
+    runtimePolicy,
+    isVercel,
+    isProduction,
+    isContainerized,
+    isDevelopment,
   };
 
   return config;

@@ -359,7 +359,7 @@ const AgentAssignmentTab = () => {
                   Assigned Locations:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {agent.locations.map((location) => (
+                  {(agent.locations || []).map((location) => (
                     <div
                       key={location._id}
                       className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600"
@@ -465,7 +465,7 @@ const AgentAssignmentTab = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                    {agents.map((agent) => renderRow(agent, columns))}
+                    {(agents || []).map((agent) => renderRow(agent, columns))}
                   </tbody>
                 </table>
               </div>

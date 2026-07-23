@@ -7,33 +7,52 @@ export type LocationDocument = Location & Document;
 @Schema({ timestamps: true })
 export class Location {
   @Prop({
+    type: String,
     enum: [
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
-      COLLECTION_LOCATION_TYPES.COMMERCIAL_PROPERTY,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
+        COLLECTION_LOCATION_TYPES.COMMERCIAL_PROPERTY,
     ],
     required: true,
-    index: true,
-  })
+    index: true
+})
   locationType!: string;
 
-  @Prop({ required: true, trim: true, maxlength: 200, index: 'text' })
+  @Prop({
+    type: String,
+    required: true, trim: true, maxlength: 200, index: 'text'
+})
   locationName!: string;
 
-  @Prop({ required: true, trim: true, maxlength: 200, index: true })
+  @Prop({
+    type: String,
+    required: true, trim: true, maxlength: 200, index: true
+})
   locality!: string;
 
-  @Prop({ required: true, trim: true, maxlength: 500, index: 'text' })
+  @Prop({
+    type: String,
+    required: true, trim: true, maxlength: 500, index: 'text'
+})
   address!: string;
 
-  @Prop({ trim: true, maxlength: 100, index: true })
+  @Prop({
+    type: String,
+    trim: true, maxlength: 100, index: true
+})
   city?: string;
 
-  @Prop({ trim: true, maxlength: 100, index: true })
+  @Prop({
+    type: String,
+    trim: true, maxlength: 100, index: true
+})
   state?: string;
 
-  @Prop({ trim: true, maxlength: 20 })
+  @Prop({
+    type: String,
+    trim: true, maxlength: 20
+})
   zipCode?: string;
 
   @Prop({
@@ -53,34 +72,52 @@ export class Location {
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
   assignedToAgent?: Types.ObjectId;
 
-  @Prop({ default: true, index: true })
+  @Prop({
+    type: Boolean,
+    default: true, index: true
+})
   isActive!: boolean;
 
-  @Prop({ default: false, index: true })
+  @Prop({
+    type: Boolean,
+    default: false, index: true
+})
   isDeleted!: boolean;
 
-  @Prop({ index: true })
+  @Prop({
+    type: Date,
+    index: true
+})
   deletedAt?: Date;
 
-  @Prop({ default: 0, min: 0, index: true })
+  @Prop({
+    type: Number,
+    default: 0, min: 0, index: true
+})
   usageCount!: number;
 
-  @Prop()
+  @Prop({ type: Date })
   lastUsedAt?: Date;
 
   @Prop([{ type: String, trim: true }])
   tags?: string[];
 
-  @Prop({ trim: true, maxlength: 50 })
+  @Prop({
+    type: String,
+    trim: true, maxlength: 50
+})
   group?: string;
 
-  @Prop({ maxlength: 2000 })
+  @Prop({
+    type: String,
+    maxlength: 2000
+})
   notes?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   notesUpdatedBy?: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: Date })
   notesUpdatedAt?: Date;
 }
 

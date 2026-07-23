@@ -10,6 +10,7 @@ export interface IUser extends Document {
   avatar?: string;
   phoneNumber?: string;
   company?: string;
+  onboardingCompleted?: boolean;
   preferences?: Record<string, unknown>;
   defaultLocation?: mongoose.Types.ObjectId;
   isDeleted?: boolean;
@@ -118,6 +119,11 @@ const userSchema = new Schema<IUser>(
     company: {
       type: String,
       trim: true,
+    },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     preferences: {
       type: Schema.Types.Mixed,

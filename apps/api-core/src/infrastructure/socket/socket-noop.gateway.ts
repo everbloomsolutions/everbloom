@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
 
 /**
@@ -7,7 +7,7 @@ import { LoggerService } from '../logger/logger.service';
  */
 @Injectable()
 export class SocketGatewayNoOp {
-  constructor(private readonly logger: LoggerService) {
+  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
     this.logger.setContext('SocketGatewayNoOp');
   }
 

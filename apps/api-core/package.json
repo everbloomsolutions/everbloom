@@ -70,6 +70,8 @@
     "@eslint/js": "^9.39.1",
     "@nestjs/cli": "^10.4.8",
     "@nestjs/schematics": "^10.1.1",
+    "@nestjs/testing": "^10.4.22",
+    "@swc/core": "^1.15.46",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
@@ -88,11 +90,12 @@
     "@vercel/node": "^3.0.7",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
-    "supertest": "^7.1.4",
     "kill-port": "^1.0.1",
+    "supertest": "^7.1.4",
     "tsx": "^4.7.0",
     "turbo": "^2.3.3",
     "typescript": "^5.3.3",
+    "unplugin-swc": "^1.5.9",
     "vitest": "^4.0.15"
   }
 }

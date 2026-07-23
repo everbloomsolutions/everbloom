@@ -10,6 +10,7 @@ import { ProjectModule } from '../project/project.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { SchedulerModule } from '../../infrastructure/scheduler/scheduler.module';
 import { CommonModule } from '../../common/common.module';
+import { configuration } from '../../config/configuration';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Project, ProjectSchema } from '../project/schemas/project.schema';
 import { Location, LocationSchema } from '../location/schemas/location.schema';
@@ -26,7 +27,7 @@ import { Location, LocationSchema } from '../location/schemas/location.schema';
     LocationModule,
     ProjectModule,
     AnalyticsModule,
-    SchedulerModule.forRoot(),
+    SchedulerModule.forRoot({ redisUrl: configuration().redisUrl }),
   ],
   controllers: [AdminController, AssignmentController, JobController],
   providers: [AdminService, UserAdminService],

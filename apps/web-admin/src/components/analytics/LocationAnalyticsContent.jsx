@@ -100,12 +100,12 @@ const LocationAnalyticsContent = memo(({
   // Line chart data - Usage Over Time
   const lineData = {
     labels: usageTrends.length > 0
-      ? usageTrends.map(trend => formatDate(trend.date, 'MMM d'))
+      ? (usageTrends || []).map(trend => formatDate(trend.date, 'MMM d'))
       : ['No Data'],
     datasets: [{
       label: 'Collections',
       data: usageTrends.length > 0
-        ? usageTrends.map(trend => trend.count || 0)
+        ? (usageTrends || []).map(trend => trend.count || 0)
         : [0],
       borderColor: 'rgba(59, 130, 246, 1)',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',

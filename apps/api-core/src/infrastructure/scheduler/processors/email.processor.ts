@@ -1,3 +1,4 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Job } from 'bull';
 import { LoggerService } from '../../logger/logger.service';
@@ -13,8 +14,8 @@ export interface EmailJobData {
 @Processor('email')
 export class EmailProcessor {
   constructor(
-    private readonly logger: LoggerService,
-    private readonly mailService: MailService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
+    @Inject(MailService) private readonly mailService: MailService,
   ) {
     this.logger.setContext('EmailProcessor');
   }

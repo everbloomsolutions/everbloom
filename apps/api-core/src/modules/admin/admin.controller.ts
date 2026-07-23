@@ -11,12 +11,14 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import { AdminService, UserAdminService } from './admin.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ToggleUserStatusDto } from './dto/toggle-user-status.dto';
 import { UserQueryDto } from './dto/user-query.dto';
+import { UpdateProjectDto } from '../project/dto/update-project.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/guards/roles.guard';
@@ -36,7 +38,7 @@ export class AdminController {
     private readonly userAdminService: UserAdminService,
     private readonly projectService: ProjectService,
     private readonly locationService: LocationService,
-    private readonly logger: LoggerService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('AdminController');
   }
@@ -105,6 +107,8 @@ export class AdminController {
 
   // More specific routes must come before general ones
   @Get('dashboard/today/performance')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
   async getTodayPerformance(@CurrentUser() user: UserDocument) {
     // This endpoint was removed during dashboard simplification
     // Return today's activity data as a fallback
@@ -121,6 +125,8 @@ export class AdminController {
   }
 
   @Get('dashboard/today')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
   async getTodayActivity(@CurrentUser() user: UserDocument) {
     const todayData = await this.adminService.getTodayActivity(
       user._id.toString(),
@@ -152,6 +158,8 @@ export class AdminController {
   }
 
   @Get('dashboard/recent')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
   async getRecentData(@CurrentUser() user: UserDocument) {
     // This endpoint was removed during dashboard simplification
     // Return dashboard data as a fallback
@@ -168,6 +176,8 @@ export class AdminController {
   }
 
   @Get('dashboard')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
   async getDashboard(@CurrentUser() user: UserDocument) {
     const dashboardData = await this.adminService.getDashboard(
       user._id.toString(),
@@ -191,6 +201,46 @@ export class AdminController {
     return {
       success: true,
       data: safeData,
+    };
+  }
+
+  @Get('collections')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  async getCollections(
+    @Query() query: any,
+    @CurrentUser() user: UserDocument,
+  ) {
+    return this.projectService.getAllProjects({
+      ...query,
+      userId: user._id.toString(),
+      userRole: user.role,
+    });
+  }
+
+  @Post('collections/:id/quote')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  @HttpCode(HttpStatus.OK)
+  async sendCollectionQuote(
+    @Param('id') id: string,
+    @Body() body: UpdateProjectDto,
+    @CurrentUser() user: UserDocument,
+  ) {
+    const project = await this.projectService.updateCollection(
+      id,
+      user._id.toString(),
+      user.role,
+      {
+        quoteAmount: body.quoteAmount,
+        quoteDetails: body.quoteDetails,
+        estimatedTimeline: body.estimatedTimeline,
+      },
+    );
+    return {
+      success: true,
+      data: project,
+      message: 'Quote sent successfully',
     };
   }
 

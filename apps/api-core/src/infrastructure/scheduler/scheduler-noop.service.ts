@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Job } from 'bull';
 import { LoggerService } from '../logger/logger.service';
 import { ImportJobData, ImportJobResult } from './processors/import.processor';
@@ -9,7 +9,7 @@ import { ImportJobData, ImportJobResult } from './processors/import.processor';
  */
 @Injectable()
 export class SchedulerServiceNoOp {
-  constructor(private readonly logger: LoggerService) {
+  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
     this.logger.setContext('SchedulerServiceNoOp');
   }
 }
@@ -20,7 +20,7 @@ export class SchedulerServiceNoOp {
  */
 @Injectable()
 export class SchedulerQueueServiceNoOp {
-  constructor(private readonly logger: LoggerService) {
+  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
     this.logger.setContext('SchedulerQueueServiceNoOp');
   }
 

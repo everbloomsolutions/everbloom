@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import { configuration } from '../../config/configuration';
 
 export type TokenType = 'access' | 'refresh';
 
@@ -12,11 +13,13 @@ export interface TokenPayload {
 
 @Injectable()
 export class JwtService {
-  constructor(private configService: ConfigService) { }
+  constructor(
+    @Optional() @Inject(ConfigService) private configService?: ConfigService,
+  ) { }
 
   generateToken(payload: TokenPayload): string {
-    const secret = this.configService.get<string>('jwtSecret');
-    const expiresIn = this.configService.get<string>('jwtExpiresIn');
+    const secret = this.configService?.get<string>('jwtSecret') ?? configuration().jwtSecret;
+    const expiresIn = this.configService?.get<string>('jwtExpiresIn') ?? configuration().jwtExpiresIn;
     if (!secret) {
       throw new Error('JWT_SECRET is not configured');
     }
@@ -24,8 +27,8 @@ export class JwtService {
   }
 
   generateRefreshToken(payload: TokenPayload): string {
-    const secret = this.configService.get<string>('jwtRefreshSecret');
-    const expiresIn = this.configService.get<string>('jwtRefreshExpiresIn');
+    const secret = this.configService?.get<string>('jwtRefreshSecret') ?? configuration().jwtRefreshSecret;
+    const expiresIn = this.configService?.get<string>('jwtRefreshExpiresIn') ?? configuration().jwtRefreshExpiresIn;
     if (!secret) {
       throw new Error('JWT_REFRESH_SECRET is not configured');
     }
@@ -35,8 +38,8 @@ export class JwtService {
   verifyToken(token: string, type: TokenType = 'access'): TokenPayload {
     const secret =
       type === 'refresh'
-        ? this.configService.get<string>('jwtRefreshSecret')
-        : this.configService.get<string>('jwtSecret');
+        ? (this.configService?.get<string>('jwtRefreshSecret') ?? configuration().jwtRefreshSecret)
+        : (this.configService?.get<string>('jwtSecret') ?? configuration().jwtSecret);
     if (!secret) {
       throw new Error(
         type === 'refresh'

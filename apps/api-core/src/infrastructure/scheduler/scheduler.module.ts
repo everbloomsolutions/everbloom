@@ -1,8 +1,6 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { BullModule, BullModuleOptions } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
-import { configuration } from '../../config/configuration';
 import { getBullRedisConnectionFromUrl } from '../redis/redis-helper.service';
 import { RedisModule } from '../redis/redis.module';
 import { LoggerModule } from '../logger/logger.module';
@@ -20,7 +18,6 @@ import { TokenBlacklist, TokenBlacklistSchema } from '../../modules/auth/schemas
 import { AuditLog, AuditLogSchema } from '../../modules/audit/schemas/audit-log.schema';
 
 const baseImports = [
-  ConfigModule,
   MongooseModule.forFeature([
     { name: TokenBlacklist.name, schema: TokenBlacklistSchema },
     { name: AuditLog.name, schema: AuditLogSchema },
@@ -30,17 +27,11 @@ const baseImports = [
   MailModule,
 ];
 
-/** Resolves the Redis URL from the central configuration so the scheduler and app config stay in sync. */
-function getResolvedRedisUrl(): string {
-  return configuration().redisUrl;
+export interface SchedulerModuleOptions {
+  redisUrl?: string;
 }
 
-function hasRedisEnabled(): boolean {
-  return getResolvedRedisUrl().trim().length > 0;
-}
-
-function getQueueRedisConfig(): BullModuleOptions['redis'] {
-  const redisUrl = getResolvedRedisUrl();
+function getQueueRedisConfig(redisUrl: string): BullModuleOptions['redis'] {
   const conn = getBullRedisConnectionFromUrl(redisUrl);
   if (!conn) {
     throw new Error(
@@ -50,39 +41,39 @@ function getQueueRedisConfig(): BullModuleOptions['redis'] {
   return typeof conn === 'string' ? conn : conn.redis;
 }
 
-let bullQueuesModule: DynamicModule | undefined;
-function getBullQueues(): DynamicModule {
-  if (!bullQueuesModule) {
-    bullQueuesModule = buildBullQueues();
+const bullQueuesCache = new Map<string, DynamicModule>();
+
+function getBullQueues(redisUrl: string): DynamicModule {
+  if (!bullQueuesCache.has(redisUrl)) {
+    const bullRedis = getQueueRedisConfig(redisUrl);
+    bullQueuesCache.set(
+      redisUrl,
+      BullModule.registerQueue(
+        { name: 'email', redis: bullRedis },
+        { name: 'cleanup', redis: bullRedis },
+        { name: 'analytics', redis: bullRedis },
+        { name: 'audit-cleanup', redis: bullRedis },
+        {
+          name: 'import',
+          redis: bullRedis,
+          defaultJobOptions: {
+            removeOnComplete: {
+              age: 24 * 3600,
+              count: 100,
+            },
+            removeOnFail: {
+              age: 7 * 24 * 3600,
+            },
+            attempts: 1,
+          },
+        },
+      ),
+    );
   }
-  return bullQueuesModule;
+  return bullQueuesCache.get(redisUrl)!;
 }
 
-function buildBullQueues() {
-  const bullRedis = getQueueRedisConfig();
-  return BullModule.registerQueue(
-    { name: 'email', redis: bullRedis },
-    { name: 'cleanup', redis: bullRedis },
-    { name: 'analytics', redis: bullRedis },
-    { name: 'audit-cleanup', redis: bullRedis },
-    {
-      name: 'import',
-      redis: bullRedis,
-      defaultJobOptions: {
-        removeOnComplete: {
-          age: 24 * 3600,
-          count: 100,
-        },
-        removeOnFail: {
-          age: 7 * 24 * 3600,
-        },
-        attempts: 1,
-      },
-    },
-  );
-}
-
-let schedulerModule: DynamicModule | undefined;
+const schedulerModuleCache = new Map<string, DynamicModule>();
 
 /**
  * Scheduler (Bull/Redis) module. Must be imported via SchedulerModule.forRoot() in all consumers
@@ -91,17 +82,20 @@ let schedulerModule: DynamicModule | undefined;
 @Module({})
 export class SchedulerModule {
   /**
-   * Register SchedulerModule. When REDIS_URL is set, Bull and real queue services
+   * Register SchedulerModule. When redisUrl is set, Bull and real queue services
    * are used; otherwise no-op services are registered so the app runs without Redis (e.g. Vercel).
    */
-  static forRoot(): DynamicModule {
-    if (schedulerModule) {
-      return schedulerModule;
+  static forRoot(options: SchedulerModuleOptions = {}): DynamicModule {
+    const redisUrl = options.redisUrl?.trim() ?? '';
+    const cacheKey = redisUrl || 'disabled';
+
+    if (schedulerModuleCache.has(cacheKey)) {
+      return schedulerModuleCache.get(cacheKey)!;
     }
 
-    const hasRedis = hasRedisEnabled();
+    const hasRedis = redisUrl.length > 0;
 
-    const providers = hasRedis
+    const providers: Provider[] = hasRedis
       ? [
           SchedulerService,
           SchedulerQueueService,
@@ -116,19 +110,23 @@ export class SchedulerModule {
           { provide: SchedulerQueueService, useClass: SchedulerQueueServiceNoOp },
         ];
 
-    const imports = hasRedis
-      ? [...baseImports, getBullQueues()]
-      : [...baseImports];
+    const imports: any[] = [...baseImports];
+    if (hasRedis) {
+      imports.push(getBullQueues(redisUrl));
+    }
+
     const exports = hasRedis
       ? [SchedulerService, SchedulerQueueService, BullModule]
       : [SchedulerService, SchedulerQueueService];
 
-    schedulerModule = {
+    const module: DynamicModule = {
       module: SchedulerModule,
       imports,
       providers,
       exports,
     };
-    return schedulerModule;
+
+    schedulerModuleCache.set(cacheKey, module);
+    return module;
   }
 }

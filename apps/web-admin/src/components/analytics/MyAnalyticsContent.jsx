@@ -42,13 +42,13 @@ const MyAnalyticsContent = memo(({
   const locationTypes = Array.isArray(analytics.byLocationType) ? analytics.byLocationType : [];
   
   const materialTypeLabels = materialTypes.length > 0
-    ? materialTypes.map(item => getMaterialTypeLabel(item.materialType || 'Unknown'))
+    ? (materialTypes || []).map(item => getMaterialTypeLabel(item.materialType || 'Unknown'))
     : ['No Data'];
   const materialTypeCounts = materialTypes.length > 0
-    ? materialTypes.map(item => item.count || 0)
+    ? (materialTypes || []).map(item => item.count || 0)
     : [0];
   const materialTypeWeights = materialTypes.length > 0
-    ? materialTypes.map(item => item.totalWeight || 0)
+    ? (materialTypes || []).map(item => item.totalWeight || 0)
     : [0];
 
   const pieData = {
@@ -282,7 +282,7 @@ const MyAnalyticsContent = memo(({
         </h3>
         <div className="space-y-3">
           {materialTypes.length > 0 ? (
-            materialTypes.map((item, index) => (
+            (materialTypes || []).map((item, index) => (
               <div key={index} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">
                   {getMaterialTypeLabel(item.materialType)}
@@ -312,7 +312,7 @@ const MyAnalyticsContent = memo(({
             Collections by Location Type
           </h3>
           <div className="space-y-3">
-            {locationTypes.map((item, index) => (
+            {(locationTypes || []).map((item, index) => (
               <div key={index} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">
                   {getLocationTypeLabel(item.locationType)}

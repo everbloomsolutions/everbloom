@@ -1,34 +1,31 @@
 /**
- * EmailService Unit Tests (NestJS)
- * Migrated from Express tests
+ * MailService Unit Tests (NestJS)
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MailService } from '../../src/infrastructure/mail/mail.service';
 import { ConfigModule } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
+import { MailService } from '../../src/infrastructure/mail/mail.service';
+import { LoggerService } from '../../src/infrastructure/logger/logger.service';
+import { SanitizeService } from '../../src/common/sanitize/sanitize.service';
 
-// Mock Logger
-vi.mock('@nestjs/common', async () => {
-  const actual = await vi.importActual('@nestjs/common');
-  return {
-    ...actual,
-    Logger: vi.fn().mockImplementation(() => ({
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-    })),
-  };
-});
-
-describe('EmailService (NestJS)', () => {
+describe('MailService (NestJS)', () => {
   let module: TestingModule;
-  let emailService: EmailService;
-  let logger: Logger;
+  let mailService: MailService;
+  let loggerMock: { log: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn>; debug: ReturnType<typeof vi.fn> };
+  let sanitizeMock: { escapeHtml: ReturnType<typeof vi.fn> };
 
   beforeAll(async () => {
+    loggerMock = {
+      log: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+    };
+    sanitizeMock = {
+      escapeHtml: vi.fn((s) => s),
+    };
+
     module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -36,11 +33,18 @@ describe('EmailService (NestJS)', () => {
           envFilePath: '.env.test',
         }),
       ],
-      providers: [EmailService],
+      providers: [
+        MailService,
+        { provide: LoggerService, useValue: loggerMock },
+        { provide: SanitizeService, useValue: sanitizeMock },
+      ],
     }).compile();
 
-    emailService = module.get<EmailService>(EmailService);
-    logger = new Logger('EmailService');
+    mailService = module.get<MailService>(MailService);
+  });
+
+  afterAll(async () => {
+    await module.close();
   });
 
   beforeEach(() => {
@@ -51,22 +55,17 @@ describe('EmailService (NestJS)', () => {
     vi.restoreAllMocks();
   });
 
-  afterAll(async () => {
-    await module.close();
-  });
-
   describe('sendEmail', () => {
-    it('should log email information', async () => {
+    it('should log email information when SMTP is not configured', async () => {
       const options = {
         to: 'test@example.com',
         subject: 'Test Subject',
         html: '<p>Test HTML</p>',
       };
 
-      await emailService.sendEmail(options);
+      await mailService.sendEmail(options);
 
-      // In test environment, email service logs instead of sending
-      expect(logger.info).toHaveBeenCalled();
+      expect(loggerMock.log).toHaveBeenCalled();
     });
 
     it('should handle email with text content', async () => {
@@ -77,7 +76,7 @@ describe('EmailService (NestJS)', () => {
         text: 'Test Text',
       };
 
-      await expect(emailService.sendEmail(options)).resolves.not.toThrow();
+      await expect(mailService.sendEmail(options)).resolves.not.toThrow();
     });
 
     it('should handle email with attachments', async () => {
@@ -93,14 +92,17 @@ describe('EmailService (NestJS)', () => {
         ],
       };
 
-      await expect(emailService.sendEmail(options)).resolves.not.toThrow();
+      await expect(mailService.sendEmail(options)).resolves.not.toThrow();
     });
   });
 
   describe('sendPasswordResetEmail', () => {
     it('should send password reset email', async () => {
       await expect(
-        emailService.sendPasswordResetEmail('test@example.com', 'reset-token-123')
+        mailService.sendPasswordResetEmail(
+          { email: 'test@example.com' },
+          'https://example.com/reset?token=reset-token-123',
+        ),
       ).resolves.not.toThrow();
     });
   });
@@ -114,9 +116,7 @@ describe('EmailService (NestJS)', () => {
         message: 'Test message',
       };
 
-      await expect(
-        emailService.sendContactNotificationToAdmin(contactData)
-      ).resolves.not.toThrow();
+      await expect(mailService.sendContactNotificationToAdmin(contactData)).resolves.not.toThrow();
     });
   });
 
@@ -129,9 +129,7 @@ describe('EmailService (NestJS)', () => {
         message: 'Test message',
       };
 
-      await expect(
-        emailService.sendContactConfirmationToUser(contactData)
-      ).resolves.not.toThrow();
+      await expect(mailService.sendContactConfirmationToUser(contactData)).resolves.not.toThrow();
     });
   });
 });

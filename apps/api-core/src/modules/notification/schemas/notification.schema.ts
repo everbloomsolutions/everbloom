@@ -8,23 +8,33 @@ export class Notification {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   user!: Types.ObjectId;
 
-  @Prop({ required: true, maxlength: 200 })
+  @Prop({
+    type: String,
+    required: true, maxlength: 200
+})
   title!: string;
 
-  @Prop({ required: true, maxlength: 1000 })
+  @Prop({
+    type: String,
+    required: true, maxlength: 1000
+})
   message!: string;
 
   @Prop({
+    type: String,
     enum: ['info', 'success', 'warning', 'error', 'inquiry'],
     default: 'info',
-    index: true,
-  })
+    index: true
+})
   type!: 'info' | 'success' | 'warning' | 'error' | 'inquiry';
 
-  @Prop({ default: false })
+  @Prop({
+    type: Boolean,
+    default: false
+})
   isRead!: boolean;
 
-  @Prop()
+  @Prop({ type: String })
   link?: string;
 
   @Prop({ type: Object, default: {} })

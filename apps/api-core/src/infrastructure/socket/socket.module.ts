@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
 import { SocketGateway } from './socket.gateway';
 import { SocketGatewayNoOp } from './socket-noop.gateway';
 import { LoggerModule } from '../logger/logger.module';
@@ -8,7 +7,6 @@ import { User, UserSchema } from '../../modules/user/schemas/user.schema';
 import { CommonModule } from '../../common/common.module';
 
 const baseImports = [
-  ConfigModule,
   MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   LoggerModule,
   CommonModule,
@@ -24,9 +22,9 @@ export class SocketModule {
    * Register SocketModule. On Vercel (serverless), use no-op gateway;
    * WebSockets are not supported in serverless.
    */
-  static forRoot(): DynamicModule {
-    const isVercel = !!process.env.VERCEL;
-    const providers = isVercel
+  static forRoot(isVercel?: boolean): DynamicModule {
+    const vercel = isVercel ?? false;
+    const providers = vercel
       ? [{ provide: SocketGateway, useClass: SocketGatewayNoOp }]
       : [SocketGateway];
 

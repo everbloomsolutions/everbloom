@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument } from './schemas/project.schema';
@@ -19,9 +19,9 @@ export class ProjectService {
 
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
-    private validationService: ValidationService,
-    private paginationService: PaginationService,
-    private databaseService: DatabaseService,
+    @Inject(ValidationService) private validationService: ValidationService,
+    @Inject(PaginationService) private paginationService: PaginationService,
+    @Inject(DatabaseService) private databaseService: DatabaseService,
   ) { }
 
   async archiveDuplicateCollections(params: {
@@ -240,6 +240,26 @@ export class ProjectService {
     }
 
     return project.save();
+  }
+
+  async getUserProjects(userId: string, filters?: { serviceType?: string }): Promise<ProjectDocument[]> {
+    await this.databaseService.ensureConnectionReady();
+    const userObjectId = this.validationService.validateObjectId(userId, 'userId');
+
+    const query: Record<string, unknown> = {
+      userId: userObjectId,
+      isDeleted: { $ne: true },
+      deletedAt: { $exists: false },
+    };
+
+    if (filters?.serviceType) {
+      query.serviceType = filters.serviceType;
+    }
+
+    return this.projectModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async getProjectById(projectId: string, userId: string): Promise<ProjectDocument | null> {
@@ -467,6 +487,17 @@ export class ProjectService {
     if (data.locationType !== undefined) (project as any).locationType = data.locationType;
     if (data.locationName !== undefined) (project as any).locationName = data.locationName;
     if (data.collectionDate !== undefined) (project as any).collectionDate = new Date(data.collectionDate);
+
+    if (data.quoteAmount !== undefined) {
+      (project as any).quoteAmount = Number(data.quoteAmount);
+      (project as any).status = 'quoted';
+    }
+    if (data.quoteDetails !== undefined) (project as any).quoteDetails = data.quoteDetails;
+    if (data.estimatedTimeline !== undefined) (project as any).estimatedTimeline = data.estimatedTimeline;
+    if (data.quoteAmount !== undefined) {
+      (project as any).quotedAt = new Date();
+      (project as any).quotedBy = requesterId;
+    }
 
     if (data.locationId !== undefined) {
       if (data.locationId === null || data.locationId === '') {

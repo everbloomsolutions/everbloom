@@ -16,7 +16,7 @@ const TableCard = ({ columns, data, onRowClick }) => {
 
   return (
     <div className="space-y-4">
-      {data.map((row, rowIndex) => (
+      {(data || []).map((row, rowIndex) => (
         <div
           key={row._id || row.id || rowIndex}
           onClick={() => onRowClick && onRowClick(row)}

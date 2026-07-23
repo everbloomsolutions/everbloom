@@ -98,7 +98,7 @@ const NotificationBell = () => {
           <div className="max-h-96 overflow-y-auto">
             {recentNotifications.length > 0 ? (
               <div className="py-2">
-                {recentNotifications.map((notification) => (
+                {(recentNotifications || []).map((notification) => (
                   <div
                     key={notification._id}
                     onClick={() => handleNotificationClick(notification)}

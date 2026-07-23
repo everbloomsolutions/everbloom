@@ -1,5 +1,14 @@
 export type RuntimePlatform = 'local' | 'vercel' | 'container';
 
+export interface RuntimeEnv {
+  VERCEL?: string;
+  KUBERNETES_SERVICE_HOST?: string;
+  IN_CONTAINER?: string;
+  DOCKER?: string;
+  IN_DOCKER?: string;
+  NODE_ENV?: string;
+}
+
 export interface RuntimePolicy {
   platform: RuntimePlatform;
   isVercel: boolean;
@@ -8,24 +17,24 @@ export interface RuntimePolicy {
   defaultProtocol: 'http' | 'https';
 }
 
-export const detectRuntimePlatform = (): RuntimePlatform => {
-  if (process.env.VERCEL) return 'vercel';
-  if (isContainerizedRuntime()) return 'container';
+export const detectRuntimePlatform = (env: RuntimeEnv = {}): RuntimePlatform => {
+  if (env.VERCEL) return 'vercel';
+  if (isContainerizedRuntime(env)) return 'container';
   return 'local';
 };
 
-export const isContainerizedRuntime = (): boolean =>
-  !!process.env.KUBERNETES_SERVICE_HOST ||
-  process.env.IN_CONTAINER === 'true' ||
-  process.env.DOCKER === 'true' ||
-  process.env.IN_DOCKER === 'true';
+export const isContainerizedRuntime = (env: RuntimeEnv = {}): boolean =>
+  !!env.KUBERNETES_SERVICE_HOST ||
+  env.IN_CONTAINER === 'true' ||
+  env.DOCKER === 'true' ||
+  env.IN_DOCKER === 'true';
 
-export const getRuntimePolicy = (nodeEnv?: string): RuntimePolicy => {
-  const env = nodeEnv || process.env.NODE_ENV || 'development';
-  const platform = detectRuntimePlatform();
+export const getRuntimePolicy = (nodeEnv?: string, env: RuntimeEnv = {}): RuntimePolicy => {
+  const resolvedNodeEnv = nodeEnv || env.NODE_ENV || 'development';
+  const platform = detectRuntimePlatform(env);
   const isVercel = platform === 'vercel';
   const isContainerized = platform === 'container';
-  const isProductionLike = env === 'production' || isVercel;
+  const isProductionLike = resolvedNodeEnv === 'production' || isVercel;
   const defaultProtocol: 'http' | 'https' = isProductionLike ? 'https' : 'http';
 
   return {

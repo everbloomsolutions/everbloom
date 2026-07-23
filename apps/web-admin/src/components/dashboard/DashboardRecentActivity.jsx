@@ -203,11 +203,11 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   <div className="h-48">
                     <Line
                       data={{
-                        labels: recentData.collectionsGrowth.trend.map((item) => item.date),
+                        labels: (recentData.collectionsGrowth?.trend || []).map((item) => item.date),
                         datasets: [
                           {
                             label: 'Collections',
-                            data: recentData.collectionsGrowth.trend.map((item) => item.count),
+                            data: (recentData.collectionsGrowth?.trend || []).map((item) => item.count),
                             borderColor: 'rgb(37, 99, 235)',
                             backgroundColor: 'rgba(37, 99, 235, 0.1)',
                             tension: 0.4,
@@ -395,7 +395,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
         </div>
 
         {/* Recent Usage Chart - Only for Admin/Agent */}
-        {recentData.recentUsage && !isUser && (
+        {recentData.recentUsage?.last7Days && !isUser && (
           <div className="mt-6">
             <ChartCard title={isAgent ? "My Recent Usage (Last 7 Days)" : "Recent Usage (Last 7 Days)"}>
               <div className="h-64">

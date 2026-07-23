@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
@@ -22,8 +22,8 @@ import { formatAllowedOriginsForLog, resolveAllowedOrigins } from '../url-normal
 @Injectable()
 export class BootstrapService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('BootstrapService');
   }
@@ -35,7 +35,8 @@ export class BootstrapService {
     const corsOrigin = this.configService.get<string>('corsOrigin');
     const adminPanelUrl = this.configService.get<string>('adminPanelUrl');
 
-    const devFallback = process.env.NODE_ENV !== 'production' && !process.env.VERCEL
+    const isDevelopment = this.configService.get<boolean>('isDevelopment') ?? false;
+    const devFallback = isDevelopment
       ? 'http://localhost:3001'
       : '';
     const allowedOrigins = resolveAllowedOrigins({
@@ -63,7 +64,7 @@ export class BootstrapService {
    * Configure global exception filters
    */
   configureExceptionFilters(app: INestApplication): void {
-    app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalFilters(new HttpExceptionFilter(this.configService));
     this.logger.log('Global exception filters configured');
   }
 

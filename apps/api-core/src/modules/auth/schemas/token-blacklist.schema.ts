@@ -5,10 +5,16 @@ export type TokenBlacklistDocument = TokenBlacklist & Document;
 
 @Schema({ timestamps: true })
 export class TokenBlacklist {
-  @Prop({ required: true, unique: true })
+  @Prop({
+    type: String,
+    required: true, unique: true
+})
   token!: string;
 
-  @Prop({ required: true })
+  @Prop({
+    type: Date,
+    required: true
+})
   expiresAt!: Date;
 }
 

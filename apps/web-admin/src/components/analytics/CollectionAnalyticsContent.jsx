@@ -47,10 +47,10 @@ const CollectionAnalyticsContent = memo(({
   // Safe data extraction with fallbacks
   const materialTypes = Array.isArray(analytics.byMaterialType) ? analytics.byMaterialType : [];
   const materialTypeLabels = materialTypes.length > 0
-    ? materialTypes.map(item => getMaterialTypeLabel(item.materialType || 'Unknown'))
+    ? (materialTypes || []).map(item => getMaterialTypeLabel(item.materialType || 'Unknown'))
     : ['No Data'];
   const materialTypeCounts = materialTypes.length > 0
-    ? materialTypes.map(item => item.count || 0)
+    ? (materialTypes || []).map(item => item.count || 0)
     : [0];
 
   const getMaterialTypeColor = (type) => {
@@ -70,8 +70,8 @@ const CollectionAnalyticsContent = memo(({
     datasets: [{
       label: 'Collections by Type',
       data: materialTypeCounts,
-      backgroundColor: materialTypes.map(item => getMaterialTypeColor(item.materialType).bg),
-      borderColor: materialTypes.map(item => getMaterialTypeColor(item.materialType).border),
+      backgroundColor: (materialTypes || []).map(item => getMaterialTypeColor(item.materialType).bg),
+      borderColor: (materialTypes || []).map(item => getMaterialTypeColor(item.materialType).border),
       borderWidth: 1,
     }],
   };
@@ -81,8 +81,8 @@ const CollectionAnalyticsContent = memo(({
     datasets: [{
       label: 'Collections by Type',
       data: materialTypeCounts,
-      backgroundColor: materialTypes.map(item => getMaterialTypeColor(item.materialType).bg),
-      borderColor: materialTypes.map(item => getMaterialTypeColor(item.materialType).border),
+      backgroundColor: (materialTypes || []).map(item => getMaterialTypeColor(item.materialType).bg),
+      borderColor: (materialTypes || []).map(item => getMaterialTypeColor(item.materialType).border),
       borderWidth: 1,
     }],
   };
@@ -330,7 +330,7 @@ const CollectionAnalyticsContent = memo(({
             </h3>
             <div className="space-y-3">
               {materialTypes.length > 0 ? (
-                materialTypes.map((item, index) => (
+                (materialTypes || []).map((item, index) => (
                   <div key={index} className="flex justify-between items-center">
                     <span className="text-gray-600 dark:text-gray-400">
                       {getMaterialTypeLabel(item.materialType)}
@@ -385,7 +385,7 @@ const CollectionAnalyticsContent = memo(({
                 Revenue by Material Type
               </h3>
               <div className="space-y-4">
-                {financialAnalytics.revenueByMaterialType.map((item, index) => (
+                {(financialAnalytics.revenueByMaterialType || []).map((item, index) => (
                   <div key={index} className="flex justify-between items-center">
                     <span className="text-gray-600 dark:text-gray-400">
                       {getMaterialTypeLabel(item.materialType)}
@@ -439,11 +439,11 @@ const CollectionAnalyticsContent = memo(({
                 <div className="h-96 flex items-center justify-center">
                   <Line
                     data={{
-                      labels: timeSeriesAnalytics.trends.map(t => formatDate(t.date, 'MMM d')),
+                      labels: (timeSeriesAnalytics.trends || []).map(t => formatDate(t.date, 'MMM d')),
                       datasets: [
                         {
                           label: 'Revenue',
-                          data: timeSeriesAnalytics.trends.map(t => t.revenue || 0),
+                          data: (timeSeriesAnalytics.trends || []).map(t => t.revenue || 0),
                           borderColor: 'rgb(59, 130, 246)',
                           backgroundColor: 'rgba(59, 130, 246, 0.1)',
                           tension: 0.4,
@@ -451,7 +451,7 @@ const CollectionAnalyticsContent = memo(({
                         },
                         {
                           label: 'Collections',
-                          data: timeSeriesAnalytics.trends.map(t => t.collections || 0),
+                          data: (timeSeriesAnalytics.trends || []).map(t => t.collections || 0),
                           borderColor: 'rgb(16, 185, 129)',
                           backgroundColor: 'rgba(16, 185, 129, 0.1)',
                           tension: 0.4,

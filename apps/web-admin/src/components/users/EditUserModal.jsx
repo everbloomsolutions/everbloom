@@ -54,7 +54,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
           setSelectedAssignedLocations(agent.locations);
           setFormData(prev => ({
             ...prev,
-            assignedLocationIds: agent.locations.map(loc => loc._id),
+            assignedLocationIds: (agent.locations || []).map(loc => loc._id),
           }));
         }
       }
@@ -86,7 +86,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
       if (user.role === USER_ROLES.USER) {
         // Load default location for user role
         if (user.defaultLocation) {
-          const defaultLocation = typeof user.defaultLocation === 'object' 
+          const defaultLocation = typeof user.defaultLocation === 'object' && user.defaultLocation !== null
             ? user.defaultLocation 
             : null;
           if (defaultLocation) {
@@ -225,7 +225,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
       setSelectedAssignedLocations(updatedLocations);
       setFormData(prev => ({
         ...prev,
-        assignedLocationIds: updatedLocations.map(loc => loc._id),
+        assignedLocationIds: (updatedLocations || []).map(loc => loc._id),
       }));
       if (errors.assignedLocationIds) {
         setErrors(prev => ({ ...prev, assignedLocationIds: '' }));
@@ -238,7 +238,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
     setSelectedAssignedLocations(updatedLocations);
     setFormData(prev => ({
       ...prev,
-      assignedLocationIds: updatedLocations.map(loc => loc._id),
+      assignedLocationIds: (updatedLocations || []).map(loc => loc._id),
     }));
   };
 
@@ -449,7 +449,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Selected Locations ({selectedAssignedLocations.length})
                         </label>
-                        {selectedAssignedLocations.map((location) => (
+                        {(selectedAssignedLocations || []).map((location) => (
                           <div
                             key={location._id}
                             className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg"

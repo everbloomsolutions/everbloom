@@ -650,7 +650,7 @@ const Collections = () => {
       let errorMessage = 'Failed to export collections';
       
       if (error?.response?.data) {
-        if (typeof error.response.data === 'object' && error.response.data.message) {
+        if (error.response.data !== null && typeof error.response.data === 'object' && error.response.data.message) {
           errorMessage = error.response.data.message;
         } else if (typeof error.response.data === 'string') {
           errorMessage = error.response.data;
@@ -856,7 +856,7 @@ const Collections = () => {
                   disabled={isTransferring}
                 >
                   <option value="">-- Select an agent --</option>
-                  {agents.map((agent) => (
+                  {(agents || []).map((agent) => (
                     <option key={agent._id} value={agent._id}>
                       {agent.name} ({agent.email})
                     </option>
@@ -864,7 +864,7 @@ const Collections = () => {
                 </select>
               </div>
 
-              {agents.length === 0 && (
+              {(agents || []).length === 0 && (
                 <p className="text-sm text-yellow-600 dark:text-yellow-400">
                   No active agents found. Please create an agent first.
                 </p>

@@ -5,28 +5,41 @@ export type ContactDocument = Contact & Document;
 
 @Schema({ timestamps: true })
 export class Contact {
-  @Prop({ required: true, trim: true })
+  @Prop({
+    type: String,
+    required: true, trim: true
+})
   name!: string;
 
-  @Prop({ required: true, lowercase: true, trim: true })
+  @Prop({
+    type: String,
+    required: true, lowercase: true, trim: true
+})
   email!: string;
 
-  @Prop({ required: true, trim: true })
+  @Prop({
+    type: String,
+    required: true, trim: true
+})
   subject!: string;
 
-  @Prop({ required: true })
+  @Prop({
+    type: String,
+    required: true
+})
   message!: string;
 
   @Prop({
+    type: String,
     enum: ['new', 'read', 'replied', 'archived'],
-    default: 'new',
-  })
+    default: 'new'
+})
   status!: 'new' | 'read' | 'replied' | 'archived';
 
-  @Prop()
+  @Prop({ type: String })
   ipAddress?: string;
 
-  @Prop()
+  @Prop({ type: String })
   userAgent?: string;
 }
 

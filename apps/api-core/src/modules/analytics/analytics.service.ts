@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AnalyticsEvent, AnalyticsEventDocument } from './schemas/analytics-event.schema';
@@ -12,8 +12,8 @@ import { PAGINATION } from '../../config/constants';
 export class AnalyticsService {
   constructor(
     @InjectModel(AnalyticsEvent.name) private analyticsEventModel: Model<AnalyticsEventDocument>,
-    private paginationService: PaginationService,
-    private validationService: ValidationService,
+    @Inject(PaginationService) private paginationService: PaginationService,
+    @Inject(ValidationService) private validationService: ValidationService,
   ) {}
 
   async createAnalyticsEvent(
@@ -73,7 +73,6 @@ export class AnalyticsService {
     const [events, total] = await Promise.all([
       this.analyticsEventModel
         .find(filter)
-        .populate('userId', 'email name')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(validatedLimit)
@@ -88,6 +87,21 @@ export class AnalyticsService {
       limit: validatedLimit,
       totalPages: this.paginationService.calculateTotalPages(total, validatedLimit),
     };
+  }
+
+  async getAnalyticsStats(
+    eventType: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
+    total: number;
+    uniqueUsers: number;
+    dateRange: {
+      start: Date;
+      end: Date;
+    };
+  }> {
+    return this.getEventStats(eventType, startDate, endDate);
   }
 
   async getEventStats(

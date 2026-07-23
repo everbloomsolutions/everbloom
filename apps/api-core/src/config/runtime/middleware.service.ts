@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import express from 'express';
 import compression from 'compression';
 import { REQUEST_LIMITS } from '../constants';
-import { isProduction } from '../helpers';
 import { LoggerService } from '../../infrastructure/logger/logger.service';
 import { SanitizeInterceptor } from '../../common/interceptors/sanitize.interceptor';
 import { RequestMetadataInterceptor } from '../../common/interceptors/request-metadata.interceptor';
@@ -25,8 +25,9 @@ import { SanitizeService } from '../../common/sanitize/sanitize.service';
 @Injectable()
 export class MiddlewareService {
   constructor(
-    private readonly logger: LoggerService,
-    private readonly sanitizeService: SanitizeService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
+    @Inject(SanitizeService) private readonly sanitizeService: SanitizeService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {
     this.logger.setContext('MiddlewareService');
   }
@@ -58,7 +59,7 @@ export class MiddlewareService {
           return compression.filter(req, res);
         },
         // Compression level (0-9, where 9 is maximum compression)
-        level: isProduction() ? 6 : 1, // Higher compression in production
+        level: (this.configService.get<boolean>('isProduction') ?? false) ? 6 : 1, // Higher compression in production
         // Threshold: only compress responses above this size (in bytes)
         threshold: 1024, // 1KB
       })

@@ -40,7 +40,7 @@ const Table = memo(({ columns, data, onRowClick, virtualizeThreshold = 50 }) => 
               </td>
             </tr>
           ) : (
-            data.map((row, rowIndex) => (
+            (data || []).map((row, rowIndex) => (
               <tr
                 key={row._id || row.id || rowIndex}
                 onClick={() => onRowClick && onRowClick(row)}

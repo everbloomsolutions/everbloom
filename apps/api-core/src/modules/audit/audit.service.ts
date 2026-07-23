@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AuditLog, AuditLogDocument } from './schemas/audit-log.schema';
@@ -11,7 +11,7 @@ export class AuditService {
 
   constructor(
     @InjectModel(AuditLog.name) private auditLogModel: Model<AuditLogDocument>,
-    private validationService: ValidationService,
+    @Inject(ValidationService) private validationService: ValidationService,
   ) {}
 
   async getAuditLogs(query: AuditLogQueryDto): Promise<any> {

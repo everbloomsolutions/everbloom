@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
 import { LoggerService } from '../logger/logger.service';
@@ -8,7 +8,7 @@ import { ImportJobData, ImportJobResult } from './processors/import.processor';
 export class SchedulerQueueService {
   constructor(
     @InjectQueue('import') private importQueue: Queue<ImportJobData>,
-    private readonly logger: LoggerService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('SchedulerQueueService');
   }

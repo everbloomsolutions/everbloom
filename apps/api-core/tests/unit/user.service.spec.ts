@@ -4,65 +4,48 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, afterAll, beforeAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserService } from '../../src/modules/user/user.service';
 import { User, UserDocument } from '../../src/modules/user/schemas/user.schema';
-import { AuthService } from '../../src/modules/auth/auth.service';
-import { setupTestDB, cleanupTestDB, closeTestDB } from '../setup';
+import { cleanupNestUnitDB, closeNestUnitDB, createNestTestingModule } from '../setup-nestjs-unit';
 import { UserModule } from '../../src/modules/user/user.module';
-import { AuthModule } from '../../src/modules/auth/auth.module';
-import { DatabaseModule } from '../../src/infrastructure/database/database.module';
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import { CommonModule } from '../../src/common/common.module';
+import { TestingModule } from '@nestjs/testing';
 
 describe('UserService (NestJS)', () => {
   let module: TestingModule;
   let userService: UserService;
-  let authService: AuthService;
+  let userModel: Model<UserDocument>;
   let userId: string;
 
   beforeAll(async () => {
-    await setupTestDB();
-
-    module = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: '.env.test',
-        }),
-        DatabaseModule,
-        UserModule,
-        AuthModule,
-        CommonModule,
-      ],
-    }).compile();
+    module = await createNestTestingModule([UserModule]);
 
     userService = module.get<UserService>(UserService);
-    authService = module.get<AuthService>(AuthService);
+    userModel = module.get<Model<UserDocument>>(getModelToken(User.name));
   });
 
   beforeEach(async () => {
-    await cleanupTestDB();
+    await cleanupNestUnitDB();
+    await userModel.deleteMany({}).exec();
 
     // Create test user
-    const result = await authService.registerUser({
+    const user = await userModel.create({
       email: 'test@example.com',
       password: 'Password123',
       name: 'Test User',
     });
-    userId = result.user._id.toString();
+    userId = user._id.toString();
   });
 
   afterEach(async () => {
-    await cleanupTestDB();
+    await userModel.deleteMany({}).exec();
+    await cleanupNestUnitDB();
   });
 
   afterAll(async () => {
     await module.close();
-    await closeTestDB();
+    await closeNestUnitDB();
   });
 
   describe('updateProfile', () => {
@@ -124,7 +107,7 @@ describe('UserService (NestJS)', () => {
 
     it('should throw BadRequestException if email already exists', async () => {
       // Create another user
-      await authService.registerUser({
+      await userModel.create({
         email: 'existing@example.com',
         password: 'Password123',
         name: 'Existing User',

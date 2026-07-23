@@ -469,7 +469,7 @@ const LocationRatesTab = () => {
               <div className="p-6">
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {materialTypes.map((materialType) => {
+                    {(materialTypes || []).map((materialType) => {
                       const hasChanged = hasRateChanged(materialType);
                       const hasValue = rates[materialType] && rates[materialType] !== '';
                       return (
@@ -524,7 +524,7 @@ const LocationRatesTab = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        {materialTypes.map((materialType) => {
+                        {(materialTypes || []).map((materialType) => {
                           const hasChanged = hasRateChanged(materialType);
                           const hasValue = rates[materialType] && rates[materialType] !== '';
                           const defaultRates = {

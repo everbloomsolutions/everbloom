@@ -10,16 +10,23 @@ export class Project {
   userId!: Types.ObjectId;
 
   @Prop({
+    type: String,
     enum: ['recycling', 'cctv', 'access-control', 'fire-safety', 'networking', 'home-automation', 'other'],
     required: true,
-    index: true,
-  })
+    index: true
+})
   serviceType!: string;
 
-  @Prop({ required: true, maxlength: 200 })
+  @Prop({
+    type: String,
+    required: true, maxlength: 200
+})
   title!: string;
 
-  @Prop({ required: true, maxlength: 5000 })
+  @Prop({
+    type: String,
+    required: true, maxlength: 5000
+})
   description!: string;
 
   @Prop({
@@ -49,16 +56,20 @@ export class Project {
   locationId?: Types.ObjectId;
 
   @Prop({
+    type: String,
     enum: [
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
-      COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
-      COLLECTION_LOCATION_TYPES.COMMERCIAL_PROPERTY,
-    ],
-  })
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
+        COLLECTION_LOCATION_TYPES.RESIDENTIAL_GATED_COMMUNITY,
+        COLLECTION_LOCATION_TYPES.COMMERCIAL_PROPERTY,
+    ]
+})
   locationType?: string;
 
-  @Prop({ trim: true, maxlength: 200 })
+  @Prop({
+    type: String,
+    trim: true, maxlength: 200
+})
   locationName?: string;
 
   @Prop({
@@ -78,62 +89,88 @@ export class Project {
     amount: number;
   }>;
 
-  @Prop({ min: 0 })
+  @Prop({
+    type: Number,
+    min: 0
+})
   totalWeight?: number;
 
-  @Prop({ min: 0 })
+  @Prop({
+    type: Number,
+    min: 0
+})
   subTotal?: number;
 
-  @Prop({ min: 0, max: 100 })
+  @Prop({
+    type: Number,
+    min: 0, max: 100
+})
   gstRate?: number;
 
-  @Prop({ min: 0 })
+  @Prop({
+    type: Number,
+    min: 0
+})
   gstAmount?: number;
 
-  @Prop({ min: 0 })
+  @Prop({
+    type: Number,
+    min: 0
+})
   totalAmount?: number;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   collectedBy?: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: Date })
   collectionDate?: Date;
 
-  @Prop()
+  @Prop({ type: String })
   receiptNumber?: string;
 
-  @Prop({ min: 0 })
+  @Prop({
+    type: Number,
+    min: 0
+})
   quoteAmount?: number;
 
-  @Prop({ maxlength: 2000 })
+  @Prop({
+    type: String,
+    maxlength: 2000
+})
   quoteDetails?: string;
 
-  @Prop()
+  @Prop({ type: String })
   estimatedTimeline?: string;
 
-  @Prop()
+  @Prop({ type: Date })
   quotedAt?: Date;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   quotedBy?: Types.ObjectId;
 
   @Prop({
+    type: String,
     enum: ['pending', 'quoted', 'accepted', 'rejected', 'in-progress', 'completed', 'cancelled'],
     default: 'pending',
-    index: true,
-  })
+    index: true
+})
   status!: string;
 
   @Prop({
+    type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium',
-  })
+    default: 'medium'
+})
   priority!: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   assignedTo?: Types.ObjectId;
 
-  @Prop({ min: 0, max: 100 })
+  @Prop({
+    type: Number,
+    min: 0, max: 100
+})
   progress?: number;
 
   @Prop({
@@ -206,16 +243,22 @@ export class Project {
     notes?: string;
   }>;
 
-  @Prop({ default: false, index: true })
+  @Prop({
+    type: Boolean,
+    default: false, index: true
+})
   isDeleted?: boolean;
 
-  @Prop({ index: true })
+  @Prop({
+    type: Date,
+    index: true
+})
   deletedAt?: Date;
 
-  @Prop()
+  @Prop({ type: Date })
   startedAt?: Date;
 
-  @Prop()
+  @Prop({ type: Date })
   completedAt?: Date;
 }
 

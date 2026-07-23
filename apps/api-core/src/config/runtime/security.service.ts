@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import express from 'express';
-import { isProduction } from '../helpers';
 import { LoggerService } from '../../infrastructure/logger/logger.service';
 
 /**
@@ -20,8 +19,8 @@ import { LoggerService } from '../../infrastructure/logger/logger.service';
 @Injectable()
 export class SecurityService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('SecurityService');
   }
@@ -39,8 +38,9 @@ export class SecurityService {
    * Configure security headers using Helmet
    */
   configureSecurityHeaders(expressApp: express.Application): void {
+    const isProduction = this.configService.get<boolean>('isProduction') ?? false;
     expressApp.use(helmet({
-      contentSecurityPolicy: isProduction() ? undefined : false, // Disable CSP in dev for easier debugging
+      contentSecurityPolicy: isProduction ? undefined : false, // Disable CSP in dev for easier debugging
       crossOriginEmbedderPolicy: false, // Disable for OAuth compatibility
     }));
     this.logger.log('Security headers configured (Helmet)');
@@ -51,7 +51,8 @@ export class SecurityService {
    * Implements redirect strategy for non-HTTPS requests
    */
   configureHttpsEnforcement(expressApp: express.Application): void {
-    if (!isProduction()) {
+    const isProduction = this.configService.get<boolean>('isProduction') ?? false;
+    if (!isProduction) {
       return;
     }
 

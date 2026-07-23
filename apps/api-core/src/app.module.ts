@@ -33,42 +33,18 @@ import { MiddlewareService } from './config/runtime/middleware.service';
       load: [configuration],
       isGlobal: true,
       validate: validateConfig,
-      // Explicitly control .env file loading
-      // In production/Vercel: completely disable .env file loading
-      // In development: allow .env files
-      envFilePath: (() => {
-        const isVercel = !!process.env.VERCEL;
-        const isProduction = process.env.NODE_ENV === 'production';
-        if (isProduction || isVercel) {
-          // Return false to explicitly disable .env file loading
-          // This prevents NestJS from auto-discovering .env files
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ConfigModule envFile type does not accept false
-          return false as any;
-        }
-
-        // Development: load .env files
-        return [
-          '.env.local',
-          '.env',
-          '.env.development',
-        ].filter(Boolean) as string[];
-      })(),
-      // Explicitly ignore .env files in production/Vercel
-      ignoreEnvFile: (() => {
-        const isVercel = !!process.env.VERCEL;
-        const isProduction = process.env.NODE_ENV === 'production';
-        return isProduction || isVercel;
-      })(),
-      // Don't expand variables from process.env - use only what configuration() returns
-      // This ensures our configuration function's values take precedence
+      envFilePath: configuration().isProduction || configuration().isVercel
+        ? (false as any)
+        : ['.env.local', '.env', '.env.development'],
+      ignoreEnvFile: configuration().isProduction || configuration().isVercel,
       expandVariables: false,
     }),
     DatabaseModule,
     RedisModule,
     LoggerModule,
     MailModule,
-    SchedulerModule.forRoot(),
-    SocketModule.forRoot(),
+    SchedulerModule.forRoot({ redisUrl: configuration().redisUrl }),
+    SocketModule.forRoot(configuration().isVercel || process.env.DISABLE_WEBSOCKET === '1'),
     CloudinaryModule,
     CommonModule,
     HealthModule,

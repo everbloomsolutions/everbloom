@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Req, Res, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
@@ -9,10 +9,10 @@ import { LoggerService } from '../../infrastructure/logger/logger.service';
 @Controller('health')
 export class HealthController {
   constructor(
-    private configService: ConfigService,
+    @Inject(ConfigService) private configService: ConfigService,
     @InjectConnection() private mongooseConnection: Connection,
-    private redisService: RedisService,
-    private readonly logger: LoggerService,
+    @Inject(RedisService) private redisService: RedisService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('HealthController');
   }

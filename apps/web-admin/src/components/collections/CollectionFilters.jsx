@@ -257,7 +257,7 @@ const CollectionFilters = memo(({
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="all">All Agents</option>
-                {agents.map(agent => (
+                {(agents || []).map(agent => (
                   <option key={agent._id} value={agent._id}>
                     {agent.name} ({agent.email})
                   </option>

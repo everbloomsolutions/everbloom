@@ -110,7 +110,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
       
       // Log for debugging (especially for agents)
       if (user?.role === 'agent' || user?.role === 'user') {
-        logger.debug(`LocationAutocomplete: Found ${locations.length} locations for ${user?.role}`, { query, locations: locations.map(l => l.locationName) });
+        logger.debug(`LocationAutocomplete: Found ${(locations || []).length} locations for ${user?.role}`, { query, locations: (locations || []).map(l => l.locationName) });
       }
     } catch (error) {
       logger.error('Failed to search locations:', error);
@@ -223,7 +223,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
                 <Clock className="w-4 h-4 mr-2" />
                 Recent Locations
               </div>
-              {recentLocations.map((location) => (
+              {(recentLocations || []).map((location) => (
                 <button
                   key={location._id}
                   type="button"
@@ -252,7 +252,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
                   Search Results
                 </div>
               )}
-              {suggestions.map((location) => (
+              {(suggestions || []).map((location) => (
                 <button
                   key={location._id}
                   type="button"

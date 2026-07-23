@@ -3,10 +3,9 @@
  * Provides utilities for setting up NestJS testing modules
  */
 
+import './env-setup';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { AppModule } from '../src/app.module';
 import { setupTestDB, cleanupTestDB, closeTestDB } from './setup';
 
 let app: INestApplication;
@@ -18,11 +17,21 @@ let moduleFixture: TestingModule;
 export async function createNestApp(): Promise<INestApplication> {
   await setupTestDB();
 
+  const { AppModule } = await import('../src/app.module');
   moduleFixture = await Test.createTestingModule({
     imports: [AppModule],
   }).compile();
 
   app = moduleFixture.createNestApplication();
+
+  // Apply bootstrap, security, middleware configurations as in main.ts
+  const { BootstrapService } = await import('../src/config/runtime/bootstrap.service');
+  const { SecurityService } = await import('../src/config/runtime/security.service');
+  const { MiddlewareService } = await import('../src/config/runtime/middleware.service');
+
+  app.get(SecurityService).configure(app);
+  app.get(MiddlewareService).configure(app);
+  app.get(BootstrapService).configure(app);
 
   // Apply global pipes, filters, interceptors as in main.ts
   app.useGlobalPipes(

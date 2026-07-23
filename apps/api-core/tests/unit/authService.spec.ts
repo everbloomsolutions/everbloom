@@ -3,33 +3,33 @@
  * Migrated from Express tests
  */
 
+import '../env-setup';
 import { describe, it, expect, beforeEach, afterEach, afterAll, beforeAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { AuthService } from '../../src/modules/auth/auth.service';
 import { UserService } from '../../src/modules/user/user.service';
 import { setupTestDB, cleanupTestDB, closeTestDB } from '../setup';
 import { UserModule } from '../../src/modules/user/user.module';
 import { AuthModule } from '../../src/modules/auth/auth.module';
 import { DatabaseModule } from '../../src/infrastructure/database/database.module';
-import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from '../../src/common/common.module';
 import { JwtService } from '../../src/common/services/jwt.service';
-import { User } from '../../src/modules/user/schemas/user.schema';
+import { User, UserDocument } from '../../src/modules/user/schemas/user.schema';
 
 describe('AuthService (NestJS)', () => {
   let module: TestingModule;
   let authService: AuthService;
   let userService: UserService;
+  let userModel: Model<UserDocument>;
+  let jwtService: JwtService;
 
   beforeAll(async () => {
     await setupTestDB();
 
     module = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: '.env.test',
-        }),
         DatabaseModule,
         UserModule,
         AuthModule,
@@ -39,6 +39,8 @@ describe('AuthService (NestJS)', () => {
 
     authService = module.get<AuthService>(AuthService);
     userService = module.get<UserService>(UserService);
+    userModel = module.get<Model<UserDocument>>(getModelToken(User.name));
+    jwtService = module.get<JwtService>(JwtService);
   });
 
   beforeEach(async () => {
@@ -72,7 +74,7 @@ describe('AuthService (NestJS)', () => {
       expect(result.user).not.toHaveProperty('password');
 
       // Verify token is valid
-      const decoded = verifyToken(result.token);
+      const decoded = jwtService.verifyAccessToken(result.token);
       expect(decoded.userId).toBe(result.user._id.toString());
       expect(decoded.email).toBe(data.email.toLowerCase());
     });
@@ -105,7 +107,7 @@ describe('AuthService (NestJS)', () => {
       };
 
       await authService.registerUser(data);
-      const user = await User.findOne({ email: data.email });
+      const user = await userModel.findOne({ email: data.email }).exec();
       expect(user?.password).not.toBe(data.password);
       expect(user?.password).toBeDefined();
     });

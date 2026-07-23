@@ -39,7 +39,7 @@ const PasswordStrengthIndicator = ({ password }) => {
       </p>
       {feedback.length > 0 && (
         <ul className="text-xs text-gray-500 dark:text-gray-400 mt-1 list-disc list-inside">
-          {feedback.map((msg, i) => (
+          {(feedback || []).map((msg, i) => (
             <li key={i}>{msg}</li>
           ))}
         </ul>

@@ -7,7 +7,7 @@ import { SecurityService } from './config/runtime/security.service';
 import { MiddlewareService } from './config/runtime/middleware.service';
 import { LoggerService } from './infrastructure/logger/logger.service';
 import { createLogger } from './infrastructure/logger';
-import { getRuntimePolicy } from './config/url-normalization';
+import { configuration } from './config/configuration';
 
 /**
  * Bootstrap Factory
@@ -22,10 +22,11 @@ import { getRuntimePolicy } from './config/url-normalization';
  * - Separation of Concerns: Security, middleware, and bootstrap config are separated
  */
 
+const config = configuration();
 const processLogger = createLogger(
-  process.env.NODE_ENV,
-  process.env.LOG_LEVEL,
-  process.env.ENABLE_DEBUG === 'true',
+  config.nodeEnv,
+  config.logLevel,
+  config.enableDebug,
 );
 
 process.on('uncaughtException', (err) => {
@@ -93,7 +94,7 @@ async function bootstrap() {
     if (readyStateNum !== 1) {
       logger.warn('Database connection not ready, waiting...');
       // Wait briefly for the connection; Kubernetes startupProbe will retry the pod if needed.
-      const maxWait = Number(process.env.DB_STARTUP_TIMEOUT_MS) || 15000;
+      const maxWait = configService.get<number>('dbStartupTimeoutMs') || 15000;
       const startTime = Date.now();
       let lastLoggedState = readyStateNum;
 
@@ -149,12 +150,8 @@ async function bootstrap() {
 
   // Containers require binding to 0.0.0.0 and using the injected PORT.
   // If we bind to localhost, the app will start but will not be reachable externally.
-  const runtimePolicy = getRuntimePolicy(process.env.NODE_ENV);
-  const envPort = process.env.PORT ? Number(process.env.PORT) : undefined;
-  const basePort = envPort || configService.get<number>('port') || 8080;
-  const host = (runtimePolicy.isContainerized || runtimePolicy.isProductionLike)
-    ? '0.0.0.0'
-    : (configService.get<string>('host') || 'localhost');
+  const basePort = configService.get<number>('port') || 8080;
+  const host = configService.get<string>('host') || 'localhost';
   const maxPortAttempts = 6; // try basePort through basePort+5 on EADDRINUSE
 
   let boundPort: number | null = null;

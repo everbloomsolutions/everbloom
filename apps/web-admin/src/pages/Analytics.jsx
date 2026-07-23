@@ -441,7 +441,7 @@ const Analytics = () => {
                 className="px-4 py-2 min-w-[200px] border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-medium"
               >
                 <option value="">Select Report Type</option>
-                {availableReportTypes.map(type => (
+                {(availableReportTypes || []).map(type => (
                   <option key={type.value} value={type.value}>
                     {type.label}
                   </option>
@@ -477,7 +477,7 @@ const Analytics = () => {
       {availableTabs.length > 1 && (
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <nav className="flex space-x-8">
-            {availableTabs.map((tab) => (
+            {(availableTabs || []).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}

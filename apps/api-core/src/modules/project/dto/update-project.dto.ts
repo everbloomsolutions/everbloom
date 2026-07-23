@@ -105,4 +105,20 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsDateString()
   collectionDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  quoteAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  @MaxLength(2000)
+  quoteDetails?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  estimatedTimeline?: string;
 }

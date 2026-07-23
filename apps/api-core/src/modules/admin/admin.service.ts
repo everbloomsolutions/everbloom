@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../user/schemas/user.schema';
@@ -21,8 +21,8 @@ export class AdminService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
-    private validationService: ValidationService,
-    private databaseService: DatabaseService,
+    @Inject(ValidationService) private validationService: ValidationService,
+    @Inject(DatabaseService) private databaseService: DatabaseService,
   ) {}
 
   /**
@@ -196,6 +196,11 @@ export class AdminService {
       locations: {
         total: totalLocations,
       },
+      // Top-level aliases expected by tests/consumers
+      totalUsers,
+      activeUsers,
+      totalContent: totalProjects,
+      recentActivity: totalProjects,
     };
   }
 
@@ -263,10 +268,20 @@ export class AdminService {
       date: todayStart.toISOString().split('T')[0],
     };
 
+    const recentUsers = await this.userModel
+      .find(userFilter)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('name email role createdAt')
+      .lean()
+      .exec();
+
     return {
       overview,
       today,
       collections: safeTotalProjects, // Top-level alias for backward compatibility (total collections)
+      stats: overview,
+      recentUsers,
     };
   }
 

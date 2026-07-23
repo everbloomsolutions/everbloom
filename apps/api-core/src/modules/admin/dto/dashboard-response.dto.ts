@@ -70,4 +70,10 @@ export class DashboardResponseDto {
 
   @IsNumber()
   collections!: number; // Top-level alias for backward compatibility
+
+  @ValidateNested()
+  @Type(() => DashboardOverviewDto)
+  stats?: DashboardOverviewDto;
+
+  recentUsers?: unknown[];
 }

@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Job } from 'bull';
 import { LoggerService } from '../../logger/logger.service';
@@ -11,7 +12,7 @@ export interface AnalyticsJobData {
 
 @Processor('analytics')
 export class AnalyticsProcessor {
-  constructor(private readonly logger: LoggerService) {
+  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
     this.logger.setContext('AnalyticsProcessor');
   }
 

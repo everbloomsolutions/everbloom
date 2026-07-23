@@ -9,46 +9,60 @@ export interface UserDocument extends User, Document {
 @Schema({ timestamps: true })
 export class User {
   @Prop({
+    type: String,
     required: true,
     unique: true,
     lowercase: true,
     trim: true,
-    index: true,
-  })
+    index: true
+})
   email!: string;
 
   @Prop({
+    type: String,
     required: true,
     minlength: [8, 'Password must be at least 8 characters long'],
     validate: {
-      validator: function (v: string) {
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(v);
-      },
-      message:
-        'Password must contain at least one lowercase letter, one uppercase letter, and one number',
-    },
-  })
+        validator: function (v: string) {
+            return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(v);
+        },
+        message: 'Password must contain at least one lowercase letter, one uppercase letter, and one number',
+    }
+})
   password!: string;
 
-  @Prop({ trim: true, index: true })
+  @Prop({
+    type: String,
+    trim: true, index: true
+})
   name?: string;
 
   @Prop({
+    type: String,
     enum: ['user', 'agent', 'admin', 'super_admin'],
-    default: 'agent',
-  })
+    default: 'agent'
+})
   role!: 'user' | 'agent' | 'admin' | 'super_admin';
 
-  @Prop({ default: true })
+  @Prop({
+    type: Boolean,
+    default: true
+})
   isActive!: boolean;
 
-  @Prop()
+  @Prop({ type: String })
   avatar?: string;
 
-  @Prop({ trim: true })
+  @Prop({
+    type: String,
+    trim: true
+})
   phoneNumber?: string;
 
-  @Prop({ trim: true })
+  @Prop({
+    type: String,
+    trim: true
+})
   company?: string;
 
   @Prop({ type: Object, default: {} })
@@ -57,10 +71,22 @@ export class User {
   @Prop({ type: Types.ObjectId, ref: 'Location', index: true })
   defaultLocation?: Types.ObjectId;
 
-  @Prop({ default: false, index: true })
+  @Prop({
+    type: Boolean,
+    default: false, index: true
+})
+  onboardingCompleted?: boolean;
+
+  @Prop({
+    type: Boolean,
+    default: false, index: true
+})
   isDeleted?: boolean;
 
-  @Prop({ index: true })
+  @Prop({
+    type: Date,
+    index: true
+})
   deletedAt?: Date;
 }
 

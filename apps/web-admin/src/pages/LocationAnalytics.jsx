@@ -167,10 +167,10 @@ const LocationAnalytics = () => {
   };
 
   const lineData = {
-    labels: analytics.usageTrends.map(trend => trend.date),
+    labels: (analytics.usageTrends || []).map(trend => trend.date),
     datasets: [{
       label: 'Collections',
-      data: analytics.usageTrends.map(trend => trend.count),
+      data: (analytics.usageTrends || []).map(trend => trend.count),
       borderColor: 'rgba(59, 130, 246, 1)',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.4,

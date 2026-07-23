@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
@@ -15,9 +15,9 @@ export class NotificationService {
 
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
-    private readonly socketGateway: SocketGateway,
-    private paginationService: PaginationService,
-    private validationService: ValidationService,
+    @Optional() @Inject(SocketGateway) private readonly socketGateway: SocketGateway | undefined,
+    @Inject(PaginationService) private paginationService: PaginationService,
+    @Inject(ValidationService) private validationService: ValidationService,
   ) {}
 
   async createNotification(data: CreateNotificationDto): Promise<NotificationDocument> {
@@ -33,7 +33,7 @@ export class NotificationService {
     });
 
     // Emit real-time notification to user
-    this.socketGateway.emitToUser(
+    this.socketGateway?.emitToUser(
       data.userId,
       'notification:new',
       {
@@ -54,7 +54,7 @@ export class NotificationService {
       user: userObjectId,
       isRead: false,
     });
-    this.socketGateway.emitToUser(data.userId, 'notification:unread-count', { count: unreadCount });
+    this.socketGateway?.emitToUser(data.userId, 'notification:unread-count', { count: unreadCount });
 
     return notification;
   }
@@ -84,6 +84,20 @@ export class NotificationService {
     }
 
     return notification;
+  }
+
+  async getNotifications(
+    userId: string,
+    query: NotificationQueryDto = {},
+  ): Promise<{
+    notifications: NotificationDocument[];
+    total: number;
+    unreadCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    return this.getUserNotifications(userId, query);
   }
 
   async getUserNotifications(
@@ -158,14 +172,14 @@ export class NotificationService {
     await notification.save();
 
     // Emit real-time update
-    this.socketGateway.emitToUser(userId, 'notification:read', { notificationId: notification._id.toString() });
+    this.socketGateway?.emitToUser(userId, 'notification:read', { notificationId: notification._id.toString() });
 
     // Emit unread count update
     const unreadCount = await this.notificationModel.countDocuments({
       user: userObjectId,
       isRead: false,
     });
-    this.socketGateway.emitToUser(userId, 'notification:unread-count', { count: unreadCount });
+    this.socketGateway?.emitToUser(userId, 'notification:unread-count', { count: unreadCount });
 
     return notification;
   }
@@ -179,7 +193,7 @@ export class NotificationService {
     );
 
     // Emit unread count update (should be 0 after marking all as read)
-    this.socketGateway.emitToUser(userId, 'notification:unread-count', { count: 0 });
+    this.socketGateway?.emitToUser(userId, 'notification:unread-count', { count: 0 });
   }
 
   async deleteNotification(notificationId: string, userId: string): Promise<void> {

@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed, OnQueueProgress } from '@nestjs/bull';
 import { Job } from 'bull';
 import { LoggerService } from '../../logger/logger.service';
@@ -89,7 +90,7 @@ async function processLocationsImport(
 
 @Processor('import')
 export class ImportProcessor {
-  constructor(private readonly logger: LoggerService) {
+  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
     this.logger.setContext('ImportProcessor');
   }
 

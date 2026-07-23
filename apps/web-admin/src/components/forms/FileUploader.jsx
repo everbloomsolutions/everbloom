@@ -83,7 +83,7 @@ const FileUploader = ({
 
       {previews.length > 0 && (
         <div className="grid grid-cols-3 gap-4 mt-4">
-          {previews.map((preview, index) => (
+          {(previews || []).map((preview, index) => (
             <div key={index} className="relative group">
               <img
                 src={preview.url}

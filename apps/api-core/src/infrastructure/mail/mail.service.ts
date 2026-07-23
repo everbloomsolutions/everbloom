@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, OnModuleInit, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { LoggerService } from '../logger/logger.service';
@@ -6,18 +6,25 @@ import { SanitizeService } from '../../common/sanitize/sanitize.service';
 import { brandConfig } from '../../config/brand';
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleInit {
   private transporter: nodemailer.Transporter | null = null;
 
   constructor(
-    private configService: ConfigService,
-    private logger: LoggerService,
-    private sanitizeService: SanitizeService,
-  ) {
-    this.initializeTransporter();
+    @Optional() @Inject(ConfigService) private configService: ConfigService | undefined,
+    @Inject(LoggerService) private logger: LoggerService,
+    @Inject(SanitizeService) private sanitizeService: SanitizeService,
+  ) {}
+
+  onModuleInit(): void {
+    if (this.configService) {
+      this.initializeTransporter();
+    }
   }
 
   private initializeTransporter(): void {
+    if (!this.configService) {
+      return;
+    }
     const smtpHost = this.configService.get<string>('smtpHost');
     const smtpPort = this.configService.get<string>('smtpPort', '587');
     const smtpUser = this.configService.get<string>('smtpUser');
@@ -61,8 +68,8 @@ export class MailService {
     text?: string;
   }): Promise<void> {
     const fromEmail =
-      this.configService.get<string>('smtpFrom') ||
-      this.configService.get<string>('smtpUser') ||
+      this.configService?.get<string>('smtpFrom') ||
+      this.configService?.get<string>('smtpUser') ||
       'noreply@example.com';
 
     if (!this.transporter) {
@@ -186,7 +193,7 @@ export class MailService {
     subject: string;
     message: string;
   }): Promise<void> {
-    const adminEmail = this.configService.get<string>('adminPanelUrl')?.replace(/^https?:\/\//, '').split('/')[0] || 'admin@example.com';
+    const adminEmail = this.configService?.get<string>('adminPanelUrl')?.replace(/^https?:\/\//, '').split('/')[0] || 'admin@example.com';
     const safeName = this.sanitizeService.escapeHtml(data.name);
     const safeEmail = this.sanitizeService.escapeHtml(data.email);
     const safeSubject = this.sanitizeService.escapeHtml(data.subject);
@@ -267,9 +274,7 @@ export class MailService {
     user: { email: string; name?: string; password?: string; role: string }
   ): Promise<void> {
     const safeName = this.sanitizeService.escapeHtml(user.name || user.email.split('@')[0]);
-    const adminPanelUrl =
-      this.configService.get<string>('adminPanelUrl') ||
-      (process.env.NODE_ENV !== 'production' && !process.env.VERCEL ? 'http://localhost:3001' : '');
+    const adminPanelUrl = this.configService?.get<string>('adminPanelUrl') || '';
 
     const subject = `Welcome to ${brandConfig.name} - Your Account Has Been Created`;
     const html = `

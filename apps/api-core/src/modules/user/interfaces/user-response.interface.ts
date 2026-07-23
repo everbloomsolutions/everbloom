@@ -9,6 +9,7 @@ export interface UserResponse {
   avatar?: string;
   phoneNumber?: string;
   company?: string;
+  onboardingCompleted?: boolean;
   preferences?: Record<string, unknown>;
   defaultLocation?: string | {
     _id: string;

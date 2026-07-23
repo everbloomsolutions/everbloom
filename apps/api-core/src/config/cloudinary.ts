@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { LoggerService } from '../infrastructure/logger/logger.service';
@@ -10,8 +10,8 @@ export class CloudinaryService implements OnModuleInit {
   private isInitialized = false;
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias -- singleton ref for legacy initializeCloudinary()
     cloudinaryServiceInstance = this;
@@ -70,10 +70,13 @@ export const initializeCloudinary = (): void => {
   } else {
     // Fallback for non-NestJS contexts
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- sync bootstrap outside NestJS
-    const logger = require('../infrastructure/logger').createLogger();
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const { createLogger } = require('../infrastructure/logger');
+    const { configuration } = require('./configuration');
+    const config = configuration();
+    const logger = createLogger(config.nodeEnv, config.logLevel, config.enableDebug);
+    const cloudName = config.cloudinary?.cloudName;
+    const apiKey = config.cloudinary?.apiKey;
+    const apiSecret = config.cloudinary?.apiSecret;
 
     if (!cloudName || !apiKey || !apiSecret) {
       logger.warn('Cloudinary credentials not provided. Image uploads will be disabled.');
@@ -87,7 +90,7 @@ export const initializeCloudinary = (): void => {
       secure: true,
     });
 
-    logger.info('Cloudinary initialized successfully');
+    logger.log('Cloudinary initialized successfully');
   }
 };
 

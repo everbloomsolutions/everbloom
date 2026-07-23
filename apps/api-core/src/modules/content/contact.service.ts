@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Contact, ContactDocument } from './schemas/contact.schema';
@@ -38,9 +38,9 @@ export class ContactService {
 
   constructor(
     @InjectModel(Contact.name) private contactModel: Model<ContactDocument>,
-    private mailService: MailService,
-    private paginationService: PaginationService,
-    private validationService: ValidationService,
+    @Inject(MailService) private mailService: MailService,
+    @Inject(PaginationService) private paginationService: PaginationService,
+    @Inject(ValidationService) private validationService: ValidationService,
   ) {}
 
   async processContactForm(

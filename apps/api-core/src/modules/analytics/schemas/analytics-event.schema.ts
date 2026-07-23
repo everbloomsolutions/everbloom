@@ -5,22 +5,22 @@ export type AnalyticsEventDocument = AnalyticsEvent & Document;
 
 @Schema({ timestamps: true })
 export class AnalyticsEvent {
-  @Prop({ required: true, index: true })
+  @Prop({ type: String, required: true, index: true })
   eventType!: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
   userId?: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: String })
   sessionId?: string;
 
   @Prop({ type: Object, default: {} })
   properties?: Record<string, unknown>;
 
-  @Prop()
+  @Prop({ type: String })
   ipAddress?: string;
 
-  @Prop()
+  @Prop({ type: String })
   userAgent?: string;
 }
 

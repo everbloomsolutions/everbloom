@@ -263,7 +263,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
       setSelectedAssignedLocations(updatedLocations);
       setFormData(prev => ({
         ...prev,
-        assignedLocationIds: updatedLocations.map(loc => loc._id),
+        assignedLocationIds: (updatedLocations || []).map(loc => loc._id),
       }));
       if (errors.assignedLocationIds) {
         setErrors(prev => ({ ...prev, assignedLocationIds: '' }));
@@ -279,7 +279,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedAssignedLocations(updatedLocations);
     setFormData(prev => ({
       ...prev,
-      assignedLocationIds: updatedLocations.map(loc => loc._id),
+      assignedLocationIds: (updatedLocations || []).map(loc => loc._id),
     }));
     if (errors.assignedLocationIds) {
       setErrors(prev => ({ ...prev, assignedLocationIds: '' }));
@@ -294,7 +294,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedAssignedLocations(updatedLocations);
     setFormData(prev => ({
       ...prev,
-      assignedLocationIds: updatedLocations.map(loc => loc._id),
+      assignedLocationIds: (updatedLocations || []).map(loc => loc._id),
     }));
   };
 
@@ -506,7 +506,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Selected Locations ({selectedAssignedLocations.length})
                 </label>
-                {selectedAssignedLocations.map((location) => (
+                {(selectedAssignedLocations || []).map((location) => (
                   <div
                     key={location._id}
                     className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-start justify-between"

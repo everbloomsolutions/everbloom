@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject } from '@nestjs/common';
 import { LoggerService } from '../../infrastructure/logger/logger.service';
 import { CloudinaryService } from '../cloudinary';
 
@@ -15,8 +15,8 @@ import { CloudinaryService } from '../cloudinary';
 @Injectable()
 export class InitializationService implements OnModuleInit {
   constructor(
-    private readonly logger: LoggerService,
-    private readonly cloudinaryService: CloudinaryService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
+    @Inject(CloudinaryService) private readonly cloudinaryService: CloudinaryService,
   ) {
     this.logger.setContext('InitializationService');
   }

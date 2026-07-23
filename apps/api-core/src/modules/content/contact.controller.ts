@@ -11,6 +11,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { ContactDto } from './dto/contact.dto';
@@ -20,10 +21,10 @@ import { Roles } from '../../common/guards/roles.guard';
 
 @Controller('contact')
 export class ContactController {
-  constructor(private readonly contactService: ContactService) {}
+  constructor(@Inject(ContactService) private readonly contactService: ContactService) {}
 
   @Post()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async submitContact(
     @Body() contactDto: ContactDto,
     @Req() req: any,
@@ -32,11 +33,34 @@ export class ContactController {
     const ipAddress = req.ip || req.socket?.remoteAddress || undefined;
     const userAgent = req.get('user-agent') || undefined;
 
-    await this.contactService.processContactForm(contactDto, ipAddress, userAgent);
+    const contact = await this.contactService.processContactForm(contactDto, ipAddress, userAgent);
 
     return {
       success: true,
+      data: contact,
       message: 'Thank you for your message! We will get back to you soon.',
+    };
+  }
+
+  @Get()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin', 'super_admin')
+  async getContacts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: 'new' | 'read' | 'replied' | 'archived',
+  ) {
+    const result = await this.contactService.getContacts({
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      status,
+    });
+
+    return {
+      success: true,
+      data: result,
     };
   }
 }

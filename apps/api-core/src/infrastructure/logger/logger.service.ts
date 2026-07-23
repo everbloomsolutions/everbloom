@@ -1,4 +1,4 @@
-import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
+import { Injectable, LoggerService as NestLoggerService, Optional, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ILogger } from './interfaces/logger.interface';
 import { LoggerFactory } from './logger.factory';
@@ -28,12 +28,11 @@ export class LoggerService implements NestLoggerService {
   private context?: string;
 
   constructor(
-    private readonly configService: ConfigService,
+    @Optional() @Inject(ConfigService) private readonly configService?: ConfigService,
   ) {
-    const nodeEnv = this.configService.get<string>('nodeEnv') || process.env.NODE_ENV || 'development';
-    const logLevel = this.configService.get<string>('logLevel') || process.env.LOG_LEVEL;
-    const enableDebug = this.configService.get<boolean>('enableDebug') || 
-                       process.env.ENABLE_DEBUG === 'true';
+    const nodeEnv = this.configService?.get<string>('nodeEnv') ?? 'development';
+    const logLevel = this.configService?.get<string>('logLevel');
+    const enableDebug = this.configService?.get<boolean>('enableDebug') ?? false;
 
     this.logger = LoggerFactory.create(nodeEnv, logLevel, enableDebug);
   }

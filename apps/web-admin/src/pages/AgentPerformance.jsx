@@ -166,8 +166,8 @@ const AgentPerformance = () => {
   const leaderboardValues = leaderboardData.map(item => item.value);
 
   // Agent performance trends (aggregate all agents)
-  const allTrends = analytics.agents.flatMap(agent => 
-    agent.performanceTrend.map(trend => ({
+  const allTrends = (analytics.agents || []).flatMap(agent =>
+    (Array.isArray(agent.performanceTrend) ? agent.performanceTrend : []).map(trend => ({
       date: trend.date,
       agentName: agent.agentName,
       collections: trend.collections,
@@ -397,7 +397,7 @@ const AgentPerformance = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {analytics.agents.map((agent, index) => (
+              {(analytics.agents || []).map((agent, index) => (
                 <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {agent.agentName}

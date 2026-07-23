@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Location, LocationDocument } from './schemas/location.schema';
@@ -47,9 +47,9 @@ export class LocationService {
 
   constructor(
     @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
-    private validationService: ValidationService,
-    private paginationService: PaginationService,
-    private databaseService: DatabaseService,
+    @Inject(ValidationService) private validationService: ValidationService,
+    @Inject(PaginationService) private paginationService: PaginationService,
+    @Inject(DatabaseService) private databaseService: DatabaseService,
   ) {}
 
   async createLocation(data: CreateLocationDto, createdBy: string): Promise<LocationDocument> {

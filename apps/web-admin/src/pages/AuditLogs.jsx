@@ -141,7 +141,7 @@ const AuditLogs = () => {
     }
   };
 
-  const formattedLogs = auditLogs.map(log => {
+  const formattedLogs = (auditLogs || []).map(log => {
     const { icon, color, bgColor } = getActionIcon(log.action);
     return {
       id: log._id,

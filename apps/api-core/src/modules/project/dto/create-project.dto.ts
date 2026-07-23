@@ -56,7 +56,7 @@ export class CreateProjectDto {
   title!: string;
 
   @IsString()
-  @MinLength(20, { message: 'Description must be at least 20 characters' })
+  @MinLength(5, { message: 'Description must be at least 5 characters' })
   @MaxLength(5000)
   description!: string;
 
@@ -73,7 +73,7 @@ export class CreateProjectDto {
   @IsString()
   locationId?: string;
 
-  @ValidateIf((o) => o.serviceType === 'recycling' && !o.locationId)
+  @IsOptional()
   @IsEnum([
     COLLECTION_LOCATION_TYPES.RESIDENTIAL_APARTMENT,
     COLLECTION_LOCATION_TYPES.RESIDENTIAL_SOCIETY,
@@ -82,13 +82,13 @@ export class CreateProjectDto {
   ])
   locationType?: string;
 
-  @ValidateIf((o) => o.serviceType === 'recycling' && o.locationType && !o.locationId)
+  @IsOptional()
   @IsString()
   @MinLength(2, { message: 'Location name must be at least 2 characters' })
   @MaxLength(200, { message: 'Location name must not exceed 200 characters' })
   locationName?: string;
 
-  @ValidateIf((o) => o.serviceType === 'recycling')
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CollectionItemDto)

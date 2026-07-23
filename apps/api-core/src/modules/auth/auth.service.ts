@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, ForbiddenException, BadRequestException, Logger, Inject, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
@@ -8,6 +8,7 @@ import { TokenBlacklist, TokenBlacklistDocument } from './schemas/token-blacklis
 import { PasswordResetToken, PasswordResetTokenDocument } from './schemas/password-reset-token.schema';
 import { JwtService, TokenPayload } from '../../common/services/jwt.service';
 import { ConfigService } from '@nestjs/config';
+import { configuration } from '../../config/configuration';
 import { MailService } from '../../infrastructure/mail/mail.service';
 import { TokenBlacklistService } from '../../common/services/token-blacklist.service';
 import { UserResponse } from '../user/interfaces/user-response.interface';
@@ -33,10 +34,10 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(TokenBlacklist.name) private tokenBlacklistModel: Model<TokenBlacklistDocument>,
     @InjectModel(PasswordResetToken.name) private passwordResetTokenModel: Model<PasswordResetTokenDocument>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private mailService: MailService,
-    private tokenBlacklistService: TokenBlacklistService,
+    @Inject(JwtService) private jwtService: JwtService,
+    @Inject(MailService) private mailService: MailService,
+    @Inject(TokenBlacklistService) private tokenBlacklistService: TokenBlacklistService,
+    @Optional() @Inject(ConfigService) private configService?: ConfigService,
   ) {}
 
   async loginUser(data: LoginData): Promise<AuthResponse> {
@@ -97,7 +98,6 @@ export class AuthService {
       token,
       accessToken: token,
       refreshToken,
-      isNewUser: false,
     };
   }
 
@@ -193,10 +193,57 @@ export class AuthService {
       used: false,
     });
 
-    const adminPanelUrl = this.configService.get<string>('adminPanelUrl');
+    const adminPanelUrl = this.configService?.get<string>('adminPanelUrl') ?? configuration().adminPanelUrl;
     const resetUrl = `${adminPanelUrl}/reset-password?token=${resetToken}`;
 
     await this.mailService.sendPasswordResetEmail(user, resetUrl);
+  }
+
+  async registerUser(data: {
+    email: string;
+    password: string;
+    name?: string;
+    role?: 'user' | 'agent' | 'admin' | 'super_admin';
+  }): Promise<AuthResponse> {
+    const existingUser = await this.userModel
+      .findOne({ email: data.email.toLowerCase() })
+      .exec();
+
+    if (existingUser) {
+      throw new BadRequestException('Email is already in use');
+    }
+
+    const user = await this.userModel.create({
+      email: data.email.toLowerCase(),
+      password: data.password,
+      name: data.name,
+      role: data.role || 'agent',
+    });
+
+    const tokenPayload: TokenPayload = {
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    };
+
+    const token = this.jwtService.generateToken(tokenPayload);
+    const refreshToken = this.jwtService.generateRefreshToken(tokenPayload);
+
+    const userObj = user.toObject();
+    const { password: _password, ...userWithoutPassword } = userObj;
+
+    return {
+      user: {
+        ...userWithoutPassword,
+        _id: user._id.toString(),
+        createdAt: (user as any).createdAt || new Date(),
+        updatedAt: (user as any).updatedAt || new Date(),
+      } as UserResponse,
+      token,
+      accessToken: token,
+      refreshToken,
+      isNewUser: true,
+    };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

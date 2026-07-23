@@ -1,7 +1,8 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Optional, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { configuration } from '../../config/configuration';
 
 /**
  * Database Service
@@ -20,7 +21,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
-    private readonly configService: ConfigService,
+    @Optional() @Inject(ConfigService) private readonly configService?: ConfigService,
   ) {
     // Seed initial state to avoid false negatives when the connection is already up
     this.connectionReady = this.connection.readyState === 1;
@@ -52,31 +53,28 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private getNumberEnv(name: string): number | undefined {
-    const raw = process.env[name];
-    if (!raw) return undefined;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : undefined;
+  private getConfigValue<T>(key: string): T | undefined {
+    return (this.configService?.get<T>(key) ?? configuration()[key as keyof ReturnType<typeof configuration>]) as T | undefined;
   }
 
   private getPingTimeoutMs(): number {
-    return this.getNumberEnv('DB_PING_TIMEOUT_MS') ?? 5000;
+    return this.getConfigValue<number>('dbPingTimeoutMs') ?? 5000;
   }
 
   private getReadyTimeoutMs(isLocalMongo: boolean, nodeEnv: string): number {
-    const configured = this.getNumberEnv('DB_READY_TIMEOUT_MS');
-    if (configured != null) return configured;
+    const configured = this.getConfigValue<number>('dbReadyTimeoutMs');
+    if (configured) return configured;
     return isLocalMongo && nodeEnv !== 'production' ? 3000 : 60000;
   }
 
   private getCooldownMs(isLocalMongo: boolean, nodeEnv: string): number {
-    const configured = this.getNumberEnv('DB_COOLDOWN_MS');
-    if (configured != null) return configured;
+    const configured = this.getConfigValue<number>('dbCooldownMs');
+    if (configured) return configured;
     return isLocalMongo && nodeEnv !== 'production' ? 3000 : 15000;
   }
 
   private withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> {
-    let timer: NodeJS.Timeout | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
 
     const timeoutPromise = new Promise<T>((_, reject) => {
@@ -131,7 +129,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private async waitForConnection(): Promise<void> {
     // Wait for MongoDB connection to be ready before allowing operations
     // This prevents "buffering timed out" errors
-    const nodeEnv = this.configService.get<string>('nodeEnv') || process.env.NODE_ENV || 'development';
+    const nodeEnv = this.getConfigValue<string>('nodeEnv') || 'development';
     const isLocalMongo = this.connection.host === 'localhost' || this.connection.host === '127.0.0.1';
     // In development with local Mongo, fail fast so API calls don't hang for 60 seconds.
     const maxWaitTime = this.getReadyTimeoutMs(isLocalMongo, nodeEnv);
@@ -255,7 +253,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return ['disconnected', 'connected', 'connecting', 'disconnecting'][state] || 'unknown';
     };
 
-    const nodeEnv = this.configService.get<string>('nodeEnv') || process.env.NODE_ENV || 'development';
+    const nodeEnv = this.getConfigValue<string>('nodeEnv') || 'development';
     const isLocalMongo = this.connection.host === 'localhost' || this.connection.host === '127.0.0.1';
     const cooldownMs = this.getCooldownMs(isLocalMongo, nodeEnv);
 

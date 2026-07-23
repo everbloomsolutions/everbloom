@@ -101,19 +101,19 @@ describe('ValidationPipe (NestJS)', () => {
       expect(result.optional).toBe('optional value');
     });
 
-    it('should remove non-whitelisted properties', async () => {
+    it('should throw BadRequestException for non-whitelisted properties', async () => {
       const dataWithExtra = {
         name: 'John Doe',
         email: 'john@example.com',
-        extraField: 'should be removed',
+        extraField: 'should be rejected',
       };
 
-      const result = await validationPipe.transform(dataWithExtra, {
-        type: 'body',
-        metatype: TestDto,
-      } as any);
-
-      expect(result).not.toHaveProperty('extraField');
+      await expect(
+        validationPipe.transform(dataWithExtra, {
+          type: 'body',
+          metatype: TestDto,
+        } as any)
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

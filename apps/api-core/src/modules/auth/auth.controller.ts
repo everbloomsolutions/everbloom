@@ -7,9 +7,11 @@ import {
   HttpCode,
   HttpStatus,
   Headers,
+  Inject,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -19,7 +21,18 @@ import { UserDocument } from '../user/schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(@Inject(AuthService) private readonly authService: AuthService) {}
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() registerUserDto: RegisterUserDto) {
+    const result = await this.authService.registerUser(registerUserDto);
+    return {
+      success: true,
+      data: result,
+      message: 'User registered successfully',
+    };
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

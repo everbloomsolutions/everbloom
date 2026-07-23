@@ -14,16 +14,24 @@ export const setupTestDB = async (): Promise<void> => {
 // Clean up database after tests
 export const cleanupTestDB = async (): Promise<void> => {
   try {
-    if (mongoose.connection.readyState === 1) {
-      const collections = mongoose.connection.collections;
-      const collectionNames = Object.keys(collections);
-
-      // Delete all documents from all collections
-      for (const collectionName of collectionNames) {
+    // Delete all documents from every collection across all open connections
+    for (const conn of mongoose.connections) {
+      if (conn.readyState === 1 && conn.db) {
         try {
-          await collections[collectionName].deleteMany({});
+          const collections = await conn.db.collections();
+          for (const collection of collections) {
+            try {
+              // Skip system collections
+              if (collection.collectionName.startsWith('system.')) {
+                continue;
+              }
+              await collection.deleteMany({});
+            } catch (error) {
+              // Ignore individual collection errors
+            }
+          }
         } catch (error) {
-          // Ignore individual collection errors
+          // Ignore connection-level errors
         }
       }
     }
@@ -34,6 +42,22 @@ export const cleanupTestDB = async (): Promise<void> => {
 
 // Close database connection
 export const closeTestDB = async (): Promise<void> => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
+  for (const conn of mongoose.connections) {
+    try {
+      if (conn.readyState === 1) {
+        await conn.dropDatabase();
+      }
+    } catch (error) {
+      // Ignore drop errors
+    }
+  }
+  for (const conn of mongoose.connections) {
+    try {
+      if (conn.readyState !== 0) {
+        await conn.close();
+      }
+    } catch (error) {
+      // Ignore close errors
+    }
+  }
 };

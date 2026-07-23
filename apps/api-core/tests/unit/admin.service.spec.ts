@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, afterAll, beforeAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AdminService } from '../../src/modules/admin/admin.service.nestjs';
+import { AdminService } from '../../src/modules/admin/admin.service';
 import { AuthService } from '../../src/modules/auth/auth.service';
 import { AdminModule } from '../../src/modules/admin/admin.module';
 import { AuthModule } from '../../src/modules/auth/auth.module';
@@ -133,7 +133,6 @@ describe('AdminService (NestJS)', () => {
 
       const dashboard = await adminService.getDashboard(
         admin._id.toString(),
-        true,
         'admin'
       );
 

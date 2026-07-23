@@ -78,7 +78,7 @@ const Dashboard = () => {
   // Fetch default location for users
   const defaultLocationId = useMemo(() => {
     if (!isUser || !user?.defaultLocation) return null;
-    if (typeof user.defaultLocation === 'object' && user.defaultLocation.locationName) {
+    if (typeof user.defaultLocation === 'object' && user.defaultLocation !== null && user.defaultLocation.locationName) {
       return user.defaultLocation; // Already populated
     }
     return typeof user.defaultLocation === 'string'
@@ -149,7 +149,7 @@ const Dashboard = () => {
       },
     };
   }, [todayData]);
-  const defaultLocation = typeof defaultLocationId === 'object' ? defaultLocationId : defaultLocationData;
+  const defaultLocation = defaultLocationId !== null && typeof defaultLocationId === 'object' ? defaultLocationId : defaultLocationData;
   const assignedLocations = assignedLocationsData?.locations || [];
 
   // Combined loading state

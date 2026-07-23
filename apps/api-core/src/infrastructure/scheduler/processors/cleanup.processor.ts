@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Job } from 'bull';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,7 +14,7 @@ export interface CleanupJobData {
 export class CleanupProcessor {
   constructor(
     @InjectModel(TokenBlacklist.name) private tokenBlacklistModel: Model<TokenBlacklist>,
-    private readonly logger: LoggerService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     this.logger.setContext('CleanupProcessor');
   }

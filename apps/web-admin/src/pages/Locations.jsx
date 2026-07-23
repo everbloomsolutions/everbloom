@@ -195,11 +195,11 @@ const Locations = () => {
     }
 
     // Filter out locations with usage
-    const locationsWithUsage = locations.filter(loc =>
+    const locationsWithUsage = (locations || []).filter(loc =>
       selectedLocations.includes(loc._id) && (loc.usageCount || 0) > 0
     );
     const locationsWithoutUsage = selectedLocations.filter(id => {
-      const loc = locations.find(l => l._id === id);
+      const loc = (locations || []).find(l => l._id === id);
       return loc && (loc.usageCount || 0) === 0;
     });
 
@@ -268,7 +268,7 @@ const Locations = () => {
 
   const handleSelectAll = useCallback((checked) => {
     if (checked) {
-      setSelectedLocations(locations.map(loc => loc._id));
+      setSelectedLocations((locations || []).map(loc => loc._id));
     } else {
       setSelectedLocations([]);
     }
@@ -360,7 +360,7 @@ const Locations = () => {
           <div className="p-8">
             <Loader />
           </div>
-        ) : locations.length === 0 ? (
+        ) : (locations || []).length === 0 ? (
           <div className="p-8 text-center">
             <MapPin className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 mb-2">
