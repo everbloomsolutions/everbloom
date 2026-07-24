@@ -25,6 +25,10 @@ const isVercel = dbConfig.isVercel || false;
 const isLocalMongo =
   normalizedMongodbUri.includes('localhost') ||
   normalizedMongodbUri.includes('127.0.0.1');
+// Treat the URI as a replica set only if replicaSet is explicitly set or mongodb+srv is used.
+const isReplicaSet =
+  /[?&]replicaset=/i.test(normalizedMongodbUri) ||
+  /^mongodb\+srv:\/\//i.test(normalizedMongodbUri);
 const isProduction = nodeEnv === 'production';
 
 if (normalizedMongodbUri.trim() === '') {
@@ -59,12 +63,14 @@ const connectTimeoutMS = isLocalMongo ? 10000 : isProduction ? 60000 : 30000;
       maxPoolSize: 20,
       minPoolSize: isLocalMongo ? 5 : 1,
       bufferCommands: false,
-      retryWrites: isLocalMongo ? false : true,
-      retryReads: isLocalMongo ? false : true,
-      readPreference: isLocalMongo ? 'primary' : 'primaryPreferred',
-      heartbeatFrequencyMS: isLocalMongo ? 10000 : 10000,
-      minHeartbeatFrequencyMS: isLocalMongo ? 10000 : 10000,
-      directConnection: isLocalMongo,
+      // retryWrites/retryReads/readPreference settings are only valid for replica sets.
+      retryWrites: isReplicaSet,
+      retryReads: isReplicaSet,
+      readPreference: isReplicaSet ? 'primaryPreferred' : 'primary',
+      // directConnection keeps standalone connections stable and avoids replica-set discovery.
+      directConnection: !isReplicaSet,
+      heartbeatFrequencyMS: 10000,
+      minHeartbeatFrequencyMS: 10000,
     }),
   ],
   providers: [DatabaseService, QueryBuilderService],

@@ -169,16 +169,22 @@ export function validateConfig(config: Record<string, unknown>) {
   }
 
   // Production MongoDB URI safety checks
+  // Production must use the in-cluster MongoDB service, not Atlas or localhost
   if (isProduction && mongodbUri.length > 0) {
     const lowerUri = mongodbUri.toLowerCase();
+    if (!lowerUri.startsWith('mongodb://')) {
+      throw new Error('MONGODB_URI must use mongodb:// protocol and an in-cluster host in production');
+    }
     if (lowerUri.includes('localhost') || lowerUri.includes('127.0.0.1')) {
       throw new Error('MONGODB_URI must not use localhost or 127.0.0.1 in production');
     }
-    if (!lowerUri.includes('retrywrites=true')) {
-      throw new Error('MONGODB_URI must include retryWrites=true in production');
+    if (lowerUri.includes('atlas') || lowerUri.includes('mongodb.net')) {
+      throw new Error('MONGODB_URI must use the in-cluster MongoDB host, not Atlas, in production');
     }
-    if (!lowerUri.includes('w=majority')) {
-      throw new Error('MONGODB_URI must include w=majority in production');
+    const hostMatch = /mongodb:\/\/(?:[^@]+@)?([^/\s?:]+)/i.exec(mongodbUri);
+    const host = hostMatch ? hostMatch[1].toLowerCase() : '';
+    if (!host.startsWith('mongodb')) {
+      throw new Error('MONGODB_URI must point to the in-cluster MongoDB service (mongodb) in production');
     }
   }
 

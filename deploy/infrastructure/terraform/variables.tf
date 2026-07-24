@@ -39,32 +39,32 @@ variable "mongodb_password" {
 }
 
 variable "mongodb_protocol" {
-  description = "MongoDB connection protocol: mongodb or mongodb+srv"
+  description = "MongoDB connection protocol. Production uses the in-cluster mongodb:// protocol only."
   type        = string
   default     = "mongodb"
   validation {
-    condition     = contains(["mongodb", "mongodb+srv"], var.mongodb_protocol)
-    error_message = "mongodb_protocol must be mongodb or mongodb+srv"
+    condition     = var.mongodb_protocol == "mongodb"
+    error_message = "mongodb_protocol must be mongodb for the in-cluster database"
   }
 }
 
 variable "mongodb_host" {
-  description = "MongoDB host or Atlas cluster (e.g. mongodb:27017 or cluster0.xxx.mongodb.net)"
+  description = "MongoDB host. Must be the in-cluster MongoDB service (e.g. mongodb:27017)."
   type        = string
   default     = "mongodb:27017"
   validation {
-    condition     = !strcontains(lower(var.mongodb_host), "localhost") && !strcontains(lower(var.mongodb_host), "127.0.0.1")
-    error_message = "mongodb_host must not be localhost or 127.0.0.1"
+    condition     = !strcontains(lower(var.mongodb_host), "localhost") && !strcontains(lower(var.mongodb_host), "127.0.0.1") && !strcontains(lower(var.mongodb_host), "mongodb.net") && !strcontains(lower(var.mongodb_host), "atlas")
+    error_message = "mongodb_host must be the in-cluster MongoDB service; localhost, Atlas and mongodb.net hosts are not allowed"
   }
 }
 
 variable "mongodb_options" {
-  description = "MongoDB connection options query string"
+  description = "MongoDB connection options query string. The in-cluster standalone instance must not use replica-set options."
   type        = string
-  default     = "authSource=admin&retryWrites=true&w=majority"
+  default     = "authSource=admin"
   validation {
-    condition     = strcontains(lower(var.mongodb_options), "retrywrites=true") && strcontains(lower(var.mongodb_options), "w=majority")
-    error_message = "mongodb_options must include retryWrites=true and w=majority"
+    condition     = strcontains(lower(var.mongodb_options), "authsource=admin") && !strcontains(lower(var.mongodb_options), "retrywrites=true") && !strcontains(lower(var.mongodb_options), "w=majority")
+    error_message = "mongodb_options must include authSource=admin and must not include retryWrites=true or w=majority for the in-cluster standalone database"
   }
 }
 
