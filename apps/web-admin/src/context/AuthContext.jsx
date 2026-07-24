@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api';
 import { tokenManager } from '../utils/tokenManager';
 import logger from '../utils/logger';
@@ -8,6 +9,7 @@ import socketService from '../services/socketService';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +49,30 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
+  }, []);
+
+  // Guard against the browser back button / bfcache returning to authenticated
+  // pages after logout. If the token is gone, force the user back to login.
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!tokenManager.isAuthenticated()) {
+        window.location.replace('/login');
+      }
+    };
+
+    const handlePageShow = (event) => {
+      if (event.persisted && !tokenManager.isAuthenticated()) {
+        window.location.replace('/login');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -104,6 +130,9 @@ export const AuthProvider = ({ children }) => {
       socketService.disconnect();
       setUser(null);
       setIsAuthenticated(false);
+      // Replace the current history entry so the browser Back button does not
+      // return to the authenticated page the user was on.
+      navigate('/login', { replace: true });
     }
   };
 

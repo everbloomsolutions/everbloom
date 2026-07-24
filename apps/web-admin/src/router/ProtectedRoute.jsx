@@ -1,11 +1,22 @@
 // src/router/ProtectedRoute.jsx
-import { Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks';
 import Loader from '../components/shared/Loader';
 import { hasRoleOrHigher, hasPermission } from '../utils/permissionUtils';
+import { tokenManager } from '../utils/tokenManager';
 
 const ProtectedRoute = ({ children, requiredRole = null, requiredRoles = null }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const navigate = useNavigate();
+
+  // If the token is removed while this route is mounted (e.g. via Back button),
+  // redirect immediately without waiting for the auth context to finish loading.
+  useEffect(() => {
+    if (!isLoading && !tokenManager.isAuthenticated()) {
+      navigate('/login', { replace: true });
+    }
+  }, [isLoading, navigate]);
 
   // Show loader while checking authentication
   if (isLoading) {
