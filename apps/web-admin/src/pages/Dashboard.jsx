@@ -45,7 +45,7 @@ ChartJS.register(
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const userRole = user?.role;
   const isAdmin = userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.SUPER_ADMIN;
   const isAgent = userRole === USER_ROLES.AGENT;
@@ -147,6 +147,13 @@ const Dashboard = () => {
     }
   }, [user?._id, userRole, refetchAll]);
 
+  // Refresh current user to pick up newly assigned default location
+  useEffect(() => {
+    if (user?._id) {
+      refreshUser();
+    }
+  }, [user?._id, refreshUser]);
+
   if (loading && !dashboardData) {
     return (
       <div>
@@ -223,7 +230,7 @@ const Dashboard = () => {
       />
 
       {/* Allocated Location Details - User role only */}
-      <DashboardUserLocation defaultLocation={defaultLocation} />
+      {isUser && <DashboardUserLocation defaultLocation={defaultLocation} />}
 
       {/* Today's Performance Metrics - Only for Admin and Agent */}
       <DashboardPerformanceMetrics

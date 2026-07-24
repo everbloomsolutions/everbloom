@@ -171,15 +171,24 @@ export class ReceiptService {
     }
 
     // Role-based filtering (agent/user see only their receipts)
+    const ProjectModel = this.receiptModel.db.model<any>('Project');
+
     if (filters.userRole === 'agent' && filters.userId && Types.ObjectId.isValid(filters.userId)) {
-      query.generatedBy = new Types.ObjectId(filters.userId);
+      const agentObjectId = new Types.ObjectId(filters.userId);
+      const projectIds = await ProjectModel.find({
+        $or: [{ userId: agentObjectId }, { collectedBy: agentObjectId }],
+        isDeleted: { $ne: true },
+        deletedAt: { $exists: false },
+      })
+        .select('_id')
+        .lean<any>()
+        .exec();
+      query.collectionId = { $in: projectIds.map((p: any) => p._id) };
     }
 
     // For 'user' role, we filter by the user's default location via Project linkage.
-    // Minimal approach: if caller is user, only return receipts for projects at user's defaultLocation.
     if (filters.userRole === 'user' && filters.userId && Types.ObjectId.isValid(filters.userId)) {
       const UserModel = this.receiptModel.db.model<any>('User');
-      const ProjectModel = this.receiptModel.db.model<any>('Project');
       const user = await UserModel
         .findById(new Types.ObjectId(filters.userId))
         .select('defaultLocation')
@@ -221,28 +230,52 @@ export class ReceiptService {
   }
 
   async checkUserReceiptAccess(userId: string, receipt: ReceiptDocument): Promise<boolean> {
+    return this.checkReceiptAccess(userId, 'user', receipt);
+  }
+
+  async checkReceiptAccess(
+    userId: string,
+    userRole: string,
+    receipt: ReceiptDocument,
+  ): Promise<boolean> {
     if (!Types.ObjectId.isValid(userId)) return false;
     const UserModel = this.receiptModel.db.model<any>('User');
     const ProjectModel = this.receiptModel.db.model<any>('Project');
-    const user = await UserModel
-      .findById(new Types.ObjectId(userId))
-      .select('defaultLocation')
-      .lean<any>()
-      .exec();
-    const defaultLocationId = user?.defaultLocation;
-    if (!defaultLocationId) return false;
 
     const project = await ProjectModel.findOne({
       _id: receipt.collectionId,
       isDeleted: { $ne: true },
       deletedAt: { $exists: false },
     })
-      .select('locationId')
+      .select('userId locationId collectedBy')
       .lean<any>()
       .exec();
 
-    if (!project?.locationId) return false;
-    return String(project.locationId) === String(defaultLocationId);
+    if (!project) return false;
+
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      return true;
+    }
+
+    if (userRole === 'agent') {
+      const isOwner = project.userId ? String(project.userId) === String(userId) : false;
+      const isCollector = project.collectedBy ? String(project.collectedBy) === String(userId) : false;
+      return isOwner || isCollector;
+    }
+
+    if (userRole === 'user') {
+      const user = await UserModel
+        .findById(new Types.ObjectId(userId))
+        .select('defaultLocation')
+        .lean<any>()
+        .exec();
+      const defaultLocationId = user?.defaultLocation;
+      if (!defaultLocationId) return false;
+      if (!project.locationId) return false;
+      return String(project.locationId) === String(defaultLocationId);
+    }
+
+    return false;
   }
 
   async updateReceiptPdfUrl(receiptId: string, pdfUrl: string): Promise<void> {

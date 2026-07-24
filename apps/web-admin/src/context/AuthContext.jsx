@@ -1,5 +1,5 @@
 // src/context/AuthContext.jsx
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api';
 import { tokenManager } from '../utils/tokenManager';
@@ -153,6 +153,22 @@ export const AuthProvider = ({ children }) => {
     if (updatedUser) tokenManager.setUser?.(updatedUser);
   };
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const token = tokenManager.getToken();
+      if (!token) return;
+
+      const res = await authApi.getProfile();
+      const data = res.data?.data || res.data;
+      if (data?.user) {
+        setUser(data.user);
+        tokenManager.setUser?.(data.user);
+      }
+    } catch (err) {
+      logger.error('refreshUser error:', err?.response?.data || err.message || err);
+    }
+  }, []);
+
   // Automatically log the user out when the access token is about to expire.
   useSessionTimeout(logout, isAuthenticated);
 
@@ -163,7 +179,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
-    updateUser
+    updateUser,
+    refreshUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

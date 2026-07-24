@@ -5,7 +5,7 @@ import logger from '../../utils/logger';
 import { getLocationTypeLabel } from '../../types/collections';
 import { useAuth } from '../../hooks';
 
-const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChange, placeholder = 'Search or select location...' }) => {
+const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChange, placeholder = 'Search or select location...', searchParams = {} }) => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -92,7 +92,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
   const searchLocations = async (query) => {
     try {
       setLoading(true);
-      const response = await locationApi.searchLocations(query, 10);
+      const response = await locationApi.searchLocations(query, 10, searchParams);
       
       // Handle both response formats
       let locations = [];

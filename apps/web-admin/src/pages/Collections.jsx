@@ -404,10 +404,10 @@ const Collections = () => {
         // Use hook function to fetch location data
         await fetchLocationData(locationId);
       } else {
-        // No locationId - manual entry mode
+        // No locationId - force selection of an existing location
         setSelectedLocationId('');
         setSelectedLocationData(null);
-        setUseExistingLocation(false);
+        setUseExistingLocation(true);
       }
       
       // Set editing state - ensure collection ID is a string

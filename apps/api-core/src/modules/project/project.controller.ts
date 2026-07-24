@@ -44,6 +44,8 @@ export class ProjectController {
   ) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin', 'agent')
   @HttpCode(HttpStatus.CREATED)
   async createProject(
     @Body() createProjectDto: CreateProjectDto,

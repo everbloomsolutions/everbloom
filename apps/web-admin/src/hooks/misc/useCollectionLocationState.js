@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { USER_ROLES } from '../../utils/constants';
+import { isAdmin } from '../../utils/permissionUtils';
 import logger from '../../utils/logger';
 import { locationApi } from '../../api';
 import { toast } from 'react-hot-toast';
@@ -56,6 +57,11 @@ export const useCollectionLocationState = (user) => {
           setSelectedLocationId('');
           setSelectedLocationData(null);
           // Keep useExistingLocation = true for agents
+        } else if (isAdmin(user)) {
+          toast.error('Location not found or inactive. Please select a different location.', { duration: 5000 });
+          setSelectedLocationId('');
+          setSelectedLocationData(null);
+          // Keep useExistingLocation = true for admins
         } else {
           toast.error('Location not found or inactive. Switching to manual entry mode.');
           setSelectedLocationId('');
@@ -69,6 +75,11 @@ export const useCollectionLocationState = (user) => {
         toast.error('Could not load location details. Please contact an administrator.', { duration: 5000 });
         setSelectedLocationId('');
         setSelectedLocationData(null);
+      } else if (isAdmin(user)) {
+        toast.error('Could not load location details. Please select a different location.', { duration: 5000 });
+        setSelectedLocationId('');
+        setSelectedLocationData(null);
+        // Keep useExistingLocation = true for admins
       } else {
         toast.error('Could not load location details. Using manual entry mode.');
         setSelectedLocationId('');
@@ -76,7 +87,7 @@ export const useCollectionLocationState = (user) => {
         setUseExistingLocation(false);
       }
     }
-  }, [user?.role]);
+  }, [user]);
 
   // Reset location state
   const resetLocationState = useCallback(() => {

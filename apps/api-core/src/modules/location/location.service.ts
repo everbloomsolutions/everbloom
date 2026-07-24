@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException, Inject } fr
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Location, LocationDocument } from './schemas/location.schema';
+import { User, UserDocument } from '../user/schemas/user.schema';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
@@ -47,6 +48,7 @@ export class LocationService {
 
   constructor(
     @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(ValidationService) private validationService: ValidationService,
     @Inject(PaginationService) private paginationService: PaginationService,
     @Inject(DatabaseService) private databaseService: DatabaseService,
@@ -332,7 +334,7 @@ export class LocationService {
     await location.save();
   }
 
-  async searchLocations(query: string, limit?: number, agentId?: string): Promise<LocationDocument[]> {
+  async searchLocations(query: string, limit?: number, agentId?: string, hasDefaultUser?: boolean): Promise<LocationDocument[]> {
     // Ensure database connection is ready
     await this.databaseService.ensureConnectionReady();
 
@@ -346,6 +348,25 @@ export class LocationService {
     if (agentId) {
       const agentObjectId = this.validationService.validateObjectId(agentId, 'agentId');
       filter.assignedToAgent = agentObjectId;
+    }
+
+    // Filter to locations that have a resident user with this as defaultLocation
+    if (hasDefaultUser) {
+      const residents = await this.userModel
+        .find({
+          role: 'user',
+          isDeleted: { $ne: true },
+          deletedAt: { $exists: false },
+          defaultLocation: { $exists: true, $ne: null },
+        })
+        .select('defaultLocation')
+        .lean();
+
+      const locationIds = residents
+        .map((u) => u.defaultLocation?.toString())
+        .filter((id): id is string => Boolean(id));
+
+      filter._id = { $in: locationIds.map((id) => new Types.ObjectId(id)) };
     }
 
     // Build search query - search in locationName, address, city, state, locality, zipCode

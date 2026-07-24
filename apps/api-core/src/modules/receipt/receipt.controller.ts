@@ -89,17 +89,14 @@ export class ReceiptController {
       throw new NotFoundException('Receipt not found');
     }
 
-    // Authorization check: Users can only download receipts for collections at their default location
-    if (user.role === 'user') {
-      const hasAccess = await this.receiptService.checkUserReceiptAccess(
-        user._id.toString(),
-        receipt,
-      );
-      if (!hasAccess) {
-        throw new ForbiddenException(
-          'You can only download receipts for collections at your default location',
-        );
-      }
+    // Authorization check
+    const hasAccess = await this.receiptService.checkReceiptAccess(
+      user._id.toString(),
+      user.role,
+      receipt,
+    );
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this receipt');
     }
 
     // Generate PDF buffer
@@ -149,17 +146,14 @@ export class ReceiptController {
       throw new NotFoundException('Receipt not found');
     }
 
-    // Authorization check: Users can only view receipts for collections at their default location
-    if (user.role === 'user') {
-      const hasAccess = await this.receiptService.checkUserReceiptAccess(
-        user._id.toString(),
-        receipt,
-      );
-      if (!hasAccess) {
-        throw new ForbiddenException(
-          'You can only view receipts for collections at your default location',
-        );
-      }
+    // Authorization check
+    const hasAccess = await this.receiptService.checkReceiptAccess(
+      user._id.toString(),
+      user.role,
+      receipt,
+    );
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this receipt');
     }
 
     return {
@@ -179,17 +173,14 @@ export class ReceiptController {
       throw new NotFoundException('Receipt not found');
     }
 
-    // Authorization check: Users can only view receipts for collections at their default location
-    if (user.role === 'user') {
-      const hasAccess = await this.receiptService.checkUserReceiptAccess(
-        user._id.toString(),
-        receipt,
-      );
-      if (!hasAccess) {
-        throw new ForbiddenException(
-          'You can only view receipts for collections at your default location',
-        );
-      }
+    // Authorization check
+    const hasAccess = await this.receiptService.checkReceiptAccess(
+      user._id.toString(),
+      user.role,
+      receipt,
+    );
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this receipt');
     }
 
     return {
@@ -211,17 +202,14 @@ export class ReceiptController {
       throw new NotFoundException('Receipt not found for this collection');
     }
 
-    // Authorization check: Users can only print receipts for collections at their default location
-    if (user.role === 'user') {
-      const hasAccess = await this.receiptService.checkUserReceiptAccess(
-        user._id.toString(),
-        receipt,
-      );
-      if (!hasAccess) {
-        throw new ForbiddenException(
-          'You can only print receipts for collections at your default location',
-        );
-      }
+    // Authorization check
+    const hasAccess = await this.receiptService.checkReceiptAccess(
+      user._id.toString(),
+      user.role,
+      receipt,
+    );
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this receipt');
     }
 
     // Generate PDF buffer
@@ -274,17 +262,14 @@ export class ReceiptController {
       throw new NotFoundException('Receipt not found for this collection');
     }
 
-    // Authorization check: Users can only view receipts for collections at their default location
-    if (user.role === 'user') {
-      const hasAccess = await this.receiptService.checkUserReceiptAccess(
-        user._id.toString(),
-        receipt,
-      );
-      if (!hasAccess) {
-        throw new ForbiddenException(
-          'You can only view receipts for collections at your default location',
-        );
-      }
+    // Authorization check
+    const hasAccess = await this.receiptService.checkReceiptAccess(
+      user._id.toString(),
+      user.role,
+      receipt,
+    );
+    if (!hasAccess) {
+      throw new ForbiddenException('You do not have access to this receipt');
     }
 
     return {

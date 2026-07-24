@@ -55,9 +55,9 @@ export const locationApi = {
   /**
    * Search locations for autocomplete
    */
-  searchLocations: async (query, limit = 10) => {
+  searchLocations: async (query, limit = 10, params = {}) => {
     const response = await axiosInstance.get('/admin/locations/search', {
-      params: { q: query, limit },
+      params: { q: query, limit, ...params },
     });
     return response.data;
   },

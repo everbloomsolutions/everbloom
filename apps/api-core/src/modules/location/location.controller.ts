@@ -298,6 +298,7 @@ export class LocationController {
       query,
       limit,
       userRole === 'agent' ? userId : undefined,
+      searchDto.hasDefaultUser,
     );
 
     return {

@@ -1,13 +1,17 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Location, LocationSchema } from './schemas/location.schema';
+import { User, UserSchema } from '../user/schemas/user.schema';
 import { LocationController } from './location.controller';
 import { LocationService, setLocationServiceInstance } from './location.service';
 import { CommonModule } from '../../common/common.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Location.name, schema: LocationSchema }]),
+    MongooseModule.forFeature([
+      { name: Location.name, schema: LocationSchema },
+      { name: User.name, schema: UserSchema },
+    ]),
     CommonModule, // Provides PaginationService, ValidationService, DatabaseService
   ],
   controllers: [LocationController],

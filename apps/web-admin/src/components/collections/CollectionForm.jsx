@@ -332,6 +332,16 @@ const CollectionForm = ({
           }
         }
       } else {
+        if (isAdmin(user)) {
+          toast.error('Manual address entry is not allowed. Please select an existing location or create one first.', { duration: 5000 });
+          setUseExistingLocation(true);
+          const locationField = document.querySelector('[data-location-field]');
+          if (locationField) {
+            locationField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+        }
+
         if (!formData.locationName || !formData.locality || !formData.address) {
           toast.error('Location name, locality, and address are required');
           return;
@@ -510,7 +520,7 @@ const CollectionForm = ({
           {editingCollectionId ? 'Edit Collection' : 'Create New Collection'}
         </h2>
         <div className="space-y-4">
-          {/* Toggle between existing and manual entry - Only for admins */}
+          {/* Location selection mode indicator - Only for admins */}
           {isAdmin(user) && (
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -533,25 +543,11 @@ const CollectionForm = ({
                       }));
                     }
                   }}
-                  variant={useExistingLocation ? 'primary' : 'secondary'}
+                  variant="primary"
                   size="sm"
                 >
                   Select Existing
                 </Button>
-                {user?.role !== USER_ROLES.AGENT && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setUseExistingLocation(false);
-                      setSelectedLocationId('');
-                      setSelectedLocationData(null);
-                    }}
-                    variant={!useExistingLocation ? 'primary' : 'secondary'}
-                    size="sm"
-                  >
-                    Enter Manually
-                  </Button>
-                )}
               </div>
             </div>
           )}
@@ -596,6 +592,7 @@ const CollectionForm = ({
                   }}
                   onLocationSelect={handleLocationSelect}
                   placeholder="Search for a location..."
+                  searchParams={{ hasDefaultUser: true }}
                 />
                 {isAdmin(user) && (
                   <div className="mt-2 flex justify-end">
