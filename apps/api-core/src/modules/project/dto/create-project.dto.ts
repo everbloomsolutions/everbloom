@@ -8,6 +8,7 @@ import {
   ValidateNested,
   MinLength,
   MaxLength,
+  ArrayMinSize,
   Min,
   Max,
   ValidateIf,
@@ -31,6 +32,10 @@ class LocationDto {
   @IsOptional()
   @IsString()
   zipCode?: string;
+
+  @IsOptional()
+  @IsString()
+  locality?: string;
 }
 
 class CollectionItemDto {
@@ -92,7 +97,7 @@ export class CreateProjectDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CollectionItemDto)
-  @MinLength(1, { message: 'At least one collection item is required' })
+  @ArrayMinSize(1, { message: 'At least one collection item is required' })
   collectionItems?: CollectionItemDto[];
 
   @IsOptional()

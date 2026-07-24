@@ -150,7 +150,7 @@ export class ProjectAdminController {
   ) {}
 
   @Get()
-  @Roles('admin', 'super_admin')
+  @Roles('admin', 'super_admin', 'agent')
   async getAllProjects(@Query() query: any, @CurrentUser() user: UserDocument, @Req() _req: any) {
     return this.projectService.getAllProjects({
       ...query,

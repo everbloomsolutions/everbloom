@@ -4,6 +4,8 @@ import { useAuth, useForm } from '../hooks';
 import logger from '../utils/logger';
 import { Mail, Lock, LogIn, Shield, Zap, BarChart3 } from 'lucide-react';
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -16,9 +18,10 @@ const Login = () => {
     },
     (values) => {
       const errors = {};
-      if (!values.email) {
+      const email = values.email?.trim();
+      if (!email) {
         errors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(values.email)) {
+      } else if (!EMAIL_REGEX.test(email)) {
         errors.email = 'Email is invalid';
       }
       if (!values.password) {
@@ -28,10 +31,11 @@ const Login = () => {
     },
     async (values) => {
       try {
-        logger.debug('Attempting login with:', values.email);
+        const email = values.email.trim();
+        logger.debug('Attempting login with:', email);
         
         // Use AuthContext login method
-        await login(values.email, values.password);
+        await login(email, values.password);
         
         logger.debug('Login successful! Navigating to dashboard...');
         
@@ -51,6 +55,10 @@ const Login = () => {
 
   // Extract error from form errors or submission error
   const error = loginForm.errors.email || loginForm.errors.password || '';
+
+  // Disable submit until both fields are valid
+  const trimmedEmail = loginForm.values.email?.trim() || '';
+  const canSubmit = EMAIL_REGEX.test(trimmedEmail) && !!loginForm.values.password && !loginForm.isSubmitting;
 
   return (
     <div className="w-full">
@@ -73,7 +81,7 @@ const Login = () => {
         </div>
       )}
 
-      <form onSubmit={loginForm.handleSubmit} className="space-y-6">
+      <form onSubmit={loginForm.handleSubmit} noValidate className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Email Address
@@ -152,7 +160,7 @@ const Login = () => {
 
         <button
           type="submit"
-          disabled={loginForm.isSubmitting}
+          disabled={!canSubmit}
           className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
         >
           {loginForm.isSubmitting ? (

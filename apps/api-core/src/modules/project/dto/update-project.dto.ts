@@ -8,6 +8,7 @@ import {
   ValidateNested,
   MinLength,
   MaxLength,
+  ArrayMinSize,
   Min,
   Max,
 } from 'class-validator';
@@ -30,6 +31,10 @@ class LocationDto {
   @IsOptional()
   @IsString()
   zipCode?: string;
+
+  @IsOptional()
+  @IsString()
+  locality?: string;
 }
 
 class CollectionItemDto {
@@ -93,7 +98,7 @@ export class UpdateProjectDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CollectionItemDto)
-  @MinLength(1)
+  @ArrayMinSize(1)
   collectionItems?: CollectionItemDto[];
 
   @IsOptional()

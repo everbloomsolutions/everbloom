@@ -206,7 +206,7 @@ export class AdminController {
 
   @Get('collections')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
+  @Roles('admin', 'super_admin', 'agent')
   async getCollections(
     @Query() query: any,
     @CurrentUser() user: UserDocument,
