@@ -34,6 +34,9 @@ import { LoggerModule } from '../logger/logger.module';
             url: redisUrl,
             username: parsedUrl.username || 'default',
             password: decodeURIComponent(parsedUrl.password),
+            // Send PING every 30s to keep the connection alive
+            // (AWS ElastiCache/Valkey can close idle sockets otherwise).
+            pingInterval: 30000,
             socket: {
               keepAlive: true,
               keepAliveInitialDelay: 10000,
