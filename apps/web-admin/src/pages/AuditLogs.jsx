@@ -29,14 +29,20 @@ const AuditLogs = () => {
 
   const [searchQuery, setSearchQuery] = useState(filters.search);
   const debouncedSearch = useDebounce(searchQuery, 300);
-  
-  // Update URL when debounced search changes
+
+  // Only trigger search for empty input or when at least 2 characters are typed
+  const effectiveSearch = useMemo(() => {
+    const trimmed = debouncedSearch.trim();
+    return trimmed === '' || trimmed.length >= 2 ? debouncedSearch : '';
+  }, [debouncedSearch]);
+
+  // Update URL when effective search changes
   useEffect(() => {
-    if (debouncedSearch !== filters.search) {
+    if (effectiveSearch !== filters.search) {
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
-        if (debouncedSearch) {
-          newParams.set('search', debouncedSearch);
+        if (effectiveSearch) {
+          newParams.set('search', effectiveSearch);
         } else {
           newParams.delete('search');
         }
@@ -44,7 +50,7 @@ const AuditLogs = () => {
         return newParams;
       });
     }
-  }, [debouncedSearch, filters.search, setSearchParams]);
+  }, [effectiveSearch, filters.search, setSearchParams]);
 
   const [showFilters, setShowFilters] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -56,14 +62,14 @@ const AuditLogs = () => {
     limit: 20,
     ...(filters.entityType && { entityType: filters.entityType }),
     ...(filters.action && { action: filters.action }),
-    ...(debouncedSearch && { search: debouncedSearch }),
+    ...(effectiveSearch && { search: effectiveSearch }),
     ...(filters.startDate && { startDate: filters.startDate }),
     ...(filters.endDate && { endDate: filters.endDate }),
-  }), [filters.page, filters.entityType, filters.action, debouncedSearch, filters.startDate, filters.endDate]);
+  }), [filters.page, filters.entityType, filters.action, effectiveSearch, filters.startDate, filters.endDate]);
 
   // Use TanStack Query for data fetching
   const { data: auditLogsData, isLoading: loading, error: _error, refetch: _refetch } = useQuery({
-    queryKey: ['auditLogs', filters.page, filters.entityType, filters.action, debouncedSearch, filters.startDate, filters.endDate],
+    queryKey: ['auditLogs', filters.page, filters.entityType, filters.action, effectiveSearch, filters.startDate, filters.endDate],
     queryFn: createQueryFn(() => auditApi.getAuditLogs(queryParams)),
     staleTime: 30000, // 30 seconds
   });

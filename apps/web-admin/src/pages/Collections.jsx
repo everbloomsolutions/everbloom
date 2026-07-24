@@ -38,11 +38,17 @@ const Collections = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300); // Debounce search by 300ms
-  
-  // Update filter when debounced search changes
+
+  // Only trigger search for empty input or when at least 2 characters are typed
+  const effectiveSearch = useMemo(() => {
+    const trimmed = debouncedSearchQuery.trim();
+    return trimmed === '' || trimmed.length >= 2 ? debouncedSearchQuery : '';
+  }, [debouncedSearchQuery]);
+
+  // Update filter when effective search changes
   useEffect(() => {
-    updateFilter('search', debouncedSearchQuery);
-  }, [debouncedSearchQuery, updateFilter]);
+    updateFilter('search', effectiveSearch);
+  }, [effectiveSearch, updateFilter]);
   
   // UI state using custom hook
   const {
@@ -131,7 +137,7 @@ const Collections = () => {
   // Use custom hooks for collections data fetching and actions
   const { collections, totalPages, loading: collectionsLoading, refetch: refetchCollections, clearCache: clearCollectionsCache } = useCollections({
     ...filters,
-    search: debouncedSearchQuery,
+    search: effectiveSearch,
   });
   
   const { 
@@ -590,10 +596,10 @@ const Collections = () => {
     updateFilter('endDate', endDate.toISOString().split('T')[0]);
   };
   
-  const hasActiveFilters = useMemo(() => 
-    searchQuery || filters.status !== 'all' || filters.agentFilter !== 'all' || 
+  const hasActiveFilters = useMemo(() =>
+    effectiveSearch || filters.status !== 'all' || filters.agentFilter !== 'all' ||
     filters.locationType !== 'all' || filters.startDate || filters.endDate || filters.sortBy !== 'newest',
-    [searchQuery, filters.status, filters.agentFilter, filters.locationType, filters.startDate, filters.endDate, filters.sortBy]
+    [effectiveSearch, filters.status, filters.agentFilter, filters.locationType, filters.startDate, filters.endDate, filters.sortBy]
   );
 
   const handleTransferCollection = (collectionId) => {
@@ -626,7 +632,7 @@ const Collections = () => {
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
       if (filters.agentFilter !== 'all') params.userId = filters.agentFilter;
-      if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+      if (effectiveSearch) params.search = effectiveSearch;
 
       const blob = await collectionApi.exportCollections(params);
       

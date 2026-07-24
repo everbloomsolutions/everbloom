@@ -40,6 +40,7 @@ const UsersFilters = memo(({
             placeholder="Search users by name or email..."
             value={searchInput}
             onChange={handleSearchChange}
+            minSearchLength={2}
           />
         </div>
 

@@ -43,6 +43,7 @@ const LocationsFilters = memo(({
           <SearchBar
             onSearch={onSearch}
             placeholder="Search by locality..."
+            minSearchLength={2}
           />
         </div>
 
