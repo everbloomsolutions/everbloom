@@ -219,7 +219,7 @@ export class LocationService {
     };
   }
 
-  async getLocationById(locationId: string): Promise<LocationDocument> {
+  async getLocationById(locationId: string, user?: any): Promise<LocationDocument> {
     // Ensure database connection is ready
     await this.databaseService.ensureConnectionReady();
 
@@ -237,6 +237,25 @@ export class LocationService {
 
     if (!location) {
       throw new NotFoundException('Location not found');
+    }
+
+    if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+      const locationIdStr = location._id.toString();
+      if (user.role === 'user') {
+        const userDefault = user.defaultLocation?.toString?.() || user.defaultLocation;
+        if (userDefault !== locationIdStr) {
+          throw new NotFoundException('Location not found');
+        }
+      } else if (user.role === 'agent') {
+        const assignedAgents = Array.isArray(location.assignedToAgent)
+          ? location.assignedToAgent.map((a) => String(a._id || a))
+          : location.assignedToAgent
+            ? [String(location.assignedToAgent)]
+            : [];
+        if (!assignedAgents.includes(user._id.toString())) {
+          throw new NotFoundException('Location not found');
+        }
+      }
     }
 
     return location;
@@ -404,7 +423,7 @@ export class LocationService {
     return locations;
   }
 
-  async getLocationWithStats(locationId: string): Promise<any> {
+  async getLocationWithStats(locationId: string, user?: any): Promise<any> {
     const expressService = await getExpressService();
     if (expressService && expressService.getLocationWithStats) {
       return expressService.getLocationWithStats(locationId);
@@ -426,6 +445,25 @@ export class LocationService {
 
     if (!location) {
       throw new NotFoundException('Location not found');
+    }
+
+    if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+      const locationIdStr = location._id.toString();
+      if (user.role === 'user') {
+        const userDefault = user.defaultLocation?.toString?.() || user.defaultLocation;
+        if (userDefault !== locationIdStr) {
+          throw new NotFoundException('Location not found');
+        }
+      } else if (user.role === 'agent') {
+        const assignedAgents = Array.isArray(location.assignedToAgent)
+          ? location.assignedToAgent.map((a) => String(a._id || a))
+          : location.assignedToAgent
+            ? [String(location.assignedToAgent)]
+            : [];
+        if (!assignedAgents.includes(user._id.toString())) {
+          throw new NotFoundException('Location not found');
+        }
+      }
     }
 
     // Avoid a hard dependency on ProjectModule injection; use already-registered mongoose model.

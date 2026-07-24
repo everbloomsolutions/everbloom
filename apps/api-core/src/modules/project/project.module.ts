@@ -1,13 +1,19 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Project, ProjectSchema } from './schemas/project.schema';
+import { User, UserSchema } from '../user/schemas/user.schema';
+import { Location, LocationSchema } from '../location/schemas/location.schema';
 import { ProjectController, ProjectAdminController } from './project.controller';
 import { ProjectService, setProjectServiceInstance } from './project.service';
 import { CommonModule } from '../../common/common.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }]),
+    MongooseModule.forFeature([
+      { name: Project.name, schema: ProjectSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Location.name, schema: LocationSchema },
+    ]),
     CommonModule, // Provides PaginationService, ValidationService, DatabaseService
   ],
   controllers: [ProjectController, ProjectAdminController],

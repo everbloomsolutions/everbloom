@@ -6,7 +6,15 @@ import { formatDate } from '../../utils/formatDate';
  * Displays allocated location details for the User role
  */
 const DashboardUserLocation = ({ defaultLocation }) => {
-  if (!defaultLocation) return null;
+  if (!defaultLocation) {
+    return (
+      <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <p className="text-sm text-amber-800 dark:text-amber-200">
+          No location assigned — please contact an administrator.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-8">

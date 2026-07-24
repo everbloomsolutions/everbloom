@@ -944,7 +944,11 @@ export const permanentlyDeleteUser = async (userId: string, verifiedConnection?:
   await UserModel.deleteOne({ _id: userObjectId });
 };
 
-export const getUserStats = async (requesterRole?: string, verifiedConnection?: mongoose.Connection): Promise<{
+export const getUserStats = async (
+  requesterId?: string,
+  requesterRole?: string,
+  verifiedConnection?: mongoose.Connection,
+): Promise<{
   total: number;
   active: number;
   inactive: number;
@@ -966,8 +970,33 @@ export const getUserStats = async (requesterRole?: string, verifiedConnection?: 
   const UserModel = getUserModel(verifiedConnection);
 
   if (isAgent) {
-    // Agents can only see 'user' role statistics
-    const userRoleQuery = { ...baseQuery, role: 'user' };
+    let allowedLocationIds: string[] = [];
+
+    if (requesterId) {
+      const agentObjectId = new mongoose.Types.ObjectId(requesterId);
+      const assignedLocations = await Location.find({
+        assignedToAgent: agentObjectId,
+        isDeleted: { $ne: true },
+        deletedAt: { $exists: false },
+      }).select('_id');
+      allowedLocationIds = assignedLocations.map((loc) => loc._id.toString());
+    }
+
+    if (allowedLocationIds.length === 0) {
+      return {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        users: 0,
+        recent: 0,
+      };
+    }
+
+    const userRoleQuery = {
+      ...baseQuery,
+      role: 'user',
+      defaultLocation: { $in: allowedLocationIds.map((id) => new mongoose.Types.ObjectId(id)) },
+    };
 
     const [total, active, inactive, recent] = await Promise.all([
       UserModel.countDocuments(userRoleQuery),

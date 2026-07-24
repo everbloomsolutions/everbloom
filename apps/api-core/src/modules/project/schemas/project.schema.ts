@@ -271,3 +271,4 @@ ProjectSchema.index({ locationId: 1, isDeleted: 1 });
 ProjectSchema.index({ collectedBy: 1, isDeleted: 1 });
 ProjectSchema.index({ isDeleted: 1, createdAt: -1 });
 ProjectSchema.index({ receiptNumber: 1 });
+ProjectSchema.index({ userId: 1, locationId: 1, isDeleted: 1, createdAt: -1 });

@@ -166,13 +166,16 @@ const CollectionTable = memo(({
   ], [user, onEdit, onDelete, onTransfer, onGenerateReceipt, onPrintReceipt, onDownloadReceipt]);
 
   if (collections.length === 0) {
+    const isUserRole = user?.role === USER_ROLES.USER;
     return (
       <div className="p-8 text-center">
         <p className="text-gray-500 dark:text-gray-400 mb-2">
           No collections found
         </p>
         <p className="text-sm text-gray-400 dark:text-gray-500">
-          Create a new collection to get started.
+          {isUserRole
+            ? 'No collections are assigned to your location. Please contact an administrator.'
+            : 'Create a new collection to get started.'}
         </p>
       </div>
     );

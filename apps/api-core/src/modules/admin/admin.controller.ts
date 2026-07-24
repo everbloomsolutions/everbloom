@@ -304,7 +304,7 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin', 'agent')
   async getUserStats(@CurrentUser() user: UserDocument) {
-    const stats = await this.userAdminService.getUserStats(user.role);
+    const stats = await this.userAdminService.getUserStats(user._id.toString(), user.role);
     return {
       success: true,
       data: stats,

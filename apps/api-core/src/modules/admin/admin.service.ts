@@ -42,7 +42,7 @@ export class AdminService {
    */
   private buildUserFilter(userId: string, userRole?: string): Record<string, unknown> {
     const baseQuery = this.buildBaseQuery();
-    if (userRole === 'agent') {
+    if (userRole === 'agent' || userRole === 'user') {
       const userObjectId = this.validationService.validateObjectId(userId, 'userId');
       return { ...baseQuery, _id: userObjectId };
     }
@@ -65,7 +65,20 @@ export class AdminService {
       return baseQuery;
     }
 
-    // If locationIds is [], user/agent has no locations (match nothing)
+    const userObjectId = this.validationService.validateObjectId(userId, 'userId');
+
+    // Agent: only collections they collected or created (no location widening)
+    if (userRole === 'agent') {
+      return {
+        ...baseQuery,
+        $or: [
+          { collectedBy: userObjectId },
+          { userId: userObjectId },
+        ],
+      };
+    }
+
+    // If locationIds is [], user has no defaultLocation (match nothing)
     if (locationIds.length === 0) {
       return {
         ...baseQuery,
@@ -73,26 +86,12 @@ export class AdminService {
       };
     }
 
-    // Filter by location IDs
-    const locationFilter: Record<string, unknown> = {
+    // User: must be the owner AND at the defaultLocation
+    return {
       ...baseQuery,
+      userId: userObjectId,
       locationId: { $in: locationIds },
     };
-
-    // For agents, also include projects they collected/created (even if not in assigned locations)
-    if (userRole === 'agent') {
-      const userObjectId = this.validationService.validateObjectId(userId, 'userId');
-      return {
-        ...locationFilter,
-        $or: [
-          { locationId: { $in: locationIds } },
-          { collectedBy: userObjectId },
-          { userId: userObjectId },
-        ],
-      };
-    }
-
-    return locationFilter;
   }
 
   /**
@@ -469,11 +468,11 @@ export class UserAdminService {
     await permanentlyDeleteUser(userId, verifiedConnection);
   }
 
-  async getUserStats(requesterRole?: string): Promise<any> {
+  async getUserStats(requesterId?: string, requesterRole?: string): Promise<any> {
     await this.databaseService.ensureConnectionReady();
     const { getUserStats } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    return getUserStats(requesterRole, verifiedConnection);
+    return getUserStats(requesterId, requesterRole, verifiedConnection);
   }
 
   async ensureConnectionReady(): Promise<void> {

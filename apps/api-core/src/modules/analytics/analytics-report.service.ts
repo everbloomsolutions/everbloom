@@ -492,7 +492,7 @@ const fetchAnalyticsData = async (
       });
 
     case 'user':
-      return userAdminService.getUserStats(request.role, verifiedConnection);
+      return userAdminService.getUserStats(request.userId, request.role, verifiedConnection);
 
     case 'comprehensive': {
       // Fetch all analytics for comprehensive report
@@ -509,7 +509,7 @@ const fetchAnalyticsData = async (
           userId: request.userId,
           userRole: request.role,
         }),
-        userAdminService.getUserStats(request.role, verifiedConnection),
+        userAdminService.getUserStats(request.userId, request.role, verifiedConnection),
       ]);
       return { location, agent, collection, user };
     }

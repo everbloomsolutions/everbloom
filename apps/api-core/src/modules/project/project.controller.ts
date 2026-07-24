@@ -76,7 +76,10 @@ export class ProjectController {
   ) {
     const projects = await this.projectService.getUserProjects(
       user._id.toString(),
-      query,
+      {
+        ...query,
+        defaultLocation: user.defaultLocation?.toString(),
+      },
     );
     return {
       success: true,
@@ -86,7 +89,12 @@ export class ProjectController {
 
   @Get(':id')
   async getProjectById(@Param('id') id: string, @CurrentUser() user: UserDocument) {
-    const project = await this.projectService.getProjectById(id, user._id.toString());
+    const project = await this.projectService.getProjectById(
+      id,
+      user._id.toString(),
+      user.defaultLocation?.toString(),
+      user.role,
+    );
 
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -105,7 +113,12 @@ export class ProjectController {
     @Body() quoteActionDto: QuoteActionDto,
     @CurrentUser() user: UserDocument,
   ) {
-    const existing = await this.projectService.getProjectById(id, user._id.toString());
+    const existing = await this.projectService.getProjectById(
+      id,
+      user._id.toString(),
+      user.defaultLocation?.toString(),
+      user.role,
+    );
     if (!existing || (existing as any).status !== 'quoted') {
       throw new BadRequestException('Project must be quoted before accepting');
     }
@@ -114,6 +127,8 @@ export class ProjectController {
       user._id.toString(),
       user.role,
       { status: 'accepted' },
+      undefined,
+      user.defaultLocation?.toString(),
     );
     return {
       success: true,
@@ -134,6 +149,8 @@ export class ProjectController {
       user._id.toString(),
       user.role,
       { status: 'rejected' },
+      undefined,
+      user.defaultLocation?.toString(),
     );
     return {
       success: true,
@@ -153,12 +170,13 @@ export class ProjectAdminController {
   ) {}
 
   @Get()
-  @Roles('admin', 'super_admin', 'agent')
+  @Roles('admin', 'super_admin', 'agent', 'user')
   async getAllProjects(@Query() query: any, @CurrentUser() user: UserDocument, @Req() _req: any) {
     return this.projectService.getAllProjects({
       ...query,
       userId: user._id.toString(),
       userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
     });
   }
 
@@ -169,26 +187,29 @@ export class ProjectAdminController {
       ...query,
       userId: user._id.toString(),
       userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
     });
   }
 
   @Get('stats')
-  @Roles('admin', 'super_admin', 'agent')
+  @Roles('admin', 'super_admin', 'agent', 'user')
   async getProjectStats(@Query() query: any, @CurrentUser() user: UserDocument) {
     return this.projectService.getProjectStats({
       ...query,
       userId: user._id.toString(),
       userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
     });
   }
 
   @Get('analytics')
-  @Roles('admin', 'super_admin', 'agent')
+  @Roles('admin', 'super_admin', 'agent', 'user')
   async getCollectionAnalytics(@Query() query: any, @CurrentUser() user: UserDocument) {
     return this.projectService.getCollectionAnalytics({
       ...query,
       userId: user._id.toString(),
       userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
     });
   }
 
@@ -240,6 +261,8 @@ export class ProjectAdminController {
   async getMyCollectionAnalytics(@Query() query: any, @CurrentUser() user: UserDocument) {
     return this.projectService.getMyCollectionAnalytics(user._id.toString(), {
       ...query,
+      userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
     });
   }
 
@@ -251,6 +274,7 @@ export class ProjectAdminController {
       ...query,
       userId: user._id.toString(),
       userRole: user.role,
+      defaultLocation: user.defaultLocation?.toString(),
       includeDeleted: true, // Flag to include deleted projects
     });
   }
@@ -262,6 +286,7 @@ export class ProjectAdminController {
       id,
       user._id.toString(),
       user.role,
+      user.defaultLocation?.toString(),
     );
     return {
       success: true,
@@ -304,6 +329,7 @@ export class ProjectAdminController {
       user.role,
       updateProjectDto,
       req,
+      user.defaultLocation?.toString(),
     );
     return {
       success: true,

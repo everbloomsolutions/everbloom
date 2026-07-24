@@ -379,9 +379,9 @@ export class LocationController {
   }
 
   @Get(':id')
-  @Roles('admin', 'super_admin', 'agent')
-  async getLocationById(@Param('id') id: string) {
-    const location = await this.locationService.getLocationById(id);
+  @Roles('admin', 'super_admin', 'agent', 'user')
+  async getLocationById(@Param('id') id: string, @CurrentUser() user: UserDocument) {
+    const location = await this.locationService.getLocationById(id, user);
     return {
       success: true,
       data: location,
@@ -389,9 +389,9 @@ export class LocationController {
   }
 
   @Get(':id/stats')
-  @Roles('admin', 'super_admin', 'agent')
-  async getLocationWithStats(@Param('id') id: string) {
-    const location = await this.locationService.getLocationWithStats(id);
+  @Roles('admin', 'super_admin', 'agent', 'user')
+  async getLocationWithStats(@Param('id') id: string, @CurrentUser() user: UserDocument) {
+    const location = await this.locationService.getLocationWithStats(id, user);
     return {
       success: true,
       data: location,

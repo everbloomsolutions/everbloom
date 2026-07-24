@@ -2,6 +2,8 @@ import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project, ProjectDocument } from './schemas/project.schema';
+import { User, UserDocument } from '../user/schemas/user.schema';
+import { Location, LocationDocument } from '../location/schemas/location.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ValidationService } from '../../common/validation/validation.service';
@@ -19,6 +21,8 @@ export class ProjectService {
 
   constructor(
     @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
     @Inject(ValidationService) private validationService: ValidationService,
     @Inject(PaginationService) private paginationService: PaginationService,
     @Inject(DatabaseService) private databaseService: DatabaseService,
@@ -192,7 +196,7 @@ export class ProjectService {
 
   // Core functions - implement using NestJS schema
   // TODO: Migrate remaining complex functions gradually
-  async createProject(data: CreateProjectDto, userId: string, _userRole?: string, _req?: any): Promise<ProjectDocument> {
+  async createProject(data: CreateProjectDto, userId: string, userRole?: string, _req?: any): Promise<ProjectDocument> {
     await this.databaseService.ensureConnectionReady();
 
     const userObjectId = this.validationService.validateObjectId(userId, 'userId');
@@ -215,8 +219,66 @@ export class ProjectService {
     const gstAmount = subTotal * (gstRate / 100);
     const totalAmount = subTotal + gstAmount;
 
+    // For admin/agent creation, require an existing location so the resident user can be resolved
+    if ((userRole === 'admin' || userRole === 'super_admin' || userRole === 'agent') && !data.locationId) {
+      throw new NotFoundException('An existing location is required. Please select a location from the list.');
+    }
+
+    let locationObjectId: Types.ObjectId | undefined;
+    if (data.locationId) {
+      locationObjectId = this.validationService.validateObjectId(data.locationId, 'locationId');
+    }
+
+    let resolvedUserId = userObjectId;
+
+    // For admin/agent, assign the collection to the user whose defaultLocation matches the selected location
+    if ((userRole === 'admin' || userRole === 'super_admin' || userRole === 'agent') && locationObjectId) {
+      const location = await this.locationModel.findOne({
+        _id: locationObjectId,
+        isDeleted: { $ne: true },
+        deletedAt: { $exists: false },
+      }).lean();
+
+      if (!location) {
+        throw new NotFoundException('Selected location not found or is inactive.');
+      }
+
+      if (userRole === 'agent') {
+        const assignedAgents = Array.isArray(location.assignedToAgent)
+          ? location.assignedToAgent.map((a) => String(a._id || a))
+          : location.assignedToAgent
+            ? [String(location.assignedToAgent)]
+            : [];
+        if (!assignedAgents.includes(userId)) {
+          throw new NotFoundException('The selected location is not assigned to you.');
+        }
+      }
+
+      const resident = await this.userModel
+        .findOne({
+          defaultLocation: locationObjectId,
+          role: 'user',
+          isDeleted: { $ne: true },
+        })
+        .lean();
+
+      if (!resident) {
+        throw new NotFoundException('No user has this location as their default location. Please assign a user to this location first.');
+      }
+
+      resolvedUserId = resident._id as Types.ObjectId;
+    }
+
+    // For user role creation, validate the selected location matches their defaultLocation
+    if (userRole === 'user') {
+      const user = await this.userModel.findById(userObjectId).select('defaultLocation').lean();
+      if (!user?.defaultLocation || String(user.defaultLocation) !== String(locationObjectId)) {
+        throw new NotFoundException('You can only create collections at your assigned default location.');
+      }
+    }
+
     const project = new this.projectModel({
-      userId: userObjectId,
+      userId: resolvedUserId,
       collectedBy: userObjectId,
       serviceType: data.serviceType,
       title: data.title,
@@ -233,16 +295,16 @@ export class ProjectService {
       totalAmount,
       collectionDate: data.collectionDate ? new Date(data.collectionDate) : now,
       status: 'pending',
+      locationId: locationObjectId,
     } as any);
-
-    if (data.locationId) {
-      project.locationId = this.validationService.validateObjectId(data.locationId, 'locationId');
-    }
 
     return project.save();
   }
 
-  async getUserProjects(userId: string, filters?: { serviceType?: string }): Promise<ProjectDocument[]> {
+  async getUserProjects(
+    userId: string,
+    filters?: { serviceType?: string; defaultLocation?: string },
+  ): Promise<ProjectDocument[]> {
     await this.databaseService.ensureConnectionReady();
     const userObjectId = this.validationService.validateObjectId(userId, 'userId');
 
@@ -256,13 +318,25 @@ export class ProjectService {
       query.serviceType = filters.serviceType;
     }
 
+    // Restrict to the user's defaultLocation if provided; otherwise return empty
+    if (filters?.defaultLocation) {
+      query.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+    } else {
+      return [];
+    }
+
     return this.projectModel
       .find(query)
       .sort({ createdAt: -1 })
       .exec();
   }
 
-  async getProjectById(projectId: string, userId: string): Promise<ProjectDocument | null> {
+  async getProjectById(
+    projectId: string,
+    userId: string,
+    defaultLocation?: string,
+    userRole?: string,
+  ): Promise<ProjectDocument | null> {
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 
     // Find project excluding deleted ones
@@ -280,6 +354,13 @@ export class ProjectService {
     // For admin endpoints, skip this check (handled by controller guards)
     if (userId && project.userId.toString() !== userId) {
       return null;
+    }
+
+    // For user role, also enforce defaultLocation match; missing defaultLocation means no access
+    if (userRole === 'user') {
+      if (!defaultLocation || !project.locationId || String(project.locationId) !== String(defaultLocation)) {
+        return null;
+      }
     }
 
     return project;
@@ -320,6 +401,14 @@ export class ProjectService {
     } else if (filters?.userRole === 'user' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
       filter.userId = userObjectId;
+
+      // Restrict user collections to their defaultLocation
+      if (filters?.defaultLocation) {
+        filter.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+      } else {
+        // No defaultLocation -> no visible collections
+        filter._id = { $in: [] };
+      }
     }
     // Admin/super_admin can see all projects
 
@@ -402,7 +491,12 @@ export class ProjectService {
     };
   }
 
-  async getProjectByIdAdmin(projectId: string, userId: string, userRole: string): Promise<ProjectDocument | null> {
+  async getProjectByIdAdmin(
+    projectId: string,
+    userId: string,
+    userRole: string,
+    defaultLocation?: string,
+  ): Promise<ProjectDocument | null> {
     await this.databaseService.ensureConnectionReady();
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 
@@ -430,7 +524,11 @@ export class ProjectService {
     }
 
     if (userRole === 'user') {
-      return String(project.userId) === String(requesterId) ? project : null;
+      const userMatches = String(project.userId) === String(requesterId);
+      const locationMatches = defaultLocation && project.locationId
+        ? String(project.locationId) === String(defaultLocation)
+        : false;
+      return userMatches && locationMatches ? project : null;
     }
 
     if (userRole === 'agent') {
@@ -446,7 +544,14 @@ export class ProjectService {
     return this.createProject(data, userId, userRole, req);
   }
 
-  async updateCollection(projectId: string, userId: string, userRole: string, data: UpdateProjectDto, _req?: any): Promise<ProjectDocument> {
+  async updateCollection(
+    projectId: string,
+    userId: string,
+    userRole: string,
+    data: UpdateProjectDto,
+    _req?: any,
+    defaultLocation?: string,
+  ): Promise<ProjectDocument> {
     await this.databaseService.ensureConnectionReady();
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 
@@ -467,6 +572,9 @@ export class ProjectService {
       }
       if (userRole === 'user') {
         if (String(project.userId) !== String(requesterId)) {
+          throw new NotFoundException('Collection not found');
+        }
+        if (!defaultLocation || !project.locationId || String(project.locationId) !== String(defaultLocation)) {
           throw new NotFoundException('Collection not found');
         }
       }
@@ -501,9 +609,46 @@ export class ProjectService {
 
     if (data.locationId !== undefined) {
       if (data.locationId === null || data.locationId === '') {
-        (project as any).locationId = undefined;
+        throw new NotFoundException('An existing location is required. Please select a location from the list.');
       } else {
-        (project as any).locationId = this.validationService.validateObjectId(String(data.locationId), 'locationId');
+        const newLocationId = this.validationService.validateObjectId(String(data.locationId), 'locationId');
+
+        // Re-resolve the resident user when the location changes
+        if (String(newLocationId) !== String(project.locationId)) {
+          if (userRole === 'user') {
+            const user = await this.userModel.findById(requesterId).select('defaultLocation').lean();
+            if (!user?.defaultLocation || String(user.defaultLocation) !== String(newLocationId)) {
+              throw new NotFoundException('You can only update collections at your assigned default location.');
+            }
+          }
+
+          if (userRole === 'agent') {
+            // Agents can only update to locations assigned to them
+            const location = await this.locationModel.findOne({
+              _id: newLocationId,
+              assignedToAgent: requesterId,
+              isDeleted: { $ne: true },
+              deletedAt: { $exists: false },
+            }).lean();
+            if (!location) {
+              throw new NotFoundException('The selected location is not assigned to you.');
+            }
+          }
+
+          if (userRole === 'admin' || userRole === 'super_admin') {
+            const resident = await this.userModel.findOne({
+              defaultLocation: newLocationId,
+              role: 'user',
+              isDeleted: { $ne: true },
+            }).lean();
+            if (!resident) {
+              throw new NotFoundException('No user has this location as their default location.');
+            }
+            (project as any).userId = resident._id;
+          }
+        }
+
+        (project as any).locationId = newLocationId;
       }
     }
 
@@ -628,6 +773,21 @@ export class ProjectService {
     } else if (filters?.userRole === 'user' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
       match.userId = userObjectId;
+
+      if (filters?.defaultLocation) {
+        match.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+      } else {
+        // No defaultLocation -> return empty stats
+        return {
+          success: true,
+          data: {
+            total: 0,
+            totalWeight: 0,
+            totalAmount: 0,
+            byStatus: {},
+          },
+        };
+      }
     }
 
     // Date range on collectionDate (more meaningful for collections)
@@ -700,6 +860,22 @@ export class ProjectService {
     } else if (filters?.userRole === 'user' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
       baseQuery.userId = userObjectId;
+
+      if (filters?.defaultLocation) {
+        baseQuery.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+      } else {
+        return {
+          success: true,
+          data: {
+            total: 0,
+            pending: 0,
+            inProgress: 0,
+            completed: 0,
+            totalWeight: 0,
+            totalAmount: 0,
+          },
+        };
+      }
     }
 
     if (filters?.startDate || filters?.endDate) {
@@ -790,6 +966,28 @@ export class ProjectService {
     } else if (filters?.userRole === 'user' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
       baseQuery.userId = userObjectId;
+
+      if (filters?.defaultLocation) {
+        baseQuery.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+      } else {
+        return {
+          success: true,
+          data: {
+            timeSeries: [],
+            overall: {
+              totalCollections: 0,
+              totalRevenue: 0,
+              totalWeight: 0,
+              completedCollections: 0,
+              pendingCollections: 0,
+              inProgressCollections: 0,
+              averageCollectionValue: 0,
+              byServiceType: {},
+            },
+            granularity: filters?.granularity || 'daily',
+          },
+        };
+      }
     }
 
     // Determine granularity (daily, weekly, monthly)
@@ -1216,11 +1414,36 @@ export class ProjectService {
     const baseQuery: Record<string, unknown> = {
       isDeleted: { $ne: true },
       deletedAt: { $exists: false },
-      $or: [
+    };
+
+    const userRole = filters?.userRole;
+
+    if (userRole === 'user') {
+      if (filters?.defaultLocation) {
+        baseQuery.userId = userObjectId;
+        baseQuery.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
+      } else {
+        return {
+          success: true,
+          data: {
+            totalCollections: 0,
+            totalRevenue: 0,
+            totalWeight: 0,
+            completedCollections: 0,
+            pendingCollections: 0,
+            inProgressCollections: 0,
+            averageCollectionValue: 0,
+            byServiceType: {},
+          },
+        };
+      }
+    } else {
+      // agent / admin / super_admin: collections they created or collected
+      baseQuery.$or = [
         { userId: userObjectId },
         { collectedBy: userObjectId },
-      ],
-    };
+      ];
+    }
 
     // Date range filter
     if (filters?.startDate || filters?.endDate) {
