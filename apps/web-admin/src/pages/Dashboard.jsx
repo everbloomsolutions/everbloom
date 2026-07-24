@@ -50,29 +50,12 @@ const Dashboard = () => {
   const isAgent = userRole === USER_ROLES.AGENT;
   const isUser = userRole === USER_ROLES.USER;
 
-  // Use TanStack Query for all data fetching
-  const { data: statsData, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useQuery({
-    queryKey: ['dashboard', 'stats', user?._id, userRole],
+  // Use TanStack Query for dashboard data in a single request
+  const { data: dashboardData, isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['dashboard', 'all', user?._id, userRole],
     queryFn: createQueryFn(() => dashboardApi.getDashboardStats()),
-    staleTime: 60000, // 1 minute
-  });
-
-  const { data: todayData, isLoading: todayLoading, error: todayError, refetch: refetchToday } = useQuery({
-    queryKey: ['dashboard', 'today', user?._id, userRole],
-    queryFn: createQueryFn(() => dashboardApi.getTodayActivityOverview()),
-    staleTime: 30000, // 30 seconds
-  });
-
-  const { data: performanceData, isLoading: performanceLoading, error: performanceError, refetch: refetchPerformance } = useQuery({
-    queryKey: ['dashboard', 'performance', user?._id, userRole],
-    queryFn: createQueryFn(() => dashboardApi.getTodayPerformanceMetrics()),
-    staleTime: 30000, // 30 seconds
-  });
-
-  const { data: recentData, isLoading: recentLoading, error: recentError, refetch: refetchRecent } = useQuery({
-    queryKey: ['dashboard', 'recent', user?._id, userRole],
-    queryFn: createQueryFn(() => dashboardApi.getRecentDataAndGrowth()),
-    staleTime: 60000, // 1 minute
+    staleTime: 120000, // 2 minutes
+    gcTime: 300000, // 5 minutes
   });
 
   // Fetch default location for users
@@ -107,12 +90,12 @@ const Dashboard = () => {
   });
 
   // Extract data from responses (after adapter transformation)
-  const stats = statsData;
+  const stats = dashboardData;
 
-  // Normalize todayData into the richer structure expected by dashboard components.
+  // Normalize today data into the richer structure expected by dashboard components.
   // Backend currently returns a simplified TodayActivityDto (counts only) with role-based filtering.
   const normalizedTodayData = useMemo(() => {
-    const raw = todayData || {};
+    const raw = dashboardData?.today || {};
     const collectionsCount = Number(raw?.collections ?? raw?.newProjects ?? 0) || 0;
     const newUsers = Number(raw?.newUsers ?? 0) || 0;
     const newLocations = Number(raw?.newLocations ?? 0) || 0;
@@ -148,21 +131,12 @@ const Dashboard = () => {
         newUsers: 0,
       },
     };
-  }, [todayData]);
+  }, [dashboardData?.today]);
   const defaultLocation = defaultLocationId !== null && typeof defaultLocationId === 'object' ? defaultLocationId : defaultLocationData;
   const assignedLocations = assignedLocationsData?.locations || [];
 
-  // Combined loading state
-  const loading = statsLoading || todayLoading || performanceLoading || recentLoading;
-  const error = todayError || statsError || performanceError || recentError;
-
   // Refetch all data
-  const refetchAll = () => {
-    refetchStats();
-    refetchToday();
-    refetchPerformance();
-    refetchRecent();
-  };
+  const refetchAll = refetch;
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -170,11 +144,9 @@ const Dashboard = () => {
       const interval = setInterval(refetchAll, 5 * 60 * 1000);
       return () => clearInterval(interval);
     }
-    // intentional: run only when user/role change; refetchAll is stable from query
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?._id, userRole]);
+  }, [user?._id, userRole, refetchAll]);
 
-  if (loading && !todayData) {
+  if (loading && !dashboardData) {
     return (
       <div>
         <div className="mb-8">
@@ -195,7 +167,7 @@ const Dashboard = () => {
   }
 
   // Show error message if critical data failed
-  if (error && !todayData) {
+  if (error && !dashboardData) {
     return (
       <div>
         <div className="mb-8">
@@ -259,7 +231,7 @@ const Dashboard = () => {
 
       {/* Today's Performance Metrics - Only for Admin and Agent */}
       <DashboardPerformanceMetrics
-        performanceData={performanceData}
+        performanceData={dashboardData?.performance}
         isAdmin={isAdmin}
         isAgent={isAgent}
         assignedLocations={assignedLocations}
@@ -274,7 +246,7 @@ const Dashboard = () => {
       )}
 
       {/* Role-Specific Insights */}
-      {todayData && (isUser || isAgent) && (
+      {normalizedTodayData && (isUser || isAgent) && (
         <DashboardInsights
           todayData={normalizedTodayData}
           isUser={isUser}
@@ -284,9 +256,9 @@ const Dashboard = () => {
       )}
 
       {/* User Activity Summary and Timeline */}
-      {isUser && recentData && (
+      {isUser && dashboardData && (
         <DashboardRecentActivity
-          recentData={recentData}
+          recentData={dashboardData}
           stats={stats}
           isUser={isUser}
           isAdmin={isAdmin}
@@ -296,9 +268,9 @@ const Dashboard = () => {
       )}
 
       {/* Recent Data, Charts - Only for Admin/Agent */}
-      {recentData && !isUser && (
+      {dashboardData && !isUser && (
         <DashboardRecentActivity
-          recentData={recentData}
+          recentData={dashboardData}
           stats={stats}
           isAdmin={isAdmin}
           isAgent={isAgent}

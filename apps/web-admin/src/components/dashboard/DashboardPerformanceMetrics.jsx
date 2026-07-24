@@ -6,7 +6,15 @@ import { formatCurrency } from '../../utils/formatCurrency';
  * Displays performance metrics for Admin and Agent roles
  */
 const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assignedLocations }) => {
-  if (!performanceData || (isAdmin === false && isAgent === false)) return null;
+  if (
+    !performanceData ||
+    (isAdmin === false && isAgent === false) ||
+    (typeof performanceData.collectionsPerHour !== 'number' &&
+      !performanceData.activeAgents?.length &&
+      !performanceData.activeLocations?.length)
+  ) {
+    return null;
+  }
 
   return (
     <div className="mb-8">

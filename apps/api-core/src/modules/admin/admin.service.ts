@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { RedisClientType } from 'redis';
 import { User, UserDocument } from '../user/schemas/user.schema';
 import { Project, ProjectDocument } from '../project/schemas/project.schema';
 import { Location, LocationDocument } from '../location/schemas/location.schema';
@@ -23,6 +24,7 @@ export class AdminService {
     @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
     @Inject(ValidationService) private validationService: ValidationService,
     @Inject(DatabaseService) private databaseService: DatabaseService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: RedisClientType | null,
   ) {}
 
   /**
@@ -204,7 +206,44 @@ export class AdminService {
     };
   }
 
+  private getDashboardCacheKey(userId: string, userRole?: string): string {
+    return `dashboard:${userId}:${userRole ?? 'all'}`;
+  }
+
+  private async getCachedDashboard<T>(cacheKey: string): Promise<T | null> {
+    if (!this.redisClient?.isOpen) {
+      return null;
+    }
+    try {
+      const cached = await this.redisClient.get(cacheKey);
+      if (cached) {
+        this.logger.debug(`Dashboard cache hit: ${cacheKey}`);
+        return JSON.parse(cached) as T;
+      }
+    } catch (err) {
+      this.logger.warn('Dashboard cache read error', err);
+    }
+    return null;
+  }
+
+  private async setCachedDashboard<T>(cacheKey: string, value: T, ttlSeconds = 60): Promise<void> {
+    if (!this.redisClient?.isOpen) {
+      return;
+    }
+    try {
+      await this.redisClient.setEx(cacheKey, ttlSeconds, JSON.stringify(value));
+    } catch (err) {
+      this.logger.warn('Dashboard cache write error', err);
+    }
+  }
+
   async getDashboard(userId: string, userRole?: string): Promise<DashboardResponseDto> {
+    const cacheKey = this.getDashboardCacheKey(userId, userRole);
+    const cached = await this.getCachedDashboard<DashboardResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     await this.databaseService.ensureConnectionReady();
 
     // Get location IDs for filtering
@@ -276,16 +315,25 @@ export class AdminService {
       .lean()
       .exec();
 
-    return {
+    const result: DashboardResponseDto = {
       overview,
       today,
       collections: safeTotalProjects, // Top-level alias for backward compatibility (total collections)
       stats: overview,
       recentUsers,
     };
+
+    await this.setCachedDashboard(cacheKey, result);
+    return result;
   }
 
   async getTodayActivity(userId: string, userRole?: string): Promise<TodayActivityDto> {
+    const cacheKey = `dashboard:today:${userId}:${userRole ?? 'all'}`;
+    const cached = await this.getCachedDashboard<TodayActivityDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     await this.databaseService.ensureConnectionReady();
 
     // Get location IDs for filtering
@@ -309,13 +357,16 @@ export class AdminService {
     const safeNewProjects = Number(newProjects) || 0;
     const safeNewLocations = Number(newLocations) || 0;
 
-    return {
+    const result: TodayActivityDto = {
       newUsers: safeNewUsers,
       newProjects: safeNewProjects,
       newLocations: safeNewLocations,
       collections: safeNewProjects, // Alias for backward compatibility
       date: todayStart.toISOString().split('T')[0],
     };
+
+    await this.setCachedDashboard(cacheKey, result);
+    return result;
   }
 
 }
