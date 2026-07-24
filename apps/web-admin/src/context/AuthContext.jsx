@@ -5,6 +5,7 @@ import { authApi } from '../api';
 import { tokenManager } from '../utils/tokenManager';
 import logger from '../utils/logger';
 import socketService from '../services/socketService';
+import { useSessionTimeout } from '../hooks';
 
 export const AuthContext = createContext();
 
@@ -151,6 +152,9 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
     if (updatedUser) tokenManager.setUser?.(updatedUser);
   };
+
+  // Automatically log the user out when the access token is about to expire.
+  useSessionTimeout(logout, isAuthenticated);
 
   const value = {
     user,

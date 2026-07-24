@@ -11,6 +11,7 @@ import BlankLayout from '../layouts/BlankLayout';
 
 // Lazy load pages for code splitting
 const Login = lazy(() => import('../pages/Login'));
+const ForgotPassword = lazy(() => import('../pages/ForgotPassword'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Users = lazy(() => import('../pages/Users'));
 const Locations = lazy(() => import('../pages/Locations'));
@@ -53,6 +54,7 @@ const AppRoutes = () => {
       {/* Auth Routes (Public) */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LazyWrapper><Login /></LazyWrapper>} />
+        <Route path="/forgot-password" element={<LazyWrapper><ForgotPassword /></LazyWrapper>} />
       </Route>
 
       {/* Protected Routes */}

@@ -167,6 +167,7 @@ const Settings = () => {
               label="Current Password"
               name="currentPassword"
               type="password"
+              autoComplete="current-password"
               value={passwordForm.values.currentPassword}
               onChange={passwordForm.handleChange}
               onBlur={passwordForm.handleBlur}
@@ -178,6 +179,7 @@ const Settings = () => {
               label="New Password"
               name="newPassword"
               type="password"
+              autoComplete="new-password"
               value={passwordForm.values.newPassword}
               onChange={passwordForm.handleChange}
               onBlur={passwordForm.handleBlur}
@@ -189,6 +191,7 @@ const Settings = () => {
               label="Confirm New Password"
               name="confirmPassword"
               type="password"
+              autoComplete="new-password"
               value={passwordForm.values.confirmPassword}
               onChange={passwordForm.handleChange}
               onBlur={passwordForm.handleBlur}

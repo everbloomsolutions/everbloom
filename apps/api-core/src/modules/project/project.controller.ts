@@ -23,6 +23,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { QuoteActionDto } from './dto/quote-action.dto';
+import { ArchiveDuplicatesDto } from '../../common/dto/archive-duplicates.dto';
+import { ImportDataDto } from '../../common/dto/import-data.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/guards/roles.guard';
@@ -99,7 +102,7 @@ export class ProjectController {
   @HttpCode(HttpStatus.OK)
   async acceptQuote(
     @Param('id') id: string,
-    @Body() body: { notes?: string },
+    @Body() quoteActionDto: QuoteActionDto,
     @CurrentUser() user: UserDocument,
   ) {
     const existing = await this.projectService.getProjectById(id, user._id.toString());
@@ -123,7 +126,7 @@ export class ProjectController {
   @HttpCode(HttpStatus.OK)
   async rejectQuote(
     @Param('id') id: string,
-    @Body() body: { notes?: string },
+    @Body() quoteActionDto: QuoteActionDto,
     @CurrentUser() user: UserDocument,
   ) {
     const project = await this.projectService.updateCollection(
@@ -222,9 +225,9 @@ export class ProjectAdminController {
   @Post('archive-duplicates')
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async archiveDuplicateCollections(@Body() body: any) {
-    const mode = body?.mode === 'apply' ? 'apply' : 'dry-run';
-    const limitGroups = typeof body?.limitGroups === 'number' ? body.limitGroups : undefined;
+  async archiveDuplicateCollections(@Body() archiveDuplicatesDto: ArchiveDuplicatesDto) {
+    const mode = archiveDuplicatesDto?.mode === 'apply' ? 'apply' : 'dry-run';
+    const limitGroups = typeof archiveDuplicatesDto?.limitGroups === 'number' ? archiveDuplicatesDto.limitGroups : undefined;
     const report = await this.projectService.archiveDuplicateCollections({ mode, limitGroups });
     return {
       success: true,
@@ -377,11 +380,11 @@ export class ProjectAdminController {
   @UseInterceptors(FileInterceptor('file'))
   async validateCollectionsImport(
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() body: any,
+    @Body() importDataDto: ImportDataDto,
     @CurrentUser() user: UserDocument,
     @Req() _req: any,
   ) {
-    const csvData = typeof body?.csvData === 'string' ? body.csvData : undefined;
+    const csvData = importDataDto?.csvData;
     const fileBuffer = file?.buffer;
     if (!fileBuffer && !csvData) {
       throw new BadRequestException('File upload (file) or csvData is required');
@@ -399,11 +402,11 @@ export class ProjectAdminController {
   @UseInterceptors(FileInterceptor('file'))
   async importCollections(
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() body: any,
+    @Body() importDataDto: ImportDataDto,
     @CurrentUser() user: UserDocument,
     @Req() req: any,
   ) {
-    const csvData = typeof body?.csvData === 'string' ? body.csvData : undefined;
+    const csvData = importDataDto?.csvData;
     const fileBuffer = file?.buffer;
     if (!fileBuffer && !csvData) {
       throw new BadRequestException('File upload (file) or csvData is required');

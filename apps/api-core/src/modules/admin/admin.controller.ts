@@ -19,6 +19,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ToggleUserStatusDto } from './dto/toggle-user-status.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { UpdateProjectDto } from '../project/dto/update-project.dto';
+import { ArchiveDuplicatesDto } from '../../common/dto/archive-duplicates.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/guards/roles.guard';
@@ -445,11 +446,11 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async archiveDuplicateUsers(@Body() body: any) {
+  async archiveDuplicateUsers(@Body() archiveDuplicatesDto: ArchiveDuplicatesDto) {
     await this.userAdminService.ensureConnectionReady();
     const verifiedConnection = this.userAdminService.getConnection();
-    const mode = body?.mode === 'apply' ? 'apply' : 'dry-run';
-    const limitGroups = typeof body?.limitGroups === 'number' ? body.limitGroups : undefined;
+    const mode = archiveDuplicatesDto?.mode === 'apply' ? 'apply' : 'dry-run';
+    const limitGroups = typeof archiveDuplicatesDto?.limitGroups === 'number' ? archiveDuplicatesDto.limitGroups : undefined;
     const report = await archiveDuplicateUsers({ mode, limitGroups }, verifiedConnection);
     return {
       success: true,

@@ -4,6 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api';
 import Skeleton from '../components/shared/Skeleton';
+import PageHeader from '../components/shared/PageHeader';
 import DashboardTodayActivity from '../components/dashboard/DashboardTodayActivity';
 import DashboardPerformanceMetrics from '../components/dashboard/DashboardPerformanceMetrics';
 import DashboardRecentActivity from '../components/dashboard/DashboardRecentActivity';
@@ -197,15 +198,10 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              {getGreeting()}
-            </p>
-          </div>
-          {/* Refresh Button */}
+      <PageHeader
+        title="Dashboard"
+        subtitle={getGreeting()}
+        actions={
           <button
             onClick={refetchAll}
             disabled={loading}
@@ -214,8 +210,8 @@ const Dashboard = () => {
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
 
       {/* Today's Activity Overview */}

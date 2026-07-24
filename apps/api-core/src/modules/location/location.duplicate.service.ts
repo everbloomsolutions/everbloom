@@ -97,7 +97,7 @@ interface DuplicateResult {
 }
 
 export const checkForDuplicates = async (
-  locationData: CreateLocationData,
+  locationData: Partial<CreateLocationData>,
   threshold: number = 0.8
 , verifiedConnection?: mongoose.Connection): Promise<DuplicateResult[]> => {
   const LocationModel = getLocationModel(verifiedConnection);

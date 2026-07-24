@@ -11,7 +11,7 @@ const AdminLayout = () => {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
         
-        <main id="main-content" className="flex-1 overflow-y-auto p-6" tabIndex={-1}>
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" tabIndex={-1}>
           <Outlet />
         </main>
       </div>

@@ -12,6 +12,7 @@ import LocationsTable from '../components/locations/LocationsTable';
 import LocationBulkActions from '../components/locations/LocationBulkActions';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
 import Loader from '../components/shared/Loader';
+import PageHeader from '../components/shared/PageHeader';
 import { useDebounce, useLocations, useLocationFilters, useLoadingStates, useModal, useModalWithData } from '../hooks';
 import { toast } from 'react-hot-toast';
 import logger from '../utils/logger';
@@ -285,65 +286,67 @@ const Locations = () => {
 
   return (
     <div>
-      <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Locations</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+      <PageHeader
+        title="Locations"
+        subtitle={
+          <>
             Manage registered locations for collections
             {totalLocations > 0 && (
               <span className="ml-2 text-gray-600 dark:text-gray-300">
                 ({totalLocations} {totalLocations === 1 ? 'location' : 'locations'})
               </span>
             )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <Button
-            onClick={openImportModal}
-            variant="secondary"
-            icon={Upload}
-            className="flex-shrink-0"
-          >
-            Import
-          </Button>
-          <div className="flex items-center gap-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-shrink-0">
-            <select
-              value={exportFormat}
-              onChange={(e) => setExportFormat(e.target.value)}
-              className="px-3 py-1.5 bg-white dark:bg-gray-700 border-0 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-0 cursor-pointer h-full"
-              title="Select export format"
-              disabled={isLoading('exporting')}
-            >
-              <option value="csv">CSV</option>
-              <option value="xlsx">Excel</option>
-            </select>
+          </>
+        }
+        actions={
+          <>
             <Button
-              onClick={handleExportLocations}
+              onClick={openImportModal}
               variant="secondary"
-              size="sm"
-              className="rounded-l-none border-l border-gray-300 dark:border-gray-600 flex-shrink-0"
-              title={`Export locations as ${exportFormat.toUpperCase()}`}
-              icon={Download}
-              isLoading={isLoading('exporting')}
-              loadingText="Exporting..."
-              disabled={isLoading('exporting')}
+              icon={Upload}
+              className="flex-shrink-0"
             >
-              Export
+              Import
             </Button>
-          </div>
-          <Button
-            onClick={() => {
-              closeEditModalData();
-              openCreateModal();
-            }}
-            variant="primary"
-            icon={Plus}
-            className="flex-shrink-0"
-          >
-            Create Location
-          </Button>
-        </div>
-      </div>
+            <div className="flex items-center gap-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-shrink-0">
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value)}
+                className="px-3 py-1.5 bg-white dark:bg-gray-700 border-0 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-0 cursor-pointer h-full"
+                title="Select export format"
+                disabled={isLoading('exporting')}
+              >
+                <option value="csv">CSV</option>
+                <option value="xlsx">Excel</option>
+              </select>
+              <Button
+                onClick={handleExportLocations}
+                variant="secondary"
+                size="sm"
+                className="rounded-l-none border-l border-gray-300 dark:border-gray-600 flex-shrink-0"
+                title={`Export locations as ${exportFormat.toUpperCase()}`}
+                icon={Download}
+                isLoading={isLoading('exporting')}
+                loadingText="Exporting..."
+                disabled={isLoading('exporting')}
+              >
+                Export
+              </Button>
+            </div>
+            <Button
+              onClick={() => {
+                closeEditModalData();
+                openCreateModal();
+              }}
+              variant="primary"
+              icon={Plus}
+              className="flex-shrink-0"
+            >
+              Create Location
+            </Button>
+          </>
+        }
+      />
 
       {/* Filters */}
       <LocationsFilters

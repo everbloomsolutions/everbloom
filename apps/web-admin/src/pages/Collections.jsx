@@ -16,6 +16,7 @@ import CollectionTable from '../components/collections/CollectionTable';
 import CollectionForm from '../components/collections/CollectionForm';
 import CollectionImport from '../components/collections/CollectionImport';
 import ReceiptGenerationModal from '../components/collections/ReceiptGenerationModal';
+import PageHeader from '../components/shared/PageHeader';
 import { isAdmin } from '../utils/permissionUtils';
 import { USER_ROLES } from '../utils/constants';
 
@@ -712,67 +713,65 @@ const Collections = () => {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Collections</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
-            Manage recycling collections from apartments, societies, and gated communities
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {isAdmin(user) && (
-            <>
-              <Button
-                onClick={openImportModal}
-                variant="secondary"
-                icon={Upload}
-                className="flex-shrink-0"
-              >
-                Import
-              </Button>
-              <Button
-                onClick={openArchiveDuplicatesConfirm}
-                variant="secondary"
-                className="flex-shrink-0"
-              >
-                Archive Duplicate Collections
-              </Button>
-              <div className="flex items-center gap-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-shrink-0">
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value)}
-                  className="px-3 py-1.5 bg-white dark:bg-gray-700 border-0 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-0 cursor-pointer h-full"
-                  title="Select export format"
-                >
-                  <option value="csv">CSV</option>
-                  <option value="xlsx">Excel</option>
-                </select>
+      <PageHeader
+        title="Collections"
+        subtitle="Manage recycling collections from apartments, societies, and gated communities"
+        actions={
+          <>
+            {isAdmin(user) && (
+              <>
                 <Button
-                  onClick={handleExportCollections}
+                  onClick={openImportModal}
                   variant="secondary"
-                  size="sm"
-                  className="rounded-l-none border-l border-gray-300 dark:border-gray-600 flex-shrink-0"
-                  title={`Export collections as ${exportFormat.toUpperCase()}`}
-                  icon={Download}
+                  icon={Upload}
+                  className="flex-shrink-0"
                 >
-                  Export
+                  Import
                 </Button>
-              </div>
-            </>
-          )}
-          {(user?.role === USER_ROLES.AGENT || isAdmin(user)) && (
-            <Button
-              onClick={openCreateModal}
-              variant="primary"
-              icon={Plus}
-              className="flex-shrink-0"
-            >
-              <span className="hidden sm:inline">New Collection</span>
-              <span className="sm:hidden">New</span>
-            </Button>
-          )}
-        </div>
-      </div>
+                <Button
+                  onClick={openArchiveDuplicatesConfirm}
+                  variant="secondary"
+                  className="flex-shrink-0"
+                >
+                  Archive Duplicate Collections
+                </Button>
+                <div className="flex items-center gap-0 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-shrink-0">
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border-0 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-0 cursor-pointer h-full"
+                    title="Select export format"
+                  >
+                    <option value="csv">CSV</option>
+                    <option value="xlsx">Excel</option>
+                  </select>
+                  <Button
+                    onClick={handleExportCollections}
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-l-none border-l border-gray-300 dark:border-gray-600 flex-shrink-0"
+                    title={`Export collections as ${exportFormat.toUpperCase()}`}
+                    icon={Download}
+                  >
+                    Export
+                  </Button>
+                </div>
+              </>
+            )}
+            {(user?.role === USER_ROLES.AGENT || isAdmin(user)) && (
+              <Button
+                onClick={openCreateModal}
+                variant="primary"
+                icon={Plus}
+                className="flex-shrink-0"
+              >
+                <span className="hidden sm:inline">New Collection</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            )}
+          </>
+        }
+      />
 
 
       {/* Filters */}

@@ -351,6 +351,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                 label="New Password"
                 type="password"
                 name="password"
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Leave blank to keep unchanged"
@@ -360,6 +361,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                 label="Confirm New Password"
                 type="password"
                 name="confirmPassword"
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Re-enter new password"

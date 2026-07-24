@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth, useForm } from '../hooks';
 import logger from '../utils/logger';
 import { Mail, Lock, LogIn, Shield, Zap, BarChart3 } from 'lucide-react';
@@ -152,9 +152,9 @@ const Login = () => {
           </div>
 
           <div className="text-sm">
-            <a href="/forgot-password" className="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+            <Link to="/forgot-password" className="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
               Forgot password?
-            </a>
+            </Link>
           </div>
         </div>
 

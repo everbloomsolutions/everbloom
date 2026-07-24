@@ -19,10 +19,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { LocationService, CreateLocationData } from './location.service';
+// Ensure CreateLocationData is available for type casting in duplicate checks
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
 import { SearchLocationDto } from './dto/search-location.dto';
+import { CheckDuplicatesDto } from './dto/check-duplicates.dto';
+import { ArchiveDuplicatesDto } from '../../common/dto/archive-duplicates.dto';
+import { ImportDataDto } from '../../common/dto/import-data.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/guards/roles.guard';
@@ -47,12 +51,12 @@ export class LocationController {
   @Post('check-duplicates')
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async checkDuplicates(@Body() body: any) {
+  async checkDuplicates(@Body() checkDuplicatesDto: CheckDuplicatesDto) {
     try {
       await this.databaseService.ensureConnectionReady();
       const verifiedConnection = this.databaseService.getConnection();
-      const threshold = typeof body?.threshold === 'number' ? body.threshold : undefined;
-      const duplicates = await checkForDuplicates(body, threshold, verifiedConnection);
+      const threshold = typeof checkDuplicatesDto?.threshold === 'number' ? checkDuplicatesDto.threshold : undefined;
+      const duplicates = await checkForDuplicates(checkDuplicatesDto as unknown as CreateLocationData, threshold, verifiedConnection);
       return {
         success: true,
         data: {
@@ -75,11 +79,11 @@ export class LocationController {
   @Post('archive-duplicates')
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async archiveDuplicates(@Body() body: any) {
+  async archiveDuplicates(@Body() archiveDuplicatesDto: ArchiveDuplicatesDto) {
     await this.databaseService.ensureConnectionReady();
     const verifiedConnection = this.databaseService.getConnection();
-    const mode = body?.mode === 'apply' ? 'apply' : 'dry-run';
-    const limitGroups = typeof body?.limitGroups === 'number' ? body.limitGroups : undefined;
+    const mode = archiveDuplicatesDto?.mode === 'apply' ? 'apply' : 'dry-run';
+    const limitGroups = typeof archiveDuplicatesDto?.limitGroups === 'number' ? archiveDuplicatesDto.limitGroups : undefined;
     const report = await archiveDuplicateLocations({ mode, limitGroups }, verifiedConnection);
     return {
       success: true,
@@ -163,19 +167,21 @@ export class LocationController {
   @UseInterceptors(FileInterceptor('file'))
   async validateLocationsImport(
     @UploadedFile() file?: Express.Multer.File,
-    @Body() body?: any,
+    @Body() importDataDto?: ImportDataDto,
   ) {
-    const csvData = typeof body?.csvData === 'string' ? body.csvData : undefined;
+    const csvData = importDataDto?.csvData;
     const fileBuffer = file?.buffer;
 
     if (!fileBuffer && !csvData) {
       throw new BadRequestException('File upload (file) or csvData is required');
     }
 
+    const source = (fileBuffer || csvData) as string | Buffer;
+
     await this.databaseService.ensureConnectionReady();
     const verifiedConnection = this.databaseService.getConnection();
     const result = await locationImportService.validateLocationsImport(
-      fileBuffer || csvData,
+      source,
       file?.originalname,
       verifiedConnection,
     );
@@ -190,21 +196,23 @@ export class LocationController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
   async importLocations(
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() body: any,
     @CurrentUser() user: UserDocument,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() importDataDto?: ImportDataDto,
   ) {
-    const csvData = typeof body?.csvData === 'string' ? body.csvData : undefined;
+    const csvData = importDataDto?.csvData;
     const fileBuffer = file?.buffer;
 
     if (!fileBuffer && !csvData) {
       throw new BadRequestException('File upload (file) or csvData is required');
     }
 
+    const source = (fileBuffer || csvData) as string | Buffer;
+
     await this.databaseService.ensureConnectionReady();
     const verifiedConnection = this.databaseService.getConnection();
     const result = await locationImportService.importLocations(
-      fileBuffer || csvData,
+      source,
       user._id.toString(),
       file?.originalname,
       verifiedConnection,

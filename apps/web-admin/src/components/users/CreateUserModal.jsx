@@ -11,6 +11,7 @@ import { generatePassword } from '../../utils/passwordGenerator';
 import { toast } from 'react-hot-toast';
 import { UserPlus, Eye, EyeOff, RefreshCw, MapPin, X } from 'lucide-react';
 import logger from '../../utils/logger';
+import { sanitizeInput } from '../../utils/sanitize';
 import { useAuth, useModal, useModalWithData } from '../../hooks';
 import { USER_ROLES } from '../../utils/constants';
 
@@ -133,7 +134,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
 
       const response = await userApi.createUser(submitData);
       if (response.success) {
-        toast.success(`User created successfully! Email: ${formData.email}`);
+        toast.success(`User created successfully! Email: ${sanitizeInput(formData.email)}`);
         onSuccess?.(response.data);
         handleClose();
       }
@@ -408,6 +409,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
             label="Password"
             type={showPassword ? 'text' : 'password'}
             name="password"
+            autoComplete="new-password"
             value={formData.password}
             onChange={handleChange}
             placeholder="Enter password or generate one"

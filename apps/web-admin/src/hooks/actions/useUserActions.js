@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { userApi } from '../../api';
 import { toast } from 'react-hot-toast';
 import logger from '../../utils/logger';
+import { sanitizeInput } from '../../utils/sanitize';
 
 /**
  * Custom hook for user CRUD operations
@@ -25,7 +26,7 @@ export const useUserActions = (refetch) => {
     try {
       const response = await userApi.deleteUser(userId);
       if (response.success) {
-        toast.success(`User ${userData.email || userData.name || 'deleted'} deleted successfully`);
+        toast.success(`User ${sanitizeInput(userData.email || userData.name || 'deleted')} deleted successfully`);
         if (refetch) {
           await refetch();
         }

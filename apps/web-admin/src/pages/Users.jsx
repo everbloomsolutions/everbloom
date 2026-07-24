@@ -10,6 +10,7 @@ import UsersTable from '../components/users/UsersTable';
 import EmptyState from '../components/shared/EmptyState';
 import ConfirmationModal from '../components/shared/ConfirmationModal';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import PageHeader from '../components/shared/PageHeader';
 import { toast } from 'react-hot-toast';
 import { USER_ROLES } from '../utils/constants';
 import { useAuth, useUsers, useUserActions, useUserFilters, useModal, useModalWithData, useLoadingStates } from '../hooks';
@@ -235,31 +236,29 @@ const Users = () => {
 
   return (
     <div>
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Users</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage all registered users and their permissions
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {(currentUser?.role === USER_ROLES.ADMIN || currentUser?.role === USER_ROLES.SUPER_ADMIN) && (
+      <PageHeader
+        title="Users"
+        subtitle="Manage all registered users and their permissions"
+        actions={
+          <>
+            {(currentUser?.role === USER_ROLES.ADMIN || currentUser?.role === USER_ROLES.SUPER_ADMIN) && (
+              <Button
+                variant="secondary"
+                onClick={openArchiveDuplicatesConfirm}
+              >
+                Archive Duplicate Users
+              </Button>
+            )}
             <Button
-              variant="secondary"
-              onClick={openArchiveDuplicatesConfirm}
+              variant="primary"
+              onClick={openCreateModal}
             >
-              Archive Duplicate Users
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create User
             </Button>
-          )}
-          <Button
-            variant="primary"
-            onClick={openCreateModal}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Create User
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <UsersFilters
         filters={filters}
