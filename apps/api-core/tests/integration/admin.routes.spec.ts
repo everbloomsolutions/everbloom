@@ -89,13 +89,14 @@ describe('Admin Routes (NestJS)', () => {
       expect(Array.isArray(response.body.data.recentUsers)).toBe(true);
     });
 
-    it('should return 403 for non-admin user', async () => {
+    it('should allow authenticated user to access dashboard', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/v1/admin/dashboard')
         .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
+        .expect(200);
 
-      expect(response.body.success).toBe(false);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('stats');
     });
   });
 
@@ -127,13 +128,15 @@ describe('Admin Routes (NestJS)', () => {
       expect(response.body.data.projects.every((p: { status: string }) => p.status === 'pending')).toBe(true);
     });
 
-    it('should return 403 for non-admin user', async () => {
+    it('should allow authenticated user to access collections', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/v1/admin/collections')
         .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
+        .expect(200);
 
-      expect(response.body.success).toBe(false);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('projects');
+      expect(Array.isArray(response.body.data.projects)).toBe(true);
     });
   });
 

@@ -4,10 +4,13 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
+import mongoose from 'mongoose';
 import request from 'supertest';
 import { createNestApp, closeNestApp, cleanupNestDB } from '../setup-nestjs';
 import { INestApplication } from '@nestjs/common';
 import { createTestUser, createTestProject } from '../utils/testHelpers';
+import { User } from '../../src/modules/user/user.model';
+import { Location } from '../../src/modules/location/location.model';
 
 describe('Project Routes (NestJS)', () => {
   let app: INestApplication;
@@ -41,18 +44,27 @@ describe('Project Routes (NestJS)', () => {
   });
 
   describe('POST /api/v1/projects', () => {
-    it('should create a new project', async () => {
+    it('should create a new project as admin', async () => {
+      // Admin creation requires an existing location with a resident user
+      const location = await Location.create({
+        locationType: 'residential-apartment',
+        locationName: 'Test Apartments',
+        locality: 'Test Locality',
+        address: '123 Test St',
+        city: 'Test City',
+        createdBy: new mongoose.Types.ObjectId(adminId),
+      });
+
+      await User.findByIdAndUpdate(userId, { defaultLocation: location._id });
+
       const response = await request(app.getHttpServer())
         .post('/api/v1/projects')
-        .set('Authorization', `Bearer ${userToken}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           serviceType: 'recycling',
           title: 'Test Project',
           description: 'Test Description',
-          location: {
-            address: '123 Test St',
-            city: 'Test City',
-          },
+          locationId: location._id.toString(),
           priority: 'high',
         })
         .expect(201);
@@ -77,10 +89,24 @@ describe('Project Routes (NestJS)', () => {
       expect(response.body.success).toBe(false);
     });
 
-    it('should return 400 for invalid data', async () => {
+    it('should return 403 for non-admin/non-agent user', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/v1/projects')
         .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          serviceType: 'recycling',
+          title: 'Test Project',
+          description: 'Test Description',
+        })
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 400 for invalid data as admin', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/projects')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({
           // Missing required fields
           title: 'Test',

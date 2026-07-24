@@ -318,11 +318,9 @@ export class ProjectService {
       query.serviceType = filters.serviceType;
     }
 
-    // Restrict to the user's defaultLocation if provided; otherwise return empty
+    // Optionally restrict to a specific location (used by RBAC callers)
     if (filters?.defaultLocation) {
       query.locationId = this.validationService.validateObjectId(filters.defaultLocation, 'defaultLocation');
-    } else {
-      return [];
     }
 
     return this.projectModel
@@ -354,13 +352,6 @@ export class ProjectService {
     // For admin endpoints, skip this check (handled by controller guards)
     if (userId && project.userId.toString() !== userId) {
       return null;
-    }
-
-    // For user role, also enforce defaultLocation match; missing defaultLocation means no access
-    if (userRole === 'user') {
-      if (!defaultLocation || !project.locationId || String(project.locationId) !== String(defaultLocation)) {
-        return null;
-      }
     }
 
     return project;
@@ -574,7 +565,15 @@ export class ProjectService {
         if (String(project.userId) !== String(requesterId)) {
           throw new NotFoundException('Collection not found');
         }
-        if (!defaultLocation || !project.locationId || String(project.locationId) !== String(defaultLocation)) {
+        // Allow status-only updates (e.g. customer accept/reject quote) without a location match
+        const statusOnlyUpdate =
+          Object.keys(data).filter(
+            (key) => key !== 'status' && (data as any)[key] !== undefined,
+          ).length === 0;
+        if (
+          !statusOnlyUpdate &&
+          (!defaultLocation || !project.locationId || String(project.locationId) !== String(defaultLocation))
+        ) {
           throw new NotFoundException('Collection not found');
         }
       }
