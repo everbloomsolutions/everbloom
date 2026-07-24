@@ -1,9 +1,27 @@
-import { Types } from 'mongoose';
-import { Project } from '../project/project.model';
-import { getLocationServiceInstance } from './location.service';
+import mongoose, { Types, Model } from 'mongoose';
+import { Location, ILocation } from './location.model';
+import {Project, IProject} from '../project/project.model';
 // Note: buildDateRange should be used via QueryBuilderService in NestJS services
 // For function-based services, import the service and create an instance
 import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
+import { ValidationService } from '../../common/validation/validation.service';
+
+
+const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILocation> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Location.modelName]) {
+    return connection.models[Location.modelName] as Model<ILocation>;
+  }
+  return Location as Model<ILocation>;
+};
+
+const getProjectModel = (verifiedConnection?: mongoose.Connection): Model<IProject> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Project.modelName]) {
+    return connection.models[Project.modelName] as Model<IProject>;
+  }
+  return Project as Model<IProject>;
+};
 
 // Note: This file uses Express-style imports
 // For NestJS, inject LocationService via constructor instead
@@ -15,16 +33,20 @@ export { setLocationServiceInstance } from './location.service';
  */
 export const trackLocationUsage = async (
   locationId: string,
-  _userId: string
+  _userId: string,
+  verifiedConnection?: mongoose.Connection
 ): Promise<void> => {
-  // Increment usage count and update lastUsedAt
-  try {
-    const locationServiceInstance = getLocationServiceInstance();
-    await locationServiceInstance.incrementUsage(locationId);
-  } catch (_error) {
-    // Note: This won't work without DI - needs refactoring
-    throw new Error('LocationService instance not set. Use NestJS DI instead.');
-  }
+  const LocationModel = getLocationModel(verifiedConnection);
+  const validationService = new ValidationService();
+  const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
+  await LocationModel.findByIdAndUpdate(
+    locationObjectId,
+    {
+      $inc: { usageCount: 1 },
+      $set: { lastUsedAt: new Date() },
+    },
+    { new: true }
+  );
 };
 
 /**
@@ -38,7 +60,7 @@ export const getUsageHistory = async (
     startDate?: Date;
     endDate?: Date;
   }
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   collections: Array<{
     _id: string;
     title: string;
@@ -55,6 +77,7 @@ export const getUsageHistory = async (
   limit: number;
   totalPages: number;
 }> => {
+  const ProjectModel = getProjectModel(verifiedConnection);
   const { page = 1, limit = 20, startDate, endDate } = filters || {};
   const skip = (page - 1) * limit;
 
@@ -68,14 +91,14 @@ export const getUsageHistory = async (
   Object.assign(query, dateRangeFilter);
 
   const [collections, total] = await Promise.all([
-    Project.find(query)
+    ProjectModel.find(query)
       .populate('collectedBy', 'name email')
       .select('title collectionDate totalAmount collectedBy')
       .sort({ collectionDate: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
-    Project.countDocuments(query),
+    ProjectModel.countDocuments(query),
   ]);
 
   interface CollectionLean {
@@ -116,7 +139,7 @@ export const getUsageHistory = async (
 export const getUserRecentLocations = async (
   userId: string,
   limit: number = 5
-): Promise<Array<{
+, verifiedConnection?: mongoose.Connection): Promise<Array<{
   _id: string;
   locationName: string;
   address: string;
@@ -124,7 +147,8 @@ export const getUserRecentLocations = async (
   locationType: string;
   lastUsedAt: Date;
 }>> => {
-  const collections = await Project.find({
+  const ProjectModel = getProjectModel(verifiedConnection);
+  const collections = await ProjectModel.find({
     locationId: { $exists: true, $ne: null },
     collectedBy: new Types.ObjectId(userId),
   })

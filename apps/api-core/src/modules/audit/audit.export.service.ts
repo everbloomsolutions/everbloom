@@ -1,7 +1,15 @@
+import mongoose, { Model, Types } from 'mongoose';
 import { AuditLog, IAuditLog } from './audit.model';
-import { Types } from 'mongoose';
 import { ValidationService } from '../../common/validation/validation.service';
 import { AuditAction, EntityType } from './audit.model';
+
+const getAuditLogModel = (verifiedConnection?: mongoose.Connection): Model<IAuditLog> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[AuditLog.modelName]) {
+    return connection.models[AuditLog.modelName] as Model<IAuditLog>;
+  }
+  return AuditLog as Model<IAuditLog>;
+};
 
 export interface ExportFilters {
   entityType?: EntityType;
@@ -17,8 +25,10 @@ export interface ExportFilters {
  * Export audit logs to CSV format
  */
 export const exportAuditLogsToCSV = async (
-  filters?: ExportFilters
+  filters?: ExportFilters,
+  verifiedConnection?: mongoose.Connection
 ): Promise<string> => {
+  const AuditLogModel = getAuditLogModel(verifiedConnection);
   const validationService = new ValidationService();
   const filter: Record<string, unknown> = {};
   
@@ -52,7 +62,7 @@ export const exportAuditLogsToCSV = async (
     filter.$text = { $search: filters.search };
   }
   
-  const auditLogs = await AuditLog.find(filter)
+  const auditLogs = await AuditLogModel.find(filter)
     .populate('performedBy', 'name email')
     .sort({ createdAt: -1 })
     .lean()
@@ -118,8 +128,10 @@ export const exportAuditLogsToCSV = async (
  * Export audit logs to JSON format
  */
 export const exportAuditLogsToJSON = async (
-  filters?: ExportFilters
+  filters?: ExportFilters,
+  verifiedConnection?: mongoose.Connection
 ): Promise<IAuditLog[]> => {
+  const AuditLogModel = getAuditLogModel(verifiedConnection);
   const validationService = new ValidationService();
   const filter: Record<string, unknown> = {};
   
@@ -153,7 +165,7 @@ export const exportAuditLogsToJSON = async (
     filter.$text = { $search: filters.search };
   }
   
-  const auditLogs = await AuditLog.find(filter)
+  const auditLogs = await AuditLogModel.find(filter)
     .populate('performedBy', 'name email')
     .sort({ createdAt: -1 })
     .lean()

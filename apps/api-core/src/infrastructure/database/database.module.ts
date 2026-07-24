@@ -46,23 +46,25 @@ if (isDevLog) {
   });
 }
 
-const serverSelectionTimeoutMS = isLocalMongo ? 1000 : isProduction ? 60000 : 30000;
-const connectTimeoutMS = isLocalMongo ? 1000 : isProduction ? 60000 : 30000;
+const serverSelectionTimeoutMS = isLocalMongo ? 10000 : isProduction ? 60000 : 30000;
+const connectTimeoutMS = isLocalMongo ? 10000 : isProduction ? 60000 : 30000;
 
 @Module({
   imports: [
     LoggerModule,
     MongooseModule.forRoot(normalizedMongodbUri, {
       serverSelectionTimeoutMS,
-      socketTimeoutMS: isLocalMongo ? 5000 : isProduction ? 60000 : 45000,
+      socketTimeoutMS: isLocalMongo ? 60000 : isProduction ? 60000 : 45000,
       connectTimeoutMS,
       maxPoolSize: 20,
-      minPoolSize: 1,
+      minPoolSize: isLocalMongo ? 5 : 1,
       bufferCommands: false,
-      retryWrites: true,
-      retryReads: true,
-      readPreference: 'primaryPreferred',
-      heartbeatFrequencyMS: isLocalMongo ? 5000 : 10000,
+      retryWrites: isLocalMongo ? false : true,
+      retryReads: isLocalMongo ? false : true,
+      readPreference: isLocalMongo ? 'primary' : 'primaryPreferred',
+      heartbeatFrequencyMS: isLocalMongo ? 10000 : 10000,
+      minHeartbeatFrequencyMS: isLocalMongo ? 10000 : 10000,
+      directConnection: isLocalMongo,
     }),
   ],
   providers: [DatabaseService, QueryBuilderService],

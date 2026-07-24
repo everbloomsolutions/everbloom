@@ -1426,9 +1426,10 @@ export class ProjectService {
     _userRole: string,
     filename?: string,
   ): Promise<any> {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const importService = await import('./project.import.service');
-    // validateCollectionsImport takes (fileData, filename?)
-    return importService.validateCollectionsImport(fileData, filename);
+    return importService.validateCollectionsImport(fileData, filename, verifiedConnection);
   }
 
   async importCollections(
@@ -1438,9 +1439,10 @@ export class ProjectService {
     _req?: any,
     filename?: string,
   ): Promise<any> {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const importService = await import('./project.import.service');
-    // importCollections takes (fileData, createdBy, filename?)
-    return importService.importCollections(fileData, userId, filename);
+    return importService.importCollections(fileData, userId, filename, verifiedConnection);
   }
 
   async getCollectionsImportTemplate(): Promise<any> {

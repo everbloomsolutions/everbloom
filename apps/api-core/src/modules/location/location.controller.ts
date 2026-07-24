@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { LocationService } from './location.service';
+import { LocationService, CreateLocationData } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
@@ -50,8 +50,9 @@ export class LocationController {
   async checkDuplicates(@Body() body: any) {
     try {
       await this.databaseService.ensureConnectionReady();
+      const verifiedConnection = this.databaseService.getConnection();
       const threshold = typeof body?.threshold === 'number' ? body.threshold : undefined;
-      const duplicates = await checkForDuplicates(body, threshold);
+      const duplicates = await checkForDuplicates(body, threshold, verifiedConnection);
       return {
         success: true,
         data: {
@@ -59,11 +60,11 @@ export class LocationController {
         },
       };
     } catch (error) {
-      // Duplicate checking should never block location creation.
-      // If DB is temporarily unhealthy, return "no duplicates" and let create flow proceed.
+      // Duplicate checking should not block location creation, but the caller should know it failed.
       this.logger.error('Duplicate check failed; returning empty duplicate list', error);
       return {
-        success: true,
+        success: false,
+        error: 'Unable to check for duplicates. Please try again.',
         data: {
           duplicates: [],
         },
@@ -75,9 +76,11 @@ export class LocationController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async archiveDuplicates(@Body() body: any) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const mode = body?.mode === 'apply' ? 'apply' : 'dry-run';
     const limitGroups = typeof body?.limitGroups === 'number' ? body.limitGroups : undefined;
-    const report = await archiveDuplicateLocations({ mode, limitGroups });
+    const report = await archiveDuplicateLocations({ mode, limitGroups }, verifiedConnection);
     return {
       success: true,
       data: report,
@@ -87,7 +90,9 @@ export class LocationController {
   @Get(':id1/merge/:id2')
   @Roles('admin', 'super_admin')
   async suggestMerge(@Param('id1') id1: string, @Param('id2') id2: string) {
-    const result = await suggestMerge(id1, id2);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await suggestMerge(id1, id2, verifiedConnection);
     return {
       success: true,
       data: result,
@@ -98,7 +103,9 @@ export class LocationController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async mergeLocations(@Body('sourceId') sourceId: string, @Body('targetId') targetId: string) {
-    await mergeLocations(sourceId, targetId);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    await mergeLocations(sourceId, targetId, verifiedConnection);
     return {
       success: true,
       message: 'Locations merged successfully',
@@ -112,7 +119,9 @@ export class LocationController {
     @Body('locations') locations: any[],
     @CurrentUser() user: UserDocument,
   ) {
-    const result = await locationBulkService.bulkCreateLocations(locations, user._id.toString());
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await locationBulkService.bulkCreateLocations(locations, user._id.toString(), verifiedConnection);
     return {
       success: true,
       data: result,
@@ -124,7 +133,9 @@ export class LocationController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async bulkUpdateLocations(@Body('updates') updates: any[]) {
-    const result = await locationBulkService.bulkUpdateLocations(updates);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await locationBulkService.bulkUpdateLocations(updates, verifiedConnection);
     return {
       success: true,
       data: result,
@@ -136,7 +147,9 @@ export class LocationController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async bulkDeleteLocations(@Body('ids') ids: string[]) {
-    const result = await locationBulkService.bulkDeleteLocations(ids);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await locationBulkService.bulkDeleteLocations(ids, verifiedConnection);
     return {
       success: true,
       data: result,
@@ -159,9 +172,12 @@ export class LocationController {
       throw new BadRequestException('File upload (file) or csvData is required');
     }
 
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const result = await locationImportService.validateLocationsImport(
       fileBuffer || csvData,
       file?.originalname,
+      verifiedConnection,
     );
     return {
       success: true,
@@ -185,10 +201,13 @@ export class LocationController {
       throw new BadRequestException('File upload (file) or csvData is required');
     }
 
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const result = await locationImportService.importLocations(
       fileBuffer || csvData,
       user._id.toString(),
       file?.originalname,
+      verifiedConnection,
     );
     return {
       success: true,
@@ -212,15 +231,25 @@ export class LocationController {
   async createLocation(
     @Body() createLocationDto: CreateLocationDto,
     @CurrentUser() user: UserDocument,
-    @Query('checkFuzzyDuplicates') _checkFuzzyDuplicates?: string,
+    @Query('checkFuzzyDuplicates') checkFuzzyDuplicates?: string,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    if (checkFuzzyDuplicates === 'true' || checkFuzzyDuplicates === '1') {
+      const duplicates = await checkForDuplicates(createLocationDto as CreateLocationData, undefined, verifiedConnection);
+      if (duplicates.length > 0) {
+        throw new BadRequestException({
+          message: 'Potential duplicate locations found',
+          duplicates,
+        });
+      }
+    }
+
     const location = await this.locationService.createLocation(
       createLocationDto,
       user._id.toString(),
     );
 
-    // TODO: Add fuzzy duplicate checking if requested
-    // For now, just return the created location
     return {
       success: true,
       data: location,
@@ -311,6 +340,8 @@ export class LocationController {
     @Query('state') state?: string,
     @Query('isActive') isActive?: string,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const { exportLocations } = await import('./location.import.service');
     const fileFormat = (format === 'xlsx' ? 'xlsx' : 'csv') as 'csv' | 'xlsx';
     const filters = {
@@ -319,7 +350,7 @@ export class LocationController {
       state,
       isActive: isActive !== undefined ? isActive === 'true' : undefined,
     };
-    const result = await exportLocations(filters, fileFormat);
+    const result = await exportLocations(filters, fileFormat, verifiedConnection);
     
     // Return appropriate response based on format
     if (fileFormat === 'xlsx') {

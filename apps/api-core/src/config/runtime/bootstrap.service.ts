@@ -97,11 +97,11 @@ export class BootstrapService {
   }
 
   /**
-   * Configure global prefix. Root '', health, and debug are excluded so GET /, /health, /debug work (e.g. Vercel).
+   * Configure global prefix. Root '', health, and debug are excluded so GET /, /health, /health/ready, /health/live, /debug work (e.g. Vercel).
    */
   configureGlobalPrefix(app: INestApplication): void {
     app.setGlobalPrefix('api/v1', {
-      exclude: ['', 'health', 'health/detailed', 'health/cors-test', 'debug'],
+      exclude: ['', 'health', 'health/live', 'health/ready', 'health/detailed', 'health/cors-test', 'debug'],
     });
     this.logger.log('Global prefix configured: api/v1');
   }

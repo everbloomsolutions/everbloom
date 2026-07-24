@@ -123,6 +123,7 @@ const Archived = () => {
       toast.success(`${typeLabel} restored successfully`);
       queryClient.invalidateQueries({ queryKey: ['archived', `${variables.type}s`] });
       queryClient.invalidateQueries({ queryKey: ['archived'] });
+      queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
     },
     onError: (error, variables) => {
       logger.error(`Failed to restore ${variables.type}:`, error);
@@ -148,6 +149,7 @@ const Archived = () => {
       toast.success(`${typeLabel} permanently deleted`);
       queryClient.invalidateQueries({ queryKey: ['archived', `${variables.type}s`] });
       queryClient.invalidateQueries({ queryKey: ['archived'] });
+      queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
       closeDeleteConfirm();
     },
     onError: (error, variables) => {

@@ -54,7 +54,7 @@ export class UpdateProjectDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(20)
+  @MinLength(5)
   @MaxLength(5000)
   description?: string;
 

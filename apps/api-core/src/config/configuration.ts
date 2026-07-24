@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { detectRuntimePlatform, getRuntimePolicy, normalizeUrl } from './url-normalization';
+import { getRuntimePolicy, normalizeUrl } from './url-normalization';
 
 // Load environment variables manually before NestJS ConfigModule
 // Skip .env in production/Vercel - use platform environment variables only
@@ -119,6 +119,20 @@ export const configuration = () => {
     finalMongodbUri = String(rawMongoUri).trim();
   }
 
+  // Production MongoDB URI safety checks
+  if (isProduction && finalMongodbUri) {
+    const lowerUri = finalMongodbUri.toLowerCase();
+    if (lowerUri.includes('localhost') || lowerUri.includes('127.0.0.1')) {
+      throw new Error('Production MONGODB_URI must not use localhost or 127.0.0.1');
+    }
+    if (!lowerUri.includes('retrywrites=true')) {
+      throw new Error('Production MONGODB_URI must include retryWrites=true');
+    }
+    if (!lowerUri.includes('w=majority')) {
+      throw new Error('Production MONGODB_URI must include w=majority');
+    }
+  }
+
   // Default Redis URL based on environment
   let defaultRedisUrl = '';
   if (!isProduction && !isVercel && !isContainerized) {
@@ -148,7 +162,7 @@ export const configuration = () => {
       process.env.BACKEND_CORS_ORIGIN ||
       process.env.CORS_ORIGIN ||
       (isDevelopment && !isContainerized
-        ? 'http://localhost:3000,http://localhost:3001'
+        ? 'http://localhost:3000,http://localhost:3001,http://localhost:5175'
         : ''),
     logLevel: String(logLevel),
     enableDebug: Boolean(enableDebug),

@@ -1,9 +1,4 @@
-import {
-  ILocationItemTypeRate,
-  LocationItemTypeRate,
-  LOCATION_ITEM_TYPE_RATE_MODEL_NAME,
-  LocationItemTypeRateSchema,
-} from './location.rate.model';
+import {ILocationItemTypeRate, LocationItemTypeRate, LOCATION_ITEM_TYPE_RATE_MODEL_NAME, LocationItemTypeRateSchema, } from './location.rate.model';
 import { Location, ILocation } from './location.model';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { ValidationService } from '../../common/validation/validation.service';
@@ -199,7 +194,8 @@ export const bulkSetLocationItemTypeRates = async (
 export const getRateForLocationAndMaterial = async (
   locationId: string,
   materialType: string
-): Promise<number | null> => {
+, verifiedConnection?: mongoose.Connection): Promise<number | null> => {
+  const LocationItemTypeRateModel = getLocationItemTypeRateModel(verifiedConnection);
   const validationService = new ValidationService();
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
 
@@ -207,7 +203,7 @@ export const getRateForLocationAndMaterial = async (
     return null;
   }
 
-  const rate = await LocationItemTypeRate.findOne({
+  const rate = await LocationItemTypeRateModel.findOne({
     locationId: locationObjectId,
     materialType: materialType as MaterialType,
     isActive: true,
@@ -222,7 +218,8 @@ export const getRateForLocationAndMaterial = async (
 export const deleteLocationItemTypeRate = async (
   locationId: string,
   materialType: string
-): Promise<void> => {
+, verifiedConnection?: mongoose.Connection): Promise<void> => {
+  const LocationItemTypeRateModel = getLocationItemTypeRateModel(verifiedConnection);
   const validationService = new ValidationService();
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
 
@@ -230,7 +227,7 @@ export const deleteLocationItemTypeRate = async (
     throw new BadRequestException(`Invalid material type: ${materialType}`);
   }
 
-  const rate = await LocationItemTypeRate.findOne({
+  const rate = await LocationItemTypeRateModel.findOne({
     locationId: locationObjectId,
     materialType: materialType as MaterialType,
     isActive: true,
@@ -249,11 +246,12 @@ export const deleteLocationItemTypeRate = async (
  */
 export const getRatesForLocations = async (
   locationIds: string[]
-): Promise<Record<string, ILocationItemTypeRate[]>> => {
+, verifiedConnection?: mongoose.Connection): Promise<Record<string, ILocationItemTypeRate[]>> => {
+  const LocationItemTypeRateModel = getLocationItemTypeRateModel(verifiedConnection);
   const validationService = new ValidationService();
   const locationObjectIds = locationIds.map(id => validationService.validateObjectId(id, 'locationId'));
 
-  const rates = await LocationItemTypeRate.find({
+  const rates = await LocationItemTypeRateModel.find({
     locationId: { $in: locationObjectIds },
     isActive: true,
   })
@@ -277,12 +275,15 @@ export const getRatesForLocations = async (
 /**
  * Get all location rates (with pagination/filtering)
  */
-export const getAllLocationRates = async (filters?: {
-  locationId?: string;
-  materialType?: string;
-  page?: number;
-  limit?: number;
-}): Promise<{
+export const getAllLocationRates = async (
+  filters?: {
+    locationId?: string;
+    materialType?: string;
+    page?: number;
+    limit?: number;
+  },
+  verifiedConnection?: mongoose.Connection
+): Promise<{
   rates: ILocationItemTypeRate[];
   pagination: {
     page: number;
@@ -291,6 +292,7 @@ export const getAllLocationRates = async (filters?: {
     pages: number;
   };
 }> => {
+  const LocationItemTypeRateModel = getLocationItemTypeRateModel(verifiedConnection);
   const query: Record<string, unknown> = { isActive: true };
 
   if (filters?.locationId) {
@@ -306,7 +308,7 @@ export const getAllLocationRates = async (filters?: {
   const skip = (page - 1) * limit;
 
   const [rates, total] = await Promise.all([
-    LocationItemTypeRate.find(query)
+    LocationItemTypeRateModel.find(query)
       .populate('locationId', 'locationName address city state locationType')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
@@ -314,7 +316,7 @@ export const getAllLocationRates = async (filters?: {
       .skip(skip)
       .limit(limit)
       .lean(),
-    LocationItemTypeRate.countDocuments(query),
+    LocationItemTypeRateModel.countDocuments(query),
   ]);
 
   return {

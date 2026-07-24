@@ -29,12 +29,16 @@ import { Roles } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/user.decorator';
 import { UserDocument } from '../user/schemas/user.schema';
 import { Response } from 'express';
+import { DatabaseService } from '../../infrastructure/database/database.service';
 
 // Customer endpoints
 @Controller('projects')
 @UseGuards(AuthGuard)
 export class ProjectController {
-  constructor(@Inject(ProjectService) private readonly projectService: ProjectService) {}
+  constructor(
+    @Inject(ProjectService) private readonly projectService: ProjectService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -140,7 +144,10 @@ export class ProjectController {
 @Controller('admin/collections')
 @UseGuards(AuthGuard, RolesGuard)
 export class ProjectAdminController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   @Get()
   @Roles('admin', 'super_admin')
@@ -345,6 +352,8 @@ export class ProjectAdminController {
     @CurrentUser() user: UserDocument,
     @Res() res: Response,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const importService = await import('./project.import.service');
     const fileFormat = (query?.format === 'xlsx' ? 'xlsx' : 'csv') as 'csv' | 'xlsx';
     const result = await importService.exportCollections(
@@ -354,6 +363,7 @@ export class ProjectAdminController {
         endDate: query?.endDate ? new Date(query.endDate) : undefined,
       },
       fileFormat,
+      verifiedConnection,
     );
 
     const filename = `collections-export-${user.role}-${Date.now()}.${result.extension}`;

@@ -1,3 +1,4 @@
+import mongoose, { Connection } from 'mongoose';
 import { Request } from 'express';
 import * as auditService from './audit.service';
 import { getRequestMetadata } from '../../common/interceptors/request-metadata.interceptor';
@@ -23,7 +24,8 @@ export const logAuditEvent = async (
     changes?: Record<string, { old: unknown; new: unknown }>;
     notes?: string;
   },
-  req?: Request
+  req?: Request,
+  verifiedConnection?: Connection
 ): Promise<void> => {
   try {
     const requestMetadata = req ? getRequestMetadata(req) : {};
@@ -36,7 +38,7 @@ export const logAuditEvent = async (
     // Check and send notifications for critical actions (async, don't wait)
     (async () => {
       try {
-        await checkAndNotifyAuditLog(auditLog._id.toString());
+        await checkAndNotifyAuditLog(auditLog._id.toString(), verifiedConnection);
       } catch (err) {
         logger.warn('Failed to send audit notification:', err);
       }

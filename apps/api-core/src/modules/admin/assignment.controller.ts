@@ -52,7 +52,9 @@ export class AssignmentController {
     @Param('userId') userId: string,
     @Body('locationId') locationId: string,
   ) {
-    await locationAssignmentService.assignLocationToUser(userId, locationId);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    await locationAssignmentService.assignLocationToUser(userId, locationId, verifiedConnection);
     return {
       success: true,
       message: 'Location assigned successfully',
@@ -62,7 +64,9 @@ export class AssignmentController {
   @Delete('users/:userId/location')
   @HttpCode(HttpStatus.OK)
   async removeUserLocation(@Param('userId') userId: string) {
-    await locationAssignmentService.removeLocationFromUser(userId);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    await locationAssignmentService.removeLocationFromUser(userId, verifiedConnection);
     return {
       success: true,
       message: 'Location removed successfully',
@@ -96,7 +100,9 @@ export class AssignmentController {
     @Param('agentId') agentId: string,
     @Body('locationIds') locationIds: string[],
   ) {
-    const result = await locationAssignmentService.assignLocationsToAgent(agentId, locationIds);
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await locationAssignmentService.assignLocationsToAgent(agentId, locationIds, verifiedConnection);
     return {
       success: true,
       data: result,
@@ -111,7 +117,9 @@ export class AssignmentController {
     @Body('newAgentId') newAgentId: string,
     @CurrentUser() user: UserDocument,
   ) {
-    const result = await locationAssignmentService.transferLocation(locationId, newAgentId, user._id.toString());
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const result = await locationAssignmentService.transferLocation(locationId, newAgentId, user._id.toString(), verifiedConnection);
     return {
       success: true,
       data: result,
@@ -126,12 +134,14 @@ export class AssignmentController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const rates = await locationItemTypeRateService.getAllLocationRates({
       locationId: locationId || undefined,
       materialType: materialType || undefined,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
-    });
+    }, verifiedConnection);
     return {
       success: true,
       data: rates,

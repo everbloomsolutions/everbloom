@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { Processor, Process, OnQueueCompleted, OnQueueFailed, OnQueueProgress } from '@nestjs/bull';
 import { Job } from 'bull';
 import { LoggerService } from '../../logger/logger.service';
+import { DatabaseService } from '../../database/database.service';
 import * as importProjectService from '../../../modules/project/project.import.service';
 import * as importLocationService from '../../../modules/location/location.import.service';
 
@@ -33,13 +34,17 @@ async function processCollectionsImport(
   job: Job<ImportJobData>,
   fileData: string | Buffer,
   filename: string | undefined,
-  userId: string
+  userId: string,
+  databaseService: DatabaseService
 ): Promise<ImportJobResult> {
   // Update progress: 10% - file parsed
   await job.progress(10);
 
+  await databaseService.ensureConnectionReady();
+  const verifiedConnection = databaseService.getConnection();
+
   // Process import
-  const result = await importProjectService.importCollections(fileData, userId, filename);
+  const result = await importProjectService.importCollections(fileData, userId, filename, verifiedConnection);
 
   // Update progress: 100% - complete
   await job.progress(100);
@@ -64,13 +69,17 @@ async function processLocationsImport(
   job: Job<ImportJobData>,
   fileData: string | Buffer,
   filename: string | undefined,
-  userId: string
+  userId: string,
+  databaseService: DatabaseService
 ): Promise<ImportJobResult> {
   // Update progress: 10% - file parsed
   await job.progress(10);
 
+  await databaseService.ensureConnectionReady();
+  const verifiedConnection = databaseService.getConnection();
+
   // Process import
-  const result = await importLocationService.importLocations(fileData, userId, filename);
+  const result = await importLocationService.importLocations(fileData, userId, filename, verifiedConnection);
 
   // Update progress: 100% - complete
   await job.progress(100);
@@ -90,7 +99,10 @@ async function processLocationsImport(
 
 @Processor('import')
 export class ImportProcessor {
-  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {
+  constructor(
+    @Inject(LoggerService) private readonly logger: LoggerService,
+    @Inject(DatabaseService) private readonly databaseService: DatabaseService,
+  ) {
     this.logger.setContext('ImportProcessor');
   }
 
@@ -104,9 +116,9 @@ export class ImportProcessor {
       let result: ImportJobResult;
 
       if (type === 'collections') {
-        result = await processCollectionsImport(job, fileData, filename, userId);
+        result = await processCollectionsImport(job, fileData, filename, userId, this.databaseService);
       } else {
-        result = await processLocationsImport(job, fileData, filename, userId);
+        result = await processLocationsImport(job, fileData, filename, userId, this.databaseService);
       }
 
       this.logger.log(`Import job ${job.id} completed: ${result.success} succeeded, ${result.failed} failed`);

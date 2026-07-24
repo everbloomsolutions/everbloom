@@ -46,13 +46,15 @@ const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILoca
 export const assignLocationToUser = async (
   userId: string,
   locationId: string
-): Promise<IUser> => {
+, verifiedConnection?: mongoose.Connection): Promise<IUser> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
 
   // Validate user exists and has role 'user'
-  const user = await User.findById(userObjectId);
+  const user = await UserModel.findById(userObjectId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -61,7 +63,7 @@ export const assignLocationToUser = async (
   }
 
   // Validate location exists and is not deleted (same criteria as list/search)
-  const location = await Location.findOne({
+  const location = await LocationModel.findOne({
     _id: locationObjectId,
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -71,7 +73,7 @@ export const assignLocationToUser = async (
   }
 
   // Check if location is already assigned to another user as default location
-  const existingUser = await User.findOne({
+  const existingUser = await UserModel.findOne({
     defaultLocation: locationObjectId,
     _id: { $ne: userObjectId },
     isDeleted: { $ne: true },
@@ -95,11 +97,12 @@ export const assignLocationToUser = async (
 /**
  * Remove default location from user
  */
-export const removeLocationFromUser = async (userId: string): Promise<IUser> => {
+export const removeLocationFromUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<IUser> => {
+  const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const user = await User.findById(userObjectId);
+  const user = await UserModel.findById(userObjectId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -116,13 +119,15 @@ export const removeLocationFromUser = async (userId: string): Promise<IUser> => 
 export const assignLocationToAgent = async (
   agentId: string,
   locationId: string
-): Promise<ILocation> => {
+, verifiedConnection?: mongoose.Connection): Promise<ILocation> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const agentObjectId = validationService.validateObjectId(agentId, 'agentId');
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
 
   // Validate agent exists and has role 'agent'
-  const agent = await User.findById(agentObjectId);
+  const agent = await UserModel.findById(agentObjectId);
   if (!agent) {
     throw new AppError('Agent not found', 404);
   }
@@ -131,7 +136,7 @@ export const assignLocationToAgent = async (
   }
 
   // Validate location exists and is not deleted (same criteria as list/search)
-  const location = await Location.findOne({
+  const location = await LocationModel.findOne({
     _id: locationObjectId,
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -155,11 +160,12 @@ export const assignLocationToAgent = async (
 /**
  * Unassign location from agent
  */
-export const unassignLocationFromAgent = async (locationId: string): Promise<ILocation> => {
+export const unassignLocationFromAgent = async (locationId: string, verifiedConnection?: mongoose.Connection): Promise<ILocation> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
 
-  const location = await Location.findOne({
+  const location = await LocationModel.findOne({
     _id: locationObjectId,
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -179,7 +185,8 @@ export const unassignLocationFromAgent = async (locationId: string): Promise<ILo
  */
 export const validateLocationsExist = async (
   locationIds: string[]
-): Promise<{ valid: string[]; invalid: Array<{ locationId: string; reason: string }> }> => {
+, verifiedConnection?: mongoose.Connection): Promise<{ valid: string[]; invalid: Array<{ locationId: string; reason: string }> }> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   const valid: string[] = [];
   const invalid: Array<{ locationId: string; reason: string }> = [];
 
@@ -187,7 +194,7 @@ export const validateLocationsExist = async (
   for (const locationId of locationIds) {
     try {
       const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
-      const location = await Location.findOne({
+      const location = await LocationModel.findOne({
         _id: locationObjectId,
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
@@ -214,12 +221,13 @@ export const validateLocationsExist = async (
 export const assignLocationsToAgent = async (
   agentId: string,
   locationIds: string[]
-): Promise<{ success: number; failed: number; results: Array<{ locationId: string; success: boolean; error?: string }> }> => {
+, verifiedConnection?: mongoose.Connection): Promise<{ success: number; failed: number; results: Array<{ locationId: string; success: boolean; error?: string }> }> => {
+  const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const agentObjectId = validationService.validateObjectId(agentId, 'agentId');
 
   // Validate agent exists and has role 'agent'
-  const agent = await User.findById(agentObjectId);
+  const agent = await UserModel.findById(agentObjectId);
   if (!agent) {
     throw new AppError('Agent not found', 404);
   }
@@ -228,7 +236,7 @@ export const assignLocationsToAgent = async (
   }
 
   // Validate all locations exist before attempting assignment
-  const { valid, invalid } = await validateLocationsExist(locationIds);
+  const { valid, invalid } = await validateLocationsExist(locationIds, verifiedConnection);
 
   if (invalid.length > 0) {
     const reasons = invalid.map(i => `${i.locationId}: ${i.reason}`).join('; ');
@@ -244,7 +252,7 @@ export const assignLocationsToAgent = async (
 
   for (const locationId of valid) {
     try {
-      await assignLocationToAgent(agentId, locationId);
+      await assignLocationToAgent(agentId, locationId, verifiedConnection);
       results.push({ locationId, success: true });
       success++;
     } catch (error) {
@@ -269,11 +277,13 @@ export const assignLocationsToAgent = async (
 /**
  * Get user's default location
  */
-export const getUserDefaultLocation = async (userId: string): Promise<ILocation | null> => {
+export const getUserDefaultLocation = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<ILocation | null> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const user = await User.findById(userObjectId).populate('defaultLocation');
+  const user = await UserModel.findById(userObjectId).populate('defaultLocation');
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -284,7 +294,7 @@ export const getUserDefaultLocation = async (userId: string): Promise<ILocation 
 
   // If populated, return it; otherwise fetch it
   if (user.defaultLocation instanceof Types.ObjectId) {
-    const location = await Location.findOne({
+    const location = await LocationModel.findOne({
       _id: user.defaultLocation,
       isDeleted: { $ne: true },
       deletedAt: { $exists: false },
@@ -298,12 +308,14 @@ export const getUserDefaultLocation = async (userId: string): Promise<ILocation 
 /**
  * Get all locations assigned to an agent
  */
-export const getAgentLocations = async (agentId: string): Promise<ILocation[]> => {
+export const getAgentLocations = async (agentId: string, verifiedConnection?: mongoose.Connection): Promise<ILocation[]> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const agentObjectId = validationService.validateObjectId(agentId, 'agentId');
 
   // Validate agent exists and has role 'agent'
-  const agent = await User.findById(agentObjectId);
+  const agent = await UserModel.findById(agentObjectId);
   if (!agent) {
     throw new AppError('Agent not found', 404);
   }
@@ -311,7 +323,7 @@ export const getAgentLocations = async (agentId: string): Promise<ILocation[]> =
     throw new AppError('Only users with role "agent" can have locations assigned', 400);
   }
 
-  const locations = await Location.find({
+  const locations = await LocationModel.find({
     assignedToAgent: agentObjectId,
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -323,8 +335,9 @@ export const getAgentLocations = async (agentId: string): Promise<ILocation[]> =
 /**
  * Get users with role 'user' who don't have a default location
  */
-export const getUsersWithoutDefaultLocation = async (): Promise<IUser[]> => {
-  const users = await User.find({
+export const getUsersWithoutDefaultLocation = async (verifiedConnection?: mongoose.Connection): Promise<IUser[]> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const users = await UserModel.find({
     role: 'user',
     $or: [
       { defaultLocation: { $exists: false } },
@@ -342,8 +355,10 @@ export const getUsersWithoutDefaultLocation = async (): Promise<IUser[]> => {
 /**
  * Get agents with count of assigned locations
  */
-export const getAgentsWithLocationCount = async (): Promise<Array<{ agent: IUser; locationCount: number }>> => {
-  const agents = await User.find({
+export const getAgentsWithLocationCount = async (verifiedConnection?: mongoose.Connection): Promise<Array<{ agent: IUser; locationCount: number }>> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
+  const agents = await UserModel.find({
     role: 'agent',
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -353,7 +368,7 @@ export const getAgentsWithLocationCount = async (): Promise<Array<{ agent: IUser
 
   const agentsWithCount = await Promise.all(
     agents.map(async (agent) => {
-      const locationCount = await Location.countDocuments({
+      const locationCount = await LocationModel.countDocuments({
         assignedToAgent: agent._id,
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
@@ -373,14 +388,16 @@ export const transferLocationToAgent = async (
   locationId: string,
   newAgentId: string,
   transferredBy: string
-): Promise<ILocation> => {
+, verifiedConnection?: mongoose.Connection): Promise<ILocation> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const locationObjectId = validationService.validateObjectId(locationId, 'locationId');
   const newAgentObjectId = validationService.validateObjectId(newAgentId, 'newAgentId');
   validationService.validateObjectId(transferredBy, 'transferredBy');
 
   // Validate location exists and is not deleted (same criteria as list/search)
-  const location = await Location.findOne({
+  const location = await LocationModel.findOne({
     _id: locationObjectId,
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -390,7 +407,7 @@ export const transferLocationToAgent = async (
   }
 
   // Validate new agent exists and has role 'agent'
-  const newAgent = await User.findById(newAgentObjectId);
+  const newAgent = await UserModel.findById(newAgentObjectId);
   if (!newAgent) {
     throw new AppError('New agent not found', 404);
   }
@@ -408,7 +425,7 @@ export const transferLocationToAgent = async (
 
   // Get old agent details if exists (for audit/logging purposes)
   if (oldAgentId) {
-    await User.findById(oldAgentId).select('name email').lean();
+    await UserModel.findById(oldAgentId).select('name email').lean();
   }
 
   // Transfer location to new agent
@@ -565,6 +582,6 @@ export const transferLocation = async (
   locationId: string,
   newAgentId: string,
   transferredBy?: string,
-): Promise<ILocation> => {
-  return transferLocationToAgent(locationId, newAgentId, transferredBy || 'system');
+  verifiedConnection?: mongoose.Connection): Promise<ILocation> => {
+  return transferLocationToAgent(locationId, newAgentId, transferredBy || 'system', verifiedConnection);
 };

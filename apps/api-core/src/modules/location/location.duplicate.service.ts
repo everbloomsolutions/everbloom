@@ -1,9 +1,27 @@
-import { Location } from './location.model';
+import {Location, ILocation} from './location.model';
 import { CreateLocationData } from './location.service';
-import { Project } from '../project/project.model';
-import { Types } from 'mongoose';
+import {Project, IProject} from '../project/project.model';
+import mongoose, { Types, Model } from 'mongoose';
 import { AppError } from '../../common/exceptions/app-error';
 import { ValidationService } from '../../common/validation/validation.service';
+
+
+
+const getProjectModel = (verifiedConnection?: mongoose.Connection): Model<IProject> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Project.modelName]) {
+    return connection.models[Project.modelName] as Model<IProject>;
+  }
+  return Project as Model<IProject>;
+};
+
+const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILocation> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Location.modelName]) {
+    return connection.models[Location.modelName] as Model<ILocation>;
+  }
+  return Location as Model<ILocation>;
+};
 
  const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -81,7 +99,8 @@ interface DuplicateResult {
 export const checkForDuplicates = async (
   locationData: CreateLocationData,
   threshold: number = 0.8
-): Promise<DuplicateResult[]> => {
+, verifiedConnection?: mongoose.Connection): Promise<DuplicateResult[]> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   try {
     const locationName = typeof locationData?.locationName === 'string' ? locationData.locationName.trim() : '';
     const address = typeof locationData?.address === 'string' ? locationData.address.trim() : '';
@@ -100,7 +119,7 @@ export const checkForDuplicates = async (
     // First, get potential matches using text search (limited to 50 for performance)
     let potentialMatches: LocationLean[] = [];
     try {
-      potentialMatches = await Location.find({
+      potentialMatches = await LocationModel.find({
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
         locationType,
@@ -122,7 +141,7 @@ export const checkForDuplicates = async (
     const addressPrefix = address.substring(0, Math.min(20, address.length));
 
     const regexMatches = potentialMatches.length === 0
-      ? await Location.find({
+      ? await LocationModel.find({
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
         locationType,
@@ -206,10 +225,12 @@ export const checkForDuplicates = async (
  export const archiveDuplicateLocations = async (params: {
    mode: ArchiveDuplicatesMode;
    limitGroups?: number;
- }): Promise<ArchiveDuplicateLocationsReport> => {
+ }, verifiedConnection?: mongoose.Connection): Promise<ArchiveDuplicateLocationsReport> => {
+  const LocationModel = getLocationModel(verifiedConnection);
+  const ProjectModel = getProjectModel(verifiedConnection);
    const { mode, limitGroups } = params;
 
-   const locations = await Location.find({
+   const locations = await LocationModel.find({
      isDeleted: { $ne: true },
      deletedAt: { $exists: false },
    })
@@ -269,7 +290,7 @@ export const checkForDuplicates = async (
 
      for (const dup of rest) {
        const dupId = dup._id;
-       const activeCollectionCount = await Project.countDocuments({
+       const activeCollectionCount = await ProjectModel.countDocuments({
          locationId: dupId,
          isDeleted: { $ne: true },
          deletedAt: { $exists: false },
@@ -285,7 +306,7 @@ export const checkForDuplicates = async (
        report.totals.archived += 1;
 
        if (mode === 'apply') {
-         await Location.updateOne(
+         await LocationModel.updateOne(
            { _id: dupId },
            { $set: { isDeleted: true, deletedAt: new Date() } },
          );
@@ -304,20 +325,21 @@ export const checkForDuplicates = async (
 export const suggestMerge = async (
   locationId1: string,
   locationId2: string
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   source: Record<string, unknown>;
   target: Record<string, unknown>;
   conflicts: string[];
   recommendation: string;
 }> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   try {
     const validationService = new ValidationService();
     const locationObjectId1 = validationService.validateObjectId(locationId1, 'locationId1');
     const locationObjectId2 = validationService.validateObjectId(locationId2, 'locationId2');
 
     const [location1, location2] = await Promise.all([
-      Location.findById(locationObjectId1),
-      Location.findById(locationObjectId2),
+      LocationModel.findById(locationObjectId1),
+      LocationModel.findById(locationObjectId2),
     ]);
 
     if (!location1 || !location2) {
@@ -357,15 +379,17 @@ export const suggestMerge = async (
 export const mergeLocations = async (
   sourceId: string,
   targetId: string
-): Promise<void> => {
+, verifiedConnection?: mongoose.Connection): Promise<void> => {
+  const LocationModel = getLocationModel(verifiedConnection);
+  const ProjectModel = getProjectModel(verifiedConnection);
   try {
     const validationService = new ValidationService();
     const sourceObjectId = validationService.validateObjectId(sourceId, 'sourceId');
     const targetObjectId = validationService.validateObjectId(targetId, 'targetId');
 
     const [source, target] = await Promise.all([
-      Location.findById(sourceObjectId),
-      Location.findById(targetObjectId),
+      LocationModel.findById(sourceObjectId),
+      LocationModel.findById(targetObjectId),
     ]);
 
     if (!source || !target) {
@@ -377,7 +401,7 @@ export const mergeLocations = async (
     }
 
     // Update all collections to use target location
-    await Project.updateMany(
+    await ProjectModel.updateMany(
       { locationId: sourceObjectId },
       { locationId: targetObjectId }
     );

@@ -389,7 +389,9 @@ export class AdminController {
     @Param('id') id: string,
     @Body('locationId') locationId: string,
   ) {
-    await locationAssignmentService.assignLocationToUser(id, locationId);
+    await this.userAdminService.ensureConnectionReady();
+    const verifiedConnection = this.userAdminService.getConnection();
+    await locationAssignmentService.assignLocationToUser(id, locationId, verifiedConnection);
     return {
       success: true,
       message: 'Default location assigned successfully',
@@ -401,7 +403,9 @@ export class AdminController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async removeUserDefaultLocation(@Param('id') id: string) {
-    await locationAssignmentService.removeLocationFromUser(id);
+    await this.userAdminService.ensureConnectionReady();
+    const verifiedConnection = this.userAdminService.getConnection();
+    await locationAssignmentService.removeLocationFromUser(id, verifiedConnection);
     return {
       success: true,
       message: 'Default location removed successfully',
@@ -416,7 +420,9 @@ export class AdminController {
     @Param('id') id: string,
     @Body('locationIds') locationIds: string[],
   ) {
-    const result = await locationAssignmentService.assignLocationsToAgent(id, locationIds);
+    await this.userAdminService.ensureConnectionReady();
+    const verifiedConnection = this.userAdminService.getConnection();
+    const result = await locationAssignmentService.assignLocationsToAgent(id, locationIds, verifiedConnection);
     return {
       success: true,
       data: result,
@@ -440,9 +446,11 @@ export class AdminController {
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
   async archiveDuplicateUsers(@Body() body: any) {
+    await this.userAdminService.ensureConnectionReady();
+    const verifiedConnection = this.userAdminService.getConnection();
     const mode = body?.mode === 'apply' ? 'apply' : 'dry-run';
     const limitGroups = typeof body?.limitGroups === 'number' ? body.limitGroups : undefined;
-    const report = await archiveDuplicateUsers({ mode, limitGroups });
+    const report = await archiveDuplicateUsers({ mode, limitGroups }, verifiedConnection);
     return {
       success: true,
       data: report,

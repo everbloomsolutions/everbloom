@@ -13,8 +13,9 @@ export const createUserSchema = z.object({
     .max(255, 'Email must not exceed 255 characters'),
   
   password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(128, 'Password must not exceed 128 characters'),
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must not exceed 128 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, 'Password must contain at least one lowercase letter, one uppercase letter, and one number'),
   
   role: z.enum(['user', 'agent', 'admin', 'super_admin'], {
     errorMap: () => ({ message: 'Role must be one of: user, agent, admin, or super_admin' }),
@@ -65,8 +66,9 @@ export const updateUserSchema = z.object({
     .optional(),
   
   password: z.string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must not exceed 128 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, 'Password must contain at least one lowercase letter, one uppercase letter, and one number')
     .optional(),
   
   role: z.enum(['user', 'agent', 'admin', 'super_admin']).optional(),

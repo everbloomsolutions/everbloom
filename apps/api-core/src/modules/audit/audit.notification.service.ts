@@ -1,6 +1,23 @@
-import { AuditLog, AuditAction } from './audit.model';
+import mongoose, { Model } from 'mongoose';
+import { AuditLog, AuditAction, IAuditLog } from './audit.model';
 import { createLogger } from '../../infrastructure/logger';
-import { User } from '../user/user.model';
+import { User, IUser } from '../user/user.model';
+
+const getUserModel = (verifiedConnection?: mongoose.Connection): Model<IUser> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[User.modelName]) {
+    return connection.models[User.modelName] as Model<IUser>;
+  }
+  return User as Model<IUser>;
+};
+
+const getAuditLogModel = (verifiedConnection?: mongoose.Connection): Model<IAuditLog> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[AuditLog.modelName]) {
+    return connection.models[AuditLog.modelName] as Model<IAuditLog>;
+  }
+  return AuditLog as Model<IAuditLog>;
+};
 
 // Use logger factory for non-NestJS context
 const logger = createLogger();
@@ -25,9 +42,10 @@ const isCriticalAction = (action: AuditAction): boolean => {
 /**
  * Get admin users who should receive audit notifications
  */
-const getAdminUsers = async (): Promise<Array<{ email: string; name?: string }>> => {
+const getAdminUsers = async (verifiedConnection?: mongoose.Connection): Promise<Array<{ email: string; name?: string }>> => {
   try {
-    const admins = await User.find({ role: 'admin', isActive: true })
+    const UserModel = getUserModel(verifiedConnection);
+    const admins = await UserModel.find({ role: 'admin', isActive: true })
       .select('email name')
       .lean()
       .exec();
@@ -53,7 +71,8 @@ export const sendAuditNotification = async (
     description?: string;
     performedBy?: string;
     ipAddress?: string;
-  }
+  },
+  verifiedConnection?: mongoose.Connection
 ): Promise<void> => {
   // Only send notifications for critical actions
   if (!isCriticalAction(auditLog.action)) {
@@ -61,7 +80,7 @@ export const sendAuditNotification = async (
   }
 
   try {
-    const admins = await getAdminUsers();
+    const admins = await getAdminUsers(verifiedConnection);
 
     if (admins.length === 0) {
       logger.warn('No admin users found for audit notifications');
@@ -178,9 +197,10 @@ This is an automated notification for a critical audit event.
 /**
  * Check and send notifications for a newly created audit log
  */
-export const checkAndNotifyAuditLog = async (auditLogId: string): Promise<void> => {
+export const checkAndNotifyAuditLog = async (auditLogId: string, verifiedConnection?: mongoose.Connection): Promise<void> => {
+  const AuditLogModel = getAuditLogModel(verifiedConnection);
   try {
-    const auditLog = await AuditLog.findById(auditLogId)
+    const auditLog = await AuditLogModel.findById(auditLogId)
       .populate('performedBy', 'name email')
       .lean()
       .exec();
@@ -198,7 +218,7 @@ export const checkAndNotifyAuditLog = async (auditLogId: string): Promise<void> 
       description: auditLog.description,
       performedBy: performedBy?.email || performedBy?.name || 'System',
       ipAddress: auditLog.ipAddress,
-    });
+    }, verifiedConnection);
   } catch (error) {
     logger.error('Failed to check and notify audit log:', error);
   }

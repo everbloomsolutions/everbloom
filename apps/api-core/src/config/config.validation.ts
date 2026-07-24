@@ -168,6 +168,20 @@ export function validateConfig(config: Record<string, unknown>) {
     throw new Error('MONGODB_URI must be a valid MongoDB connection string');
   }
 
+  // Production MongoDB URI safety checks
+  if (isProduction && mongodbUri.length > 0) {
+    const lowerUri = mongodbUri.toLowerCase();
+    if (lowerUri.includes('localhost') || lowerUri.includes('127.0.0.1')) {
+      throw new Error('MONGODB_URI must not use localhost or 127.0.0.1 in production');
+    }
+    if (!lowerUri.includes('retrywrites=true')) {
+      throw new Error('MONGODB_URI must include retryWrites=true in production');
+    }
+    if (!lowerUri.includes('w=majority')) {
+      throw new Error('MONGODB_URI must include w=majority in production');
+    }
+  }
+
   // Redis URL validation (optional, but if provided must be valid)
   let redisUrl = String(validatedConfig.redisUrl || '').trim();
   if (redisUrl.length > 0 && !/^redis(s)?:\/\//.test(redisUrl)) {

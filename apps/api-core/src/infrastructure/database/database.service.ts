@@ -257,24 +257,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const isLocalMongo = this.connection.host === 'localhost' || this.connection.host === '127.0.0.1';
     const cooldownMs = this.getCooldownMs(isLocalMongo, nodeEnv);
 
-    // Always log when this is called for debugging
     const currentState = this.connection.readyState;
-    this.logger.log(`[DatabaseService] ensureConnectionReady called. Current state: ${currentState} (${readyStateText(currentState)}), connectionReady: ${this.connectionReady}`);
 
-    // If Mongoose reports connected, treat as ready and verify with ping.
-    // This avoids false timeouts when the 'connected' event was missed.
+    // Fast path: if Mongoose already reports connected, trust the driver state.
     if (currentState === 1) {
-      try {
-        await this.verifyPingOrThrow('ensureConnectionReady');
-        this.connectionReady = true;
-        this.logger.log('[DatabaseService] Connection verified with ping');
-        return;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`[DatabaseService] readyState=connected but ping failed (${errorMsg}), reconnecting...`);
-        this.connectionReady = false;
-        this.connectionPromise = null;
-      }
+      this.connectionReady = true;
+      return;
     }
 
     // Circuit breaker: if we recently failed to connect, fail fast to avoid 60s request hangs.
@@ -283,21 +271,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       if (sinceFailure < cooldownMs) {
         const lastErr = this.lastFailureError ? ` Last error: ${this.lastFailureError}` : '';
         throw new Error(`Database connection not ready (cooldown ${cooldownMs}ms, ${sinceFailure}ms since last failure).${lastErr}`);
-      }
-    }
-
-    // Quick check: if already ready, verify with ping
-    if (this.connectionReady && this.connection.readyState === 1) {
-      try {
-        await this.verifyPingOrThrow('ensureConnectionReady');
-        this.logger.log('[DatabaseService] Connection verified with ping');
-        return;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(`[DatabaseService] Connection appeared ready but ping failed (${errorMsg}), reconnecting...`);
-        this.connectionReady = false;
-        // Reset connection promise to allow reconnection
-        this.connectionPromise = null;
       }
     }
 

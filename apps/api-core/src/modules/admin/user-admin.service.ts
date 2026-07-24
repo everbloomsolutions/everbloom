@@ -62,6 +62,19 @@ const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILoca
   return Location as Model<ILocation>;
 };
 
+/**
+ * Get Project model from the verified connection
+ *
+ * @param verifiedConnection - Optional verified connection instance from DatabaseService
+ */
+const getProjectModel = (verifiedConnection?: mongoose.Connection): Model<any> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models.Project) {
+    return connection.models.Project as Model<any>;
+  }
+  return Project as Model<any>;
+};
+
 export interface UserListParams {
   page?: number;
   limit?: number;
@@ -110,10 +123,12 @@ export interface CreateUserData {
  export const archiveDuplicateUsers = async (params: {
    mode: ArchiveDuplicatesMode;
    limitGroups?: number;
- }): Promise<ArchiveDuplicateUsersReport> => {
+ }, verifiedConnection?: mongoose.Connection): Promise<ArchiveDuplicateUsersReport> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const ProjectModel = getProjectModel(verifiedConnection);
    const { mode, limitGroups } = params;
 
-   const users = await User.find({
+   const users = await UserModel.find({
      isDeleted: { $ne: true },
      deletedAt: { $exists: false },
      email: { $exists: true, $ne: null },
@@ -165,7 +180,7 @@ export interface CreateUserData {
 
      for (const dup of rest) {
        const dupId = dup._id;
-       const activeCollectionCount = await Project.countDocuments({
+       const activeCollectionCount = await ProjectModel.countDocuments({
          $or: [
            { userId: dupId, isDeleted: { $ne: true }, deletedAt: { $exists: false } },
            { collectedBy: dupId, isDeleted: { $ne: true }, deletedAt: { $exists: false } },
@@ -182,7 +197,7 @@ export interface CreateUserData {
        report.totals.archived += 1;
 
        if (mode === 'apply') {
-         await User.updateOne(
+         await UserModel.updateOne(
            { _id: dupId },
            { $set: { isDeleted: true, deletedAt: new Date(), isActive: false } },
          );
@@ -338,11 +353,11 @@ export const getUsers = async (params: UserListParams = {}, verifiedConnection?:
  * const user = await getUserById('507f1f77bcf86cd799439011');
  * ```
  */
-export const getUserById = async (userId: string): Promise<IUserResponse> => {
+export const getUserById = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const UserModel = getUserModel();
+  const UserModel = getUserModel(verifiedConnection);
   const user = await UserModel.findById(userObjectId)
     .select('-password')
     .populate('defaultLocation', 'locationName locality address city state locationType')
@@ -397,7 +412,9 @@ export const createUser = async (
   data: CreateUserData,
   creatorRole: string,
   mailService?: MailService
-): Promise<IUserResponse> => {
+, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   // Validate role creation permissions
   const allowedRoles = getAllowedRolesForCreation(creatorRole);
   const requestedRole = data.role || 'agent';
@@ -410,7 +427,7 @@ export const createUser = async (
   }
 
   // Check if user already exists
-  const existingUser = await User.findOne({ email: data.email.toLowerCase() });
+  const existingUser = await UserModel.findOne({ email: data.email.toLowerCase() });
   if (existingUser) {
     const duplicateError = new AppError('A user with this email already exists', 400);
     duplicateError.errors = [
@@ -441,7 +458,7 @@ export const createUser = async (
     try {
       const validationService = new ValidationService();
       const locationObjectId = validationService.validateObjectId(data.defaultLocationId, 'defaultLocationId');
-      const location = await Location.findOne({
+      const location = await LocationModel.findOne({
         _id: locationObjectId,
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
@@ -469,7 +486,7 @@ export const createUser = async (
   if (requestedRole === 'agent' && data.assignedLocationIds && data.assignedLocationIds.length > 0) {
     // Validate all locations exist before creating user
     try {
-      const { invalid } = await locationAssignmentService.validateLocationsExist(data.assignedLocationIds);
+      const { invalid } = await locationAssignmentService.validateLocationsExist(data.assignedLocationIds, verifiedConnection);
 
       if (invalid.length > 0) {
         const invalidIds = invalid.map(i => i.locationId).join(', ');
@@ -495,7 +512,7 @@ export const createUser = async (
     }
   }
 
-  const user = await User.create({
+  const user = await UserModel.create({
     email: data.email.toLowerCase(),
     password: data.password,
     name: data.name,
@@ -507,7 +524,7 @@ export const createUser = async (
   if (user.role === 'user') {
     // We've already validated that defaultLocationId is present, so it must exist here
     if (!data.defaultLocationId) {
-      await User.findByIdAndDelete(user._id);
+      await UserModel.findByIdAndDelete(user._id);
       const locationError = new AppError('Default location is required for users', 400);
       locationError.errors = [
         { field: 'defaultLocationId', message: 'Default location is required for users. Please select a location from the dropdown.' }
@@ -516,10 +533,10 @@ export const createUser = async (
     }
 
     try {
-      await locationAssignmentService.assignLocationToUser(user._id.toString(), data.defaultLocationId);
+      await locationAssignmentService.assignLocationToUser(user._id.toString(), data.defaultLocationId, verifiedConnection);
     } catch (error) {
       // If location assignment fails, delete the user and throw error
-      await User.findByIdAndDelete(user._id);
+      await UserModel.findByIdAndDelete(user._id);
       const assignmentError = new AppError(
         `Failed to assign default location: ${error instanceof Error ? error.message : 'Unknown error'}`,
         400
@@ -535,7 +552,7 @@ export const createUser = async (
   if (user.role === 'agent') {
     // We've already validated that assignedLocationIds is present and non-empty, so it must exist here
     if (!data.assignedLocationIds || data.assignedLocationIds.length === 0) {
-      await User.findByIdAndDelete(user._id);
+      await UserModel.findByIdAndDelete(user._id);
       const locationError = new AppError('At least one location must be assigned to agents', 400);
       locationError.errors = [
         { field: 'assignedLocationIds', message: 'At least one location must be assigned to agents. Please add at least one location using the location selector.' }
@@ -544,10 +561,10 @@ export const createUser = async (
     }
 
     try {
-      await locationAssignmentService.assignLocationsToAgent(user._id.toString(), data.assignedLocationIds);
+      await locationAssignmentService.assignLocationsToAgent(user._id.toString(), data.assignedLocationIds, verifiedConnection);
     } catch (error) {
       // If location assignment fails, delete the user and throw error
-      await User.findByIdAndDelete(user._id);
+      await UserModel.findByIdAndDelete(user._id);
       const assignmentError = new AppError(
         `Failed to assign locations: ${error instanceof Error ? error.message : 'Unknown error'}`,
         400
@@ -581,7 +598,7 @@ export const createUser = async (
   }
 
   // Fetch user with populated location data
-  const userWithLocation = await User.findById(user._id)
+  const userWithLocation = await UserModel.findById(user._id)
     .populate('defaultLocation', 'locationName locality address city state locationType')
     .lean();
   return toUserResponse(userWithLocation || user);
@@ -609,18 +626,20 @@ export const updateUser = async (
   userId: string,
   data: UpdateUserData,
   creatorRole?: string
-): Promise<IUserResponse> => {
+, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const user = await User.findById(userObjectId);
+  const user = await UserModel.findById(userObjectId);
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
   // Check if email is being changed and if it's already taken
   if (data.email && data.email.toLowerCase() !== user.email) {
-    const existingUser = await User.findOne({ email: data.email.toLowerCase() });
+    const existingUser = await UserModel.findOne({ email: data.email.toLowerCase() });
     if (existingUser) {
       throw new AppError('User with this email already exists', 400);
     }
@@ -651,12 +670,12 @@ export const updateUser = async (
   if (data.defaultLocationId !== undefined) {
     if (data.defaultLocationId === null || data.defaultLocationId === '') {
       // Remove default location
-      await locationAssignmentService.removeLocationFromUser(userId);
+      await locationAssignmentService.removeLocationFromUser(userId, verifiedConnection);
     } else {
       // Validate location exists before assigning
       const validationService = new ValidationService();
       const locationObjectId = validationService.validateObjectId(data.defaultLocationId, 'defaultLocationId');
-      const location = await Location.findOne({
+      const location = await LocationModel.findOne({
         _id: locationObjectId,
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
@@ -667,7 +686,7 @@ export const updateUser = async (
       }
 
       // Set default location
-      await locationAssignmentService.assignLocationToUser(userId, data.defaultLocationId);
+      await locationAssignmentService.assignLocationToUser(userId, data.defaultLocationId, verifiedConnection);
     }
   }
 
@@ -679,7 +698,7 @@ export const updateUser = async (
 
     // Validate all locations exist before updating
     if (data.assignedLocationIds.length > 0) {
-      const { invalid } = await locationAssignmentService.validateLocationsExist(data.assignedLocationIds);
+      const { invalid } = await locationAssignmentService.validateLocationsExist(data.assignedLocationIds, verifiedConnection);
 
       if (invalid.length > 0) {
         const reasons = invalid.map(i => `${i.locationId}: ${i.reason}`).join('; ');
@@ -691,7 +710,7 @@ export const updateUser = async (
     }
 
     // Get current assigned locations
-    const currentLocations = await locationAssignmentService.getAgentLocations(userId);
+    const currentLocations = await locationAssignmentService.getAgentLocations(userId, verifiedConnection);
     const currentLocationIds = currentLocations.map(loc => loc._id.toString());
 
     // Find locations to remove (in current but not in new)
@@ -706,19 +725,19 @@ export const updateUser = async (
 
     // Remove locations
     for (const locationId of locationsToRemove) {
-      await locationAssignmentService.unassignLocationFromAgent(locationId);
+      await locationAssignmentService.unassignLocationFromAgent(locationId, verifiedConnection);
     }
 
     // Add locations (validation already done above)
     if (locationsToAdd.length > 0) {
-      await locationAssignmentService.assignLocationsToAgent(userId, locationsToAdd);
+      await locationAssignmentService.assignLocationsToAgent(userId, locationsToAdd, verifiedConnection);
     }
   }
 
   await user.save();
 
   // Fetch user with populated location data
-  const updatedUser = await User.findById(user._id)
+  const updatedUser = await UserModel.findById(user._id)
     .populate('defaultLocation', 'locationName locality address city state locationType')
     .lean();
 
@@ -728,12 +747,13 @@ export const updateUser = async (
 /**
  * Delete user (soft delete)
  */
-export const deleteUser = async (userId: string): Promise<void> => {
+export const deleteUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<void> => {
+  const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
   const queryBuilder = new QueryBuilderService();
-  const user = await User.findOne(queryBuilder.combineQueries(
+  const user = await UserModel.findOne(queryBuilder.combineQueries(
     { _id: userObjectId },
     queryBuilder.excludeDeleted({})
   ));
@@ -756,7 +776,7 @@ export const deleteUser = async (userId: string): Promise<void> => {
   await user.save();
 
   // Verify deletion was successful
-  const verifyUser = await User.findById(userObjectId);
+  const verifyUser = await UserModel.findById(userObjectId);
   if (verifyUser && !verifyUser.isDeleted) {
     throw new AppError('Failed to delete user. Please try again.', 500);
   }
@@ -769,6 +789,7 @@ export const getDeletedUsers = async (params: UserListParams & {
   startDate?: string;
   endDate?: string;
 } = {}, verifiedConnection?: mongoose.Connection): Promise<UserListResponse> => {
+  const ProjectModel = getProjectModel(verifiedConnection);
   const paginationService = new PaginationService();
   const validatedPage = paginationService.validatePage(params.page, 1);
   const validatedLimit = paginationService.validateLimit(params.limit, PAGINATION.MAX_LIMIT, PAGINATION.DEFAULT_LIMIT);
@@ -833,7 +854,7 @@ export const getDeletedUsers = async (params: UserListParams & {
       const userObjectId = user._id;
 
       // Count collections for this user
-      const collectionCount = await Project.countDocuments({
+      const collectionCount = await ProjectModel.countDocuments({
         $or: [
           { userId: userObjectId, isDeleted: { $ne: true }, deletedAt: { $exists: false } },
           { collectedBy: userObjectId, isDeleted: { $ne: true }, deletedAt: { $exists: false } }
@@ -859,11 +880,12 @@ export const getDeletedUsers = async (params: UserListParams & {
 /**
  * Restore deleted user
  */
-export const restoreUser = async (userId: string): Promise<IUserResponse> => {
+export const restoreUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+  const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const user = await User.findOne({
+  const user = await UserModel.findOne({
     _id: userObjectId,
     isDeleted: true,
   });
@@ -889,11 +911,13 @@ export const restoreUser = async (userId: string): Promise<IUserResponse> => {
 /**
  * Permanently delete user
  */
-export const permanentlyDeleteUser = async (userId: string): Promise<void> => {
+export const permanentlyDeleteUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<void> => {
+  const UserModel = getUserModel(verifiedConnection);
+  const ProjectModel = getProjectModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
 
-  const user = await User.findOne({
+  const user = await UserModel.findOne({
     _id: userObjectId,
     isDeleted: true,
   });
@@ -903,7 +927,7 @@ export const permanentlyDeleteUser = async (userId: string): Promise<void> => {
   }
 
   // Check if user has any collections
-  const collectionCount = await Project.countDocuments({
+  const collectionCount = await ProjectModel.countDocuments({
     $or: [
       { userId: userObjectId, isDeleted: { $ne: true }, deletedAt: { $exists: false } },
       { collectedBy: userObjectId, isDeleted: { $ne: true }, deletedAt: { $exists: false } }
@@ -917,7 +941,7 @@ export const permanentlyDeleteUser = async (userId: string): Promise<void> => {
     );
   }
 
-  await User.deleteOne({ _id: userObjectId });
+  await UserModel.deleteOne({ _id: userObjectId });
 };
 
 export const getUserStats = async (requesterRole?: string, verifiedConnection?: mongoose.Connection): Promise<{

@@ -1,7 +1,25 @@
-import { Types } from 'mongoose';
-import { Location } from './location.model';
+import mongoose, { Types, Model } from 'mongoose';
+import {Location, ILocation} from './location.model';
 import { CreateLocationData } from './location.service';
-import { Project } from '../project/project.model';
+import {Project, IProject} from '../project/project.model';
+
+
+
+const getProjectModel = (verifiedConnection?: mongoose.Connection): Model<IProject> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Project.modelName]) {
+    return connection.models[Project.modelName] as Model<IProject>;
+  }
+  return Project as Model<IProject>;
+};
+
+const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILocation> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Location.modelName]) {
+    return connection.models[Location.modelName] as Model<ILocation>;
+  }
+  return Location as Model<ILocation>;
+};
 
 export interface BulkCreateResult {
   success: number;
@@ -20,7 +38,8 @@ export interface BulkCreateResult {
 export const bulkCreateLocations = async (
   locations: CreateLocationData[],
   createdBy: string
-): Promise<BulkCreateResult> => {
+, verifiedConnection?: mongoose.Connection): Promise<BulkCreateResult> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   const results: BulkCreateResult['results'] = [];
   let success = 0;
   let failed = 0;
@@ -33,7 +52,7 @@ export const bulkCreateLocations = async (
       // Duplicate is defined as: same locationType, locationName (case-insensitive), and address (case-insensitive)
       const normalizedLocationName = locationData.locationName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const normalizedAddress = locationData.address.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const existingLocation = await Location.findOne({
+      const existingLocation = await LocationModel.findOne({
         locationType: locationData.locationType,
         locationName: { $regex: new RegExp(`^${normalizedLocationName}$`, 'i') },
         address: { $regex: new RegExp(`^${normalizedAddress}$`, 'i') },
@@ -51,7 +70,7 @@ export const bulkCreateLocations = async (
         continue;
       }
 
-      const location = new Location({
+      const location = new LocationModel({
         locationType: locationData.locationType,
         locationName: locationData.locationName,
         address: locationData.address,
@@ -96,18 +115,19 @@ export const bulkCreateLocations = async (
  */
 export const bulkUpdateLocations = async (
   updates: Array<{ id: string; data: Partial<CreateLocationData & { isActive?: boolean }> }>
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{ id: string; success: boolean; error?: string }>;
 }> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   const results: Array<{ id: string; success: boolean; error?: string }> = [];
   let success = 0;
   let failed = 0;
 
   for (const update of updates) {
     try {
-      const location = await Location.findById(update.id);
+      const location = await LocationModel.findById(update.id);
       if (!location || location.isDeleted) {
         results.push({
           id: update.id,
@@ -144,18 +164,20 @@ export const bulkUpdateLocations = async (
  */
 export const bulkDeleteLocations = async (
   ids: string[]
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{ id: string; success: boolean; error?: string }>;
 }> => {
+  const LocationModel = getLocationModel(verifiedConnection);
+  const ProjectModel = getProjectModel(verifiedConnection);
   const results: Array<{ id: string; success: boolean; error?: string }> = [];
   let success = 0;
   let failed = 0;
 
   for (const id of ids) {
     try {
-      const location = await Location.findById(id);
+      const location = await LocationModel.findById(id);
       if (!location || location.isDeleted) {
         results.push({
           id,
@@ -167,7 +189,7 @@ export const bulkDeleteLocations = async (
       }
 
       // Check if location has any collections (usage count)
-      const collectionCount = await Project.countDocuments({
+      const collectionCount = await ProjectModel.countDocuments({
         locationId: new Types.ObjectId(id),
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },

@@ -1,11 +1,20 @@
 import { Project, IProject, CollectionItem } from './project.model';
 import { AppError } from '../../common/exceptions/app-error';
-import { Types } from 'mongoose';
+import mongoose, { Types, Model } from 'mongoose';
 import { ValidationService } from '../../common/validation/validation.service';
 import { ExportService, FileFormat } from '../../infrastructure/export/export.service';
 import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
 import { FINANCIAL } from '../../config/constants';
 import { COLLECTION_LOCATION_TYPES, CollectionLocationType, isValidMaterialType } from '../../types/collections';
+
+
+const getProjectModel = (verifiedConnection?: mongoose.Connection): Model<IProject> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Project.modelName]) {
+    return connection.models[Project.modelName] as Model<IProject>;
+  }
+  return Project as Model<IProject>;
+};
 
 // CSVRow type removed - using Record<string, string> from csvExcelUtils
 
@@ -68,7 +77,8 @@ export const exportCollections = async (
     endDate?: Date;
   },
   format: FileFormat = 'csv'
-): Promise<{ data: string | Buffer; mimeType: string; extension: string }> => {
+, verifiedConnection?: mongoose.Connection): Promise<{ data: string | Buffer; mimeType: string; extension: string }> => {
+  const ProjectModel = getProjectModel(verifiedConnection);
   const query: Record<string, unknown> = {
     serviceType: 'recycling',
   };
@@ -86,7 +96,7 @@ export const exportCollections = async (
   );
   Object.assign(query, dateRangeFilter);
 
-  const collections = await Project.find(query)
+  const collections = await ProjectModel.find(query)
     .populate('userId', 'name email')
     .populate('collectedBy', 'name email')
     .populate('locationId', 'locationName locationType address city state zipCode')
@@ -164,8 +174,8 @@ export const exportCollectionsToCSV = async (filters?: {
   locationType?: string;
   startDate?: Date;
   endDate?: Date;
-}): Promise<string> => {
-  const result = await exportCollections(filters, 'csv');
+}, verifiedConnection?: mongoose.Connection): Promise<string> => {
+  const result = await exportCollections(filters, 'csv', verifiedConnection);
   return result.data as string;
 };
 
@@ -180,7 +190,7 @@ export const importCollections = async (
   fileData: string | Buffer,
   createdBy: string,
   filename?: string
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{
@@ -206,7 +216,7 @@ export const importCollections = async (
     }
 
     // Process records - invalid rows are skipped, valid ones are imported
-    const result = await processCollectionRecords(records, createdBy);
+    const result = await processCollectionRecords(records, createdBy, verifiedConnection);
 
     // Generate error report if there are failures
     let errorReport: string | undefined;
@@ -235,7 +245,7 @@ export const importCollections = async (
 export const importCollectionsFromCSV = async (
   csvData: string,
   createdBy: string
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{
@@ -245,7 +255,7 @@ export const importCollectionsFromCSV = async (
     error?: string;
   }>;
 }> => {
-  const result = await importCollections(csvData, createdBy);
+  const result = await importCollections(csvData, createdBy, undefined, verifiedConnection);
   return {
     success: result.success,
     failed: result.failed,
@@ -259,7 +269,7 @@ export const importCollectionsFromCSV = async (
 export const validateCollectionsImport = async (
   fileData: string | Buffer,
   filename?: string
-): Promise<{
+, _verifiedConnection?: mongoose.Connection): Promise<{
   valid: boolean;
   totalRows: number;
   validRows: number;
@@ -429,7 +439,8 @@ export const validateCollectionsImport = async (
  */
 const processCollectionRecords = async (
   records: Record<string, string>[],
-  createdBy: string
+  createdBy: string,
+  verifiedConnection?: mongoose.Connection
 ): Promise<{
   success: number;
   failed: number;
@@ -446,6 +457,8 @@ const processCollectionRecords = async (
     collectionId?: string;
     error?: string;
   }> = [];
+
+  const ProjectModel = getProjectModel(verifiedConnection);
 
   let successCount = 0;
   let failedCount = 0;
@@ -588,7 +601,7 @@ const processCollectionRecords = async (
       const normalizedLocationName = collectionData.locationName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const normalizedAddress = collectionData.location.address.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      const existingCollection = await Project.findOne({
+      const existingCollection = await ProjectModel.findOne({
         serviceType: 'recycling',
         locationName: { $regex: new RegExp(`^${normalizedLocationName}$`, 'i') },
         'location.address': { $regex: new RegExp(`^${normalizedAddress}$`, 'i') },
@@ -617,7 +630,7 @@ const processCollectionRecords = async (
       }
 
       // Create collection
-      const collection = new Project(collectionData);
+      const collection = new ProjectModel(collectionData);
 
       // If createdAt was set, we need to save it explicitly
       // Mongoose timestamps will override if not set before save

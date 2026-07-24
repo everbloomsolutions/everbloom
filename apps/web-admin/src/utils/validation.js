@@ -53,10 +53,13 @@ export const validators = {
   /**
    * Password validator
    */
-  password: (value, minLength = 6) => {
+  password: (value, minLength = 8) => {
     if (!value) return null;
     if (value.length < minLength) {
       return `Password must be at least ${minLength} characters`;
+    }
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(value)) {
+      return 'Password must contain at least one lowercase letter, one uppercase letter, and one number';
     }
     return null;
   },
@@ -184,7 +187,7 @@ export const validateEmail = (email) => {
 };
 
 export const validatePassword = (password) => {
-  return password.length >= 6;
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
 };
 
 export const validatePhone = (phone) => {

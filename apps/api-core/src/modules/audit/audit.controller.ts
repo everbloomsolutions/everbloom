@@ -11,6 +11,7 @@ import {
 import { Response } from 'express';
 import { AuditService } from './audit.service';
 import { AuditLogQueryDto, AuditLogStatsQueryDto } from './dto/audit-log-query.dto';
+import { DatabaseService } from '../../infrastructure/database/database.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/guards/roles.guard';
@@ -21,7 +22,10 @@ import * as auditExportService from './audit.export.service';
 @UseGuards(AuthGuard, RolesGuard)
 @Roles('admin', 'super_admin')
 export class AuditController {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   @Get()
   async getAuditLogs(@Query() query: AuditLogQueryDto) {
@@ -95,6 +99,8 @@ export class AuditController {
     @Query() query: AuditLogQueryDto,
     @Res() res: Response,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const csv = await auditExportService.exportAuditLogsToCSV({
       entityType: query.entityType,
       entityId: query.entityId,
@@ -103,7 +109,7 @@ export class AuditController {
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
       search: query.search,
-    });
+    }, verifiedConnection);
 
     const filename = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
     res.setHeader('Content-Type', 'text/csv');
@@ -117,6 +123,8 @@ export class AuditController {
     @Query() query: AuditLogQueryDto,
     @Res() res: Response,
   ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
     const json = await auditExportService.exportAuditLogsToJSON({
       entityType: query.entityType,
       entityId: query.entityId,
@@ -125,7 +133,7 @@ export class AuditController {
       startDate: query.startDate ? new Date(query.startDate) : undefined,
       endDate: query.endDate ? new Date(query.endDate) : undefined,
       search: query.search,
-    });
+    }, verifiedConnection);
 
     const filename = `audit-logs-${new Date().toISOString().split('T')[0]}.json`;
     res.setHeader('Content-Type', 'application/json');

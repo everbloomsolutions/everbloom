@@ -17,7 +17,7 @@ import { COLLECTION_LOCATION_TYPES, MATERIAL_TYPE_ENUM } from '../../../types/co
 
 class LocationDto {
   @IsString()
-  @MinLength(5, { message: 'Address is required' })
+  @MinLength(5, { message: 'Address must be at least 5 characters' })
   address!: string;
 
   @IsOptional()

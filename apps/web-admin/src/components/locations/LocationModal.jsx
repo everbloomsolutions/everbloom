@@ -30,9 +30,11 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagsInput, setTagsInput] = useState('');
   const [duplicates, setDuplicates] = useState([]);
-  const [_showDuplicates, setShowDuplicates] = useState(false);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
 
   useEffect(() => {
+    setDuplicates([]);
+    setShowDuplicateWarning(false);
     if (isOpen) {
       if (location) {
         setFormData({
@@ -69,6 +71,8 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
     });
     setTagsInput('');
     setErrors({});
+    setDuplicates([]);
+    setShowDuplicateWarning(false);
   };
 
   const handleChange = (field, value) => {
@@ -112,9 +116,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const checkForDuplicates = async () => {
-    if (isEditMode) return; // Don't check duplicates when editing
-
+  const checkForDuplicates = async (excludeId) => {
     try {
       const submitData = {
         ...formData,
@@ -123,34 +125,32 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
         notes: formData.notes || undefined,
       };
 
+      if (excludeId) {
+        submitData.excludeId = excludeId;
+      }
+
       const response = await locationApi.checkDuplicates(submitData);
       if (response.success && response.data.duplicates && response.data.duplicates.length > 0) {
         setDuplicates(response.data.duplicates);
-        setShowDuplicates(true);
         return true;
       }
+      setDuplicates([]);
+      setShowDuplicateWarning(false);
       return false;
     } catch (error) {
       logger.error('Failed to check duplicates:', error);
+      setDuplicates([]);
+      setShowDuplicateWarning(false);
       return false;
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const resetAndClose = () => {
+    resetForm();
+    onClose();
+  };
 
-    if (!validateForm()) {
-      return;
-    }
-
-    // Check for duplicates before creating
-    if (!isEditMode) {
-      const hasDuplicates = await checkForDuplicates();
-      if (hasDuplicates) {
-        return; // Don't proceed if duplicates found
-      }
-    }
-
+  const saveLocation = async () => {
     setIsSubmitting(true);
 
     try {
@@ -169,10 +169,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
         toast.success('Location created successfully');
       }
 
-      resetForm();
-      setDuplicates([]);
-      setShowDuplicates(false);
-      onClose();
+      resetAndClose();
 
       try {
         onSuccess?.();
@@ -188,54 +185,43 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
     }
   };
 
-  const _handleUseExisting = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    if (showDuplicateWarning) {
+      return;
+    }
+
+    const hasDuplicates = await checkForDuplicates(isEditMode ? location._id : undefined);
+    if (hasDuplicates) {
+      setShowDuplicateWarning(true);
+      return;
+    }
+
+    await saveLocation();
+  };
+
+  const handleUseExisting = () => {
     if (duplicates.length > 0) {
       const existingLocation = duplicates[0].location;
-      onClose();
       toast.info(`Please use existing location: ${existingLocation.locationName}`);
-      // Could emit event to parent to select this location
     }
+    resetAndClose();
   };
 
-  const _handleCreateAnyway = async () => {
-    setShowDuplicates(false);
-    setDuplicates([]);
-    
-    // Continue with creation
-    setIsSubmitting(true);
-    try {
-      const submitData = {
-        ...formData,
-        tags: formData.tags.length > 0 ? formData.tags : undefined,
-        group: formData.group || undefined,
-        notes: formData.notes || undefined,
-      };
-
-      await locationApi.createLocation(submitData);
-      toast.success('Location created successfully');
-      resetForm();
-      setDuplicates([]);
-      setShowDuplicates(false);
-      onClose();
-
-      try {
-        onSuccess?.();
-      } catch (error) {
-        logger.error('LocationModal onSuccess callback failed:', error);
-      }
-    } catch (error) {
-      logger.error('Failed to save location:', error);
-      const errorMessage = error?.response?.data?.message || error.message || 'Failed to save location';
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleCreateAnyway = () => {
+    setShowDuplicateWarning(false);
+    saveLocation();
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={resetAndClose}
       title={isEditMode ? 'Edit Location' : 'Create New Location'}
       size="lg"
     >
@@ -361,11 +347,51 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
           />
         </div>
 
+        {showDuplicateWarning && duplicates.length > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+              Possible duplicate locations found
+            </h4>
+            <ul className="space-y-2 mb-3">
+              {duplicates.map((dup, index) => (
+                <li key={dup.location?._id || index} className="text-sm text-yellow-700 dark:text-yellow-300">
+                  <span className="font-medium">{dup.location?.locationName}</span>
+                  {dup.location?.locality && `, ${dup.location.locality}`}
+                  {dup.location?.address && ` - ${dup.location.address}`}
+                  <span className="ml-2 text-xs">
+                    ({Math.round(dup.similarity * 100)}% match - {dup.matchReason})
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleUseExisting}
+              >
+                Use Existing
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleCreateAnyway}
+                isLoading={isSubmitting}
+                disabled={isSubmitting}
+              >
+                {isEditMode ? 'Update Anyway' : 'Create Anyway'}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="secondary"
-            onClick={onClose}
+            onClick={resetAndClose}
             disabled={isSubmitting}
           >
             Cancel
@@ -374,7 +400,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
             type="submit"
             variant="primary"
             isLoading={isSubmitting}
-            disabled={isSubmitting}
+            disabled={isSubmitting || showDuplicateWarning}
           >
             {isEditMode ? 'Update Location' : 'Create Location'}
           </Button>

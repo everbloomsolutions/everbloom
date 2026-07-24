@@ -3,6 +3,7 @@
  * Generates PDF and CSV reports for analytics data
  */
 
+import mongoose from 'mongoose';
 import PDFDocument from 'pdfkit';
 import * as projectService from '../project/project.service';
 import * as locationService from '../location/location.service';
@@ -378,7 +379,8 @@ const validateReportAccess = (reportType: ReportType, userRole: UserRole): void 
  * Generate report based on request
  */
 export const generateReport = async (
-  request: ReportGenerationRequest
+  request: ReportGenerationRequest,
+  verifiedConnection?: mongoose.Connection
 ): Promise<Buffer | string> => {
   try {
     // Log the report type being generated for debugging
@@ -388,7 +390,7 @@ export const generateReport = async (
     validateReportAccess(request.reportType, request.role);
 
     // Fetch analytics data based on report type
-    const analyticsData = await fetchAnalyticsData(request);
+    const analyticsData = await fetchAnalyticsData(request, verifiedConnection);
 
     // Validate that data was fetched successfully
     if (!analyticsData) {
@@ -414,7 +416,8 @@ export const generateReport = async (
  * Fetch analytics data based on report type
  */
 const fetchAnalyticsData = async (
-  request: ReportGenerationRequest
+  request: ReportGenerationRequest,
+  verifiedConnection?: mongoose.Connection
 ): Promise<unknown> => {
   // Convert date strings to Date objects, handling empty strings
   const filters = {
@@ -489,7 +492,7 @@ const fetchAnalyticsData = async (
       });
 
     case 'user':
-      return userAdminService.getUserStats(request.role);
+      return userAdminService.getUserStats(request.role, verifiedConnection);
 
     case 'comprehensive': {
       // Fetch all analytics for comprehensive report
@@ -506,7 +509,7 @@ const fetchAnalyticsData = async (
           userId: request.userId,
           userRole: request.role,
         }),
-        userAdminService.getUserStats(request.role),
+        userAdminService.getUserStats(request.role, verifiedConnection),
       ]);
       return { location, agent, collection, user };
     }

@@ -42,8 +42,8 @@ const Settings = () => {
       if (values.newPassword !== values.confirmPassword) {
         errors.confirmPassword = 'New passwords do not match';
       }
-      if (values.newPassword.length > 0 && values.newPassword.length < 6) {
-        errors.newPassword = 'Password must be at least 6 characters';
+      if (values.newPassword.length > 0 && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(values.newPassword)) {
+        errors.newPassword = 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
       }
       return errors;
     },
@@ -192,7 +192,7 @@ const Settings = () => {
 
             <div className="mb-4 p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
               <p className="text-sm text-primary-800 dark:text-primary-200">
-                Password must be at least 6 characters long
+                Password must be at least 8 characters and include uppercase, lowercase, and a number
               </p>
             </div>
 

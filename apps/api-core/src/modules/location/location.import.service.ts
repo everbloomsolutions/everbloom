@@ -1,10 +1,19 @@
 import { CreateLocationData } from './location.service';
 import * as bulkLocationService from './location.bulk.service';
-import { Location } from './location.model';
+import {Location, ILocation} from './location.model';
 import { AppError } from '../../common/exceptions/app-error';
 import { CollectionLocationType, COLLECTION_LOCATION_TYPES } from '../../types/collections';
-import { Types } from 'mongoose';
+import mongoose, { Types, Model } from 'mongoose';
 import { ExportService, FileFormat } from '../../infrastructure/export/export.service';
+
+
+const getLocationModel = (verifiedConnection?: mongoose.Connection): Model<ILocation> => {
+  const connection = verifiedConnection || mongoose.connection;
+  if (connection.models[Location.modelName]) {
+    return connection.models[Location.modelName] as Model<ILocation>;
+  }
+  return Location as Model<ILocation>;
+};
 
 /**
  * Export locations to CSV or Excel
@@ -17,7 +26,8 @@ export const exportLocations = async (
     isActive?: boolean;
   },
   format: FileFormat = 'csv'
-): Promise<{ data: string | Buffer; mimeType: string; extension: string }> => {
+, verifiedConnection?: mongoose.Connection): Promise<{ data: string | Buffer; mimeType: string; extension: string }> => {
+  const LocationModel = getLocationModel(verifiedConnection);
   const query: Record<string, unknown> = {
     isDeleted: { $ne: true },
     deletedAt: { $exists: false },
@@ -36,7 +46,7 @@ export const exportLocations = async (
     query.isActive = filters.isActive;
   }
 
-  const locations = await Location.find(query)
+  const locations = await LocationModel.find(query)
     .populate('createdBy', 'name email')
     .select('-__v')
     .lean();
@@ -119,8 +129,8 @@ export const exportLocationsToCSV = async (filters?: {
   city?: string;
   state?: string;
   isActive?: boolean;
-}): Promise<string> => {
-  const result = await exportLocations(filters, 'csv');
+}, verifiedConnection?: mongoose.Connection): Promise<string> => {
+  const result = await exportLocations(filters, 'csv', verifiedConnection);
   return result.data as string;
 };
 
@@ -130,7 +140,7 @@ export const exportLocationsToCSV = async (filters?: {
 export const validateLocationsImport = async (
   fileData: string | Buffer,
   filename?: string
-): Promise<{
+, _verifiedConnection?: mongoose.Connection): Promise<{
   valid: boolean;
   totalRows: number;
   validRows: number;
@@ -247,7 +257,7 @@ export const importLocations = async (
   fileData: string | Buffer,
   createdBy: string,
   filename?: string
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{
@@ -272,7 +282,7 @@ export const importLocations = async (
     throw new AppError(`File parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 400);
   }
 
-  const result = await processLocationRecords(records, createdBy);
+  const result = await processLocationRecords(records, createdBy, verifiedConnection);
 
   // Generate error report if there are failures
   let errorReport: string | undefined;
@@ -298,7 +308,7 @@ export const importLocations = async (
 export const importLocationsFromCSV = async (
   csvData: string,
   createdBy: string
-): Promise<{
+, verifiedConnection?: mongoose.Connection): Promise<{
   success: number;
   failed: number;
   results: Array<{
@@ -308,7 +318,7 @@ export const importLocationsFromCSV = async (
     error?: string;
   }>;
 }> => {
-  const result = await importLocations(csvData, createdBy);
+  const result = await importLocations(csvData, createdBy, undefined, verifiedConnection);
   return {
     success: result.success,
     failed: result.failed,
@@ -321,7 +331,8 @@ export const importLocationsFromCSV = async (
  */
 const processLocationRecords = async (
   records: Record<string, string>[],
-  createdBy: string
+  createdBy: string,
+  verifiedConnection?: mongoose.Connection
 ): Promise<{
   success: number;
   failed: number;
@@ -416,7 +427,7 @@ const processLocationRecords = async (
     }
 
     // Bulk create
-    const result = await bulkLocationService.bulkCreateLocations(locations, createdBy);
+    const result = await bulkLocationService.bulkCreateLocations(locations, createdBy, verifiedConnection);
 
     return {
       success: result.success,

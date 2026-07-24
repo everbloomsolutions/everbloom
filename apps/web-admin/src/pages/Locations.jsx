@@ -15,6 +15,7 @@ import Loader from '../components/shared/Loader';
 import { useDebounce, useLocations, useLocationFilters, useLoadingStates, useModal, useModalWithData } from '../hooks';
 import { toast } from 'react-hot-toast';
 import logger from '../utils/logger';
+import { queryClient } from '../providers/QueryProvider';
 
 const Locations = () => {
   // Use custom hooks for filters and loading states
@@ -129,11 +130,18 @@ const Locations = () => {
       if (response.success) {
         toast.success('Location deleted successfully');
         fetchLocations();
+        queryClient.invalidateQueries({ queryKey: ['archived', 'locations'] });
       }
     } catch (error) {
-      logger.error('Failed to delete location:', error);
-      const errorMessage = error?.response?.data?.message || 'Failed to delete location';
-      toast.error(errorMessage);
+      if (error?.response?.status === 404) {
+        toast('Location already removed or archived');
+        fetchLocations();
+        queryClient.invalidateQueries({ queryKey: ['archived', 'locations'] });
+      } else {
+        logger.error('Failed to delete location:', error);
+        const errorMessage = error?.response?.data?.message || 'Failed to delete location';
+        toast.error(errorMessage);
+      }
     } finally {
       closeDeleteConfirm();
       closeDeleteConfirmData();
