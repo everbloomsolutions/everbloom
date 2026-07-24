@@ -69,7 +69,7 @@ export class SecurityService {
       }
 
       // Skip HTTPS redirect for health checks so Kubernetes/ALB probes work on HTTP port
-      if (req.path === '/health' || req.path === '/health/detailed' || req.path === '/health/cors-test') {
+      if (req.path === '/health' || req.path.startsWith('/health/')) {
         return next();
       }
 
