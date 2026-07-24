@@ -150,8 +150,8 @@ async function bootstrap() {
 
   // Containers require binding to 0.0.0.0 and using the injected PORT.
   // If we bind to localhost, the app will start but will not be reachable externally.
-  const basePort = configService.get<number>('port') || 8080;
-  const host = configService.get<string>('host') || 'localhost';
+  const basePort = config.port || configService.get<number>('port') || 8080;
+  const host = config.host || configService.get<string>('host') || '0.0.0.0';
   const maxPortAttempts = 6; // try basePort through basePort+5 on EADDRINUSE
 
   let boundPort: number | null = null;
