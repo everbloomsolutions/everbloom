@@ -17,7 +17,13 @@ const Settings = () => {
       email: user?.email || '',
       phone: user?.phone || '',
     },
-    null, // No validation function for now
+    (values) => {
+      const errors = {};
+      if (!values.name?.trim()) {
+        errors.name = 'Name is required';
+      }
+      return errors;
+    },
     async (values) => {
       const result = await updateProfile(values);
       if (result.success) {

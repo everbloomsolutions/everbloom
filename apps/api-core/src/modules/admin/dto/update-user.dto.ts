@@ -1,19 +1,19 @@
-import { IsString, IsEmail, IsEnum, IsBoolean, IsOptional, IsArray, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsEmail, IsEnum, IsBoolean, IsOptional, IsArray, IsNotEmpty, ArrayMinSize, MinLength, MaxLength, Matches, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateUserDto {
-  @IsOptional()
+  @IsNotEmpty({ message: 'Name is required' })
   @IsString()
   @MinLength(2)
   @MaxLength(100)
-  name?: string;
+  name!: string;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Invalid email format' })
   @Transform(({ value }) => value?.toLowerCase())
   @MinLength(5)
   @MaxLength(255)
-  email?: string;
+  email!: string;
 
   @IsOptional()
   @IsString()
@@ -24,20 +24,22 @@ export class UpdateUserDto {
   })
   password?: string;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'Role is required' })
   @IsEnum(['user', 'agent', 'admin', 'super_admin'])
-  role?: 'user' | 'agent' | 'admin' | 'super_admin';
+  role!: 'user' | 'agent' | 'admin' | 'super_admin';
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @IsOptional()
+  @ValidateIf((o) => o.role === 'user')
+  @IsNotEmpty({ message: 'Default location is required' })
   @IsString()
   defaultLocationId?: string;
 
-  @IsOptional()
+  @ValidateIf((o) => o.role === 'agent')
   @IsArray()
+  @ArrayMinSize(1, { message: 'At least one location is required' })
   @IsString({ each: true })
   assignedLocationIds?: string[];
 }

@@ -117,6 +117,18 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
       newErrors.email = 'Invalid email format';
     }
 
+    if (!formData.role) {
+      newErrors.role = 'Role is required';
+    }
+
+    if (formData.role === USER_ROLES.USER && !formData.defaultLocationId) {
+      newErrors.defaultLocationId = 'Default location is required for users';
+    }
+
+    if (formData.role === USER_ROLES.AGENT && (!formData.assignedLocationIds || formData.assignedLocationIds.length === 0)) {
+      newErrors.assignedLocationIds = 'At least one location must be assigned to agents';
+    }
+
     const canSetPassword = currentUser?.role === USER_ROLES.ADMIN || currentUser?.role === USER_ROLES.SUPER_ADMIN;
     if (canSetPassword) {
       const password = formData.password || '';

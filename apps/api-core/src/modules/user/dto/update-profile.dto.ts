@@ -1,10 +1,10 @@
-import { IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsNotEmpty, MinLength } from 'class-validator';
 
 export class UpdateProfileDto {
-  @IsOptional()
+  @IsNotEmpty({ message: 'Name is required' })
   @IsString()
   @MinLength(1, { message: 'Name must not be empty' })
-  name?: string;
+  name!: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'Invalid email address' })

@@ -78,6 +78,10 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
       newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
     }
 
+    if (!formData.role) {
+      newErrors.role = 'Role is required';
+    }
+
     // Validate location requirements based on role
     if (formData.role === USER_ROLES.USER && !formData.defaultLocationId) {
       newErrors.defaultLocationId = 'Default location is required for users';
