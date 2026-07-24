@@ -15,4 +15,4 @@ commonLabels:
 images:
 - name: api-core
   newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/api-core
-  newTag: c72d217ae72573ee3dd1c2ed5654244728edb00b
+  newTag: b152f63471e6bdac2ccceb73182f21715e8ce60d
