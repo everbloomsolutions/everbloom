@@ -178,7 +178,7 @@ export class AdminController {
 
   @Get('dashboard')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
+  @Roles('admin', 'super_admin', 'agent', 'user')
   async getDashboard(@CurrentUser() user: UserDocument) {
     const dashboardData = await this.adminService.getDashboard(
       user._id.toString(),
