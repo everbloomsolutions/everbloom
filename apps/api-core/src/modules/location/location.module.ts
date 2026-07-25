@@ -5,6 +5,7 @@ import { User, UserSchema } from '../user/schemas/user.schema';
 import { LocationController } from './location.controller';
 import { LocationService, setLocationServiceInstance } from './location.service';
 import { CommonModule } from '../../common/common.module';
+import { ProjectModule } from '../project/project.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CommonModule } from '../../common/common.module';
       { name: Location.name, schema: LocationSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    ProjectModule,
     CommonModule, // Provides PaginationService, ValidationService, DatabaseService
   ],
   controllers: [LocationController],
