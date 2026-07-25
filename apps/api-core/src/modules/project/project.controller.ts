@@ -94,8 +94,6 @@ export class ProjectController {
     const project = await this.projectService.getProjectById(
       id,
       user._id.toString(),
-      user.defaultLocation?.toString(),
-      user.role,
     );
 
     if (!project) {
@@ -118,8 +116,6 @@ export class ProjectController {
     const existing = await this.projectService.getProjectById(
       id,
       user._id.toString(),
-      user.defaultLocation?.toString(),
-      user.role,
     );
     if (!existing || (existing as any).status !== 'quoted') {
       throw new BadRequestException('Project must be quoted before accepting');

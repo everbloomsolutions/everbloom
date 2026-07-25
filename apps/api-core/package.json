@@ -92,7 +92,6 @@
     "globals": "^16.5.0",
     "kill-port": "^1.0.1",
     "supertest": "^7.1.4",
-    "tsx": "^4.7.0",
     "turbo": "^2.3.3",
     "typescript": "^5.3.3",
     "unplugin-swc": "^1.5.9",

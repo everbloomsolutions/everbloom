@@ -332,8 +332,6 @@ export class ProjectService {
   async getProjectById(
     projectId: string,
     userId: string,
-    defaultLocation?: string,
-    userRole?: string,
   ): Promise<ProjectDocument | null> {
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 

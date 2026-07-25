@@ -592,7 +592,11 @@ const CollectionForm = ({
                   }}
                   onLocationSelect={handleLocationSelect}
                   placeholder="Search for a location..."
-                  searchParams={{ hasDefaultUser: true }}
+                  searchParams={
+                    user?.role === USER_ROLES.AGENT
+                      ? { hasDefaultUser: true, assignedToAgent: user?._id }
+                      : { hasDefaultUser: true }
+                  }
                 />
                 {isAdmin(user) && (
                   <div className="mt-2 flex justify-end">
