@@ -15,4 +15,4 @@ commonLabels:
 images:
 - name: web-admin
   newName: 361116840324.dkr.ecr.ap-south-2.amazonaws.com/everbloom/web-admin
-  newTag: 5bc1d0dcc4fc5a4dd17639553021336be02f4ebe
+  newTag: 25ab49735ac4ab7ff15ae44b08532bde1ea3647f
