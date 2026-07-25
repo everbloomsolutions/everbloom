@@ -38,11 +38,11 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
       },
       {
         rulePriority = 2
-        description  = "Keep last 50 images"
+        description  = "Keep last 20 images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 50
+          countNumber = 20
         }
         action = {
           type = "expire"
@@ -89,11 +89,11 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
       },
       {
         rulePriority = 2
-        description  = "Keep last 50 images"
+        description  = "Keep last 20 images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 50
+          countNumber = 20
         }
         action = {
           type = "expire"
@@ -140,11 +140,11 @@ resource "aws_ecr_lifecycle_policy" "web_public" {
       },
       {
         rulePriority = 2
-        description  = "Keep last 50 images"
+        description  = "Keep last 20 images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 50
+          countNumber = 20
         }
         action = {
           type = "expire"

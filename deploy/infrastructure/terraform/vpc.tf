@@ -57,7 +57,7 @@ resource "aws_internet_gateway" "everbloom" {
 
 # NAT Gateways
 resource "aws_eip" "nat" {
-  count  = 3
+  count  = 2
   domain = "vpc"
 
   tags = {
@@ -70,7 +70,7 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "everbloom" {
-  count         = 3
+  count         = 2
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
 
@@ -107,7 +107,7 @@ resource "aws_route_table_association" "public" {
 
 # Private Route Tables
 resource "aws_route_table" "private" {
-  count  = 3
+  count  = 2
   vpc_id = aws_vpc.everbloom.id
 
   route {
@@ -125,7 +125,7 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   count          = 3
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  route_table_id = aws_route_table.private[count.index % 2].id
 }
 
 # VPC Endpoints for ECR, S3, Secrets Manager

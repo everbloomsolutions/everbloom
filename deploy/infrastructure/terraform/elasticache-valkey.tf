@@ -79,12 +79,12 @@ resource "aws_elasticache_parameter_group" "everbloom" {
   }
 }
 
-# ElastiCache Replication Group for Valkey (Multi-AZ)
+# ElastiCache Replication Group for Valkey (Single Node)
 resource "aws_elasticache_replication_group" "everbloom" {
   replication_group_id = "everbloom-valkey"
   description          = "Everbloom Valkey replication group"
   node_type            = "cache.t3.medium"
-  num_cache_clusters   = 2
+  num_cache_clusters   = 1
   port                 = 6379
   engine               = "valkey"
   engine_version       = "7.2"
@@ -92,8 +92,8 @@ resource "aws_elasticache_replication_group" "everbloom" {
   subnet_group_name    = aws_elasticache_subnet_group.everbloom.name
   security_group_ids   = [aws_security_group.elasticache.id]
 
-  automatic_failover_enabled = true
-  multi_az_enabled           = true
+  automatic_failover_enabled = false
+  multi_az_enabled           = false
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
   auth_token                 = var.valkey_auth_token
