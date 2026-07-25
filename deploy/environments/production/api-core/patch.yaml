@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: api-core
 spec:
+  replicas: 2
   template:
     spec:
       containers:

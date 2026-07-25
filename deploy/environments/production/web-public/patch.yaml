@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: web-public
 spec:
+  replicas: 2
   template:
     spec:
       containers:
