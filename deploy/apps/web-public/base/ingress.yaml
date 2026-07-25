@@ -7,10 +7,6 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/server-snippet: |
-      if ($host = 'vartulaa.com') {
-        return 301 https://www.vartulaa.com$request_uri;
-      }
 spec:
   ingressClassName: nginx
   tls:
