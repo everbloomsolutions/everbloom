@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update GitOps kustomizations
         if: inputs.update_gitops
@@ -97,4 +99,5 @@ jobs:
           git config user.email "github-actions@github.com"
           git add $(echo "${{ inputs.kustomization_paths }}" | tr ',' '\n')
           git diff --staged --quiet || git commit -m "chore(deploy): update image tags to ${{ inputs.image_tag }}"
+          git pull --rebase origin main
           git push
