@@ -22,6 +22,63 @@ import CollectionAnalyticsContent from '../components/analytics/CollectionAnalyt
 import ReportSuggestions from '../components/analytics/ReportSuggestions';
 import ReportGenerator from '../components/analytics/ReportGenerator';
 
+// Helper: get the first day of an ISO week
+const getISOWeekStart = (year, week) => {
+  const jan4 = new Date(year, 0, 4);
+  const jan4Day = jan4.getDay() || 7;
+  return new Date(year, 0, 4 + (week - 1) * 7 - jan4Day + 1);
+};
+
+// Helper: map getTimeSeriesAnalytics response to the trends/growthMetrics shape the UI expects
+const mapTimeSeriesToTrends = (timeSeriesData) => {
+  if (!timeSeriesData?.series) {
+    return {
+      granularity: timeSeriesData?.granularity || 'daily',
+      trends: [],
+      growthMetrics: { collectionsGrowth: 0, weightGrowth: 0, revenueGrowth: 0 },
+    };
+  }
+
+  const trends = (timeSeriesData.series || [])
+    .map((item) => {
+      const { y, m, d, w } = item._id || {};
+      let date;
+      if (w) {
+        date = getISOWeekStart(y, w);
+      } else if (d) {
+        date = new Date(y, (m || 1) - 1, d);
+      } else if (m) {
+        date = new Date(y, m - 1, 1);
+      } else {
+        date = new Date();
+      }
+      return {
+        date: date.toISOString(),
+        collections: item.count || 0,
+        revenue: item.totalAmount || 0,
+        weight: item.totalWeight || 0,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const computeGrowth = (key) => {
+    if (trends.length < 2) return 0;
+    const first = trends[0][key];
+    const last = trends[trends.length - 1][key];
+    return first > 0 ? Number((((last - first) / first) * 100).toFixed(2)) : 0;
+  };
+
+  return {
+    granularity: timeSeriesData.granularity,
+    trends,
+    growthMetrics: {
+      collectionsGrowth: computeGrowth('collections'),
+      weightGrowth: computeGrowth('weight'),
+      revenueGrowth: computeGrowth('revenue'),
+    },
+  };
+};
+
 const ANALYTICS_ROLE_MAP = {
   location: ['admin', 'super_admin', 'agent'],
   user: ['admin', 'super_admin', 'agent'],
@@ -169,12 +226,54 @@ const Analytics = () => {
     staleTime: 60000,
   });
 
+  const financialAnalyticsQuery = useQuery({
+    queryKey: ['analytics', 'financial', filters.dateRangeType, customDateRange.startDate, customDateRange.endDate],
+    queryFn: createQueryFn(() => {
+      const dateRange = getDateRange();
+      const params = {};
+      if (dateRange.startDate) params.startDate = dateRange.startDate;
+      if (dateRange.endDate) params.endDate = dateRange.endDate;
+      return analyticsApi.getFinancialAnalytics(params);
+    }),
+    enabled: filters.tab === 'collection' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.collection),
+    staleTime: 60000,
+  });
+
+  const timeSeriesAnalyticsQuery = useQuery({
+    queryKey: ['analytics', 'timeSeries', filters.dateRangeType, customDateRange.startDate, customDateRange.endDate, filters.granularity],
+    queryFn: createQueryFn(() => {
+      const dateRange = getDateRange();
+      const params = { granularity: filters.granularity };
+      if (dateRange.startDate) params.startDate = dateRange.startDate;
+      if (dateRange.endDate) params.endDate = dateRange.endDate;
+      return analyticsApi.getTimeSeriesAnalytics(params);
+    }),
+    enabled: filters.tab === 'collection' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.collection),
+    staleTime: 60000,
+  });
+
   // Extract data from queries
   const locationAnalytics = filters.tab === 'location' ? locationAnalyticsQuery.data : null;
   const myAnalytics = filters.tab === 'my-analytics' ? myAnalyticsQuery.data : null;
   const userAnalytics = filters.tab === 'user' ? userAnalyticsQuery.data : null;
   const agentAnalytics = filters.tab === 'agent' ? agentAnalyticsQuery.data : null;
-  const collectionAnalytics = filters.tab === 'collection' ? collectionAnalyticsQuery.data : null;
+  const collectionAnalytics = filters.tab === 'collection' ? collectionAnalyticsQuery.data?.overall : null;
+  const timeSeriesAnalytics = filters.tab === 'collection'
+    ? mapTimeSeriesToTrends(timeSeriesAnalyticsQuery.data)
+    : null;
+  const financialAnalyticsRaw = filters.tab === 'collection' ? financialAnalyticsQuery.data : null;
+  const financialAnalytics = financialAnalyticsRaw
+    ? {
+        ...financialAnalyticsRaw,
+        totalRevenue: financialAnalyticsRaw.totalAmount,
+        totalGST: financialAnalyticsRaw.gstAmount,
+        revenueByMaterialType: (collectionAnalytics?.byMaterialType || []).map((item) => ({
+          materialType: item.materialType,
+          revenue: item.totalRevenue || 0,
+          gst: 0,
+        })),
+      }
+    : null;
 
   // Loading states
   const loading = {
@@ -182,7 +281,9 @@ const Analytics = () => {
     myAnalytics: filters.tab === 'my-analytics' ? myAnalyticsQuery.loading : false,
     user: filters.tab === 'user' ? userAnalyticsQuery.loading : false,
     agent: filters.tab === 'agent' ? agentAnalyticsQuery.loading : false,
-    collection: filters.tab === 'collection' ? collectionAnalyticsQuery.isLoading : false,
+    collection: filters.tab === 'collection'
+      ? (collectionAnalyticsQuery.isLoading || financialAnalyticsQuery.isLoading || timeSeriesAnalyticsQuery.isLoading)
+      : false,
   };
 
   // Error states
@@ -191,7 +292,9 @@ const Analytics = () => {
     myAnalytics: filters.tab === 'my-analytics' ? myAnalyticsQuery.error : null,
     user: filters.tab === 'user' ? userAnalyticsQuery.error : null,
     agent: filters.tab === 'agent' ? agentAnalyticsQuery.error : null,
-    collection: filters.tab === 'collection' ? collectionAnalyticsQuery.error : null,
+    collection: filters.tab === 'collection'
+      ? (collectionAnalyticsQuery.error || financialAnalyticsQuery.error || timeSeriesAnalyticsQuery.error)
+      : null,
   };
 
   // Memoized date range calculation
@@ -566,6 +669,8 @@ const Analytics = () => {
       {filters.tab === 'collection' && (
         <CollectionAnalyticsContent
           analytics={collectionAnalytics}
+          financialAnalytics={financialAnalytics}
+          timeSeriesAnalytics={timeSeriesAnalytics}
           dateRangeType={filters.dateRangeType}
           setDateRangeType={(type) => handleDateRangeChange(type, customDateRange.startDate, customDateRange.endDate)}
           customDateRange={customDateRange}

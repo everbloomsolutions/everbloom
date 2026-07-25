@@ -980,6 +980,9 @@ export class ProjectService {
               inProgressCollections: 0,
               averageCollectionValue: 0,
               byServiceType: {},
+              byMaterialType: [],
+              totalRecycled: 0,
+              totalPickups: 0,
             },
             granularity: filters?.granularity || 'daily',
           },
@@ -1067,10 +1070,27 @@ export class ProjectService {
       },
     ];
 
-    // Execute both pipelines in parallel
-    const [timeSeries, overallStats] = await Promise.all([
+    // Material type breakdown
+    const byMaterialTypePipeline: any[] = [
+      { $match: baseQuery },
+      { $unwind: '$collectionItems' },
+      { $match: { 'collectionItems.materialType': { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: '$collectionItems.materialType',
+          count: { $sum: 1 },
+          totalWeight: { $sum: { $ifNull: ['$collectionItems.weight', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$collectionItems.amount', 0] } },
+        },
+      },
+      { $sort: { count: -1 } },
+    ];
+
+    // Execute all pipelines in parallel
+    const [timeSeries, overallStats, materialTypeBreakdown] = await Promise.all([
       this.projectModel.aggregate(timeSeriesPipeline as any),
       this.projectModel.aggregate(overallStatsPipeline as any),
+      this.projectModel.aggregate(byMaterialTypePipeline as any),
     ]);
 
     // Format time-series data
@@ -1132,6 +1152,14 @@ export class ProjectService {
       }
     }
 
+    // Format material type breakdown
+    const byMaterialType = (materialTypeBreakdown || []).map((item: any) => ({
+      materialType: item._id,
+      count: item.count || 0,
+      totalWeight: item.totalWeight || 0,
+      totalRevenue: item.totalRevenue || 0,
+    }));
+
     return {
       success: true,
       data: {
@@ -1147,6 +1175,9 @@ export class ProjectService {
             ? stats.totalRevenue / stats.totalCollections
             : 0,
           byServiceType,
+          byMaterialType,
+          totalRecycled: stats.totalWeight || 0,
+          totalPickups: stats.totalCollections || 0,
         },
         granularity,
       },
@@ -1368,13 +1399,72 @@ export class ProjectService {
 
     const agents = await this.projectModel.aggregate(pipeline as any);
 
+    // Fetch per-agent daily collection counts for trend lines
+    const trendPipeline: any[] = [
+      { $match: baseQuery },
+      {
+        $group: {
+          _id: {
+            collectedBy: '$collectedBy',
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.date': 1 } },
+    ];
+
+    const trendResult = await this.projectModel.aggregate(trendPipeline as any);
+
+    const trendsByAgent: Record<string, Array<{ date: string; collections: number }>> = {};
+    (trendResult || []).forEach((item: any) => {
+      const agentId = item._id?.collectedBy?.toString?.() || String(item._id?.collectedBy);
+      const date = item._id?.date;
+      if (!agentId || !date) return;
+      if (!trendsByAgent[agentId]) {
+        trendsByAgent[agentId] = [];
+      }
+      trendsByAgent[agentId].push({ date, collections: item.count || 0 });
+    });
+
+    // Calculate days in range for per-day metrics
+    let daysInRange = 1;
+    if (filters?.startDate && filters?.endDate) {
+      const start = new Date(filters.startDate).getTime();
+      const end = new Date(filters.endDate).getTime();
+      if (!Number.isNaN(start) && !Number.isNaN(end)) {
+        daysInRange = Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1);
+      }
+    }
+
+    // Attach performance trend and collections-per-day to each agent
+    (agents || []).forEach((agent: any) => {
+      const agentId = agent.agentId?.toString?.() || String(agent.agentId);
+      const performanceTrend = trendsByAgent[agentId] || [];
+      agent.performanceTrend = performanceTrend;
+
+      let agentDays = daysInRange;
+      if (!filters?.startDate || !filters?.endDate) {
+        const trendDates = performanceTrend.map((t: { date: string; collections: number }) => t.date).sort();
+        if (trendDates.length > 1) {
+          const start = new Date(trendDates[0]).getTime();
+          const end = new Date(trendDates[trendDates.length - 1]).getTime();
+          agentDays = Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        }
+      }
+
+      agent.collectionsPerDay = agent.totalCollections > 0 && agentDays > 0
+        ? Number((agent.totalCollections / agentDays).toFixed(2))
+        : 0;
+    });
+
     // Calculate team averages
     const teamAverages = agents.length > 0
       ? {
         averageCollections: agents.reduce((sum, a) => sum + a.totalCollections, 0) / agents.length,
         averageRevenue: agents.reduce((sum, a) => sum + a.totalRevenue, 0) / agents.length,
         averageWeight: agents.reduce((sum, a) => sum + a.totalWeight, 0) / agents.length,
-        averageCollectionsPerDay: 0, // Would need date range calculation
+        averageCollectionsPerDay: agents.reduce((sum, a) => sum + (a.collectionsPerDay || 0), 0) / agents.length,
         averageCollectionValue: agents.reduce((sum, a) => sum + a.averageCollectionValue, 0) / agents.length,
       }
       : {
@@ -1385,11 +1475,22 @@ export class ProjectService {
         averageCollectionValue: 0,
       };
 
-    // Build leaderboard
+    // Build leaderboard with explicit value key
+    const buildLeaderboard = (metric: 'totalCollections' | 'totalRevenue' | 'totalWeight') =>
+      [...agents]
+        .sort((a, b) => b[metric] - a[metric])
+        .slice(0, 10)
+        .map((a) => ({
+          agentId: a.agentId,
+          agentName: a.agentName,
+          agentEmail: a.agentEmail,
+          value: a[metric],
+        }));
+
     const leaderboard = {
-      byCollections: [...agents].sort((a, b) => b.totalCollections - a.totalCollections).slice(0, 10),
-      byRevenue: [...agents].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10),
-      byWeight: [...agents].sort((a, b) => b.totalWeight - a.totalWeight).slice(0, 10),
+      byCollections: buildLeaderboard('totalCollections'),
+      byRevenue: buildLeaderboard('totalRevenue'),
+      byWeight: buildLeaderboard('totalWeight'),
     };
 
     return {
@@ -1431,6 +1532,8 @@ export class ProjectService {
             inProgressCollections: 0,
             averageCollectionValue: 0,
             byServiceType: {},
+            byMaterialType: [],
+            byLocationType: [],
           },
         };
       }
@@ -1516,9 +1619,41 @@ export class ProjectService {
       },
     ];
 
-    const [result, serviceTypeBreakdown] = await Promise.all([
+    // Material type breakdown
+    const byMaterialTypePipeline: any[] = [
+      { $match: baseQuery },
+      { $unwind: '$collectionItems' },
+      { $match: { 'collectionItems.materialType': { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: '$collectionItems.materialType',
+          count: { $sum: 1 },
+          totalWeight: { $sum: { $ifNull: ['$collectionItems.weight', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$collectionItems.amount', 0] } },
+        },
+      },
+      { $sort: { count: -1 } },
+    ];
+
+    // Location type breakdown
+    const byLocationTypePipeline: any[] = [
+      { $match: { ...baseQuery, locationType: { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: '$locationType',
+          count: { $sum: 1 },
+          totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+        },
+      },
+      { $sort: { count: -1 } },
+    ];
+
+    const [result, serviceTypeBreakdown, materialTypeBreakdown, locationTypeBreakdown] = await Promise.all([
       this.projectModel.aggregate(pipeline as any),
       this.projectModel.aggregate(byServiceTypePipeline as any),
+      this.projectModel.aggregate(byMaterialTypePipeline as any),
+      this.projectModel.aggregate(byLocationTypePipeline as any),
     ]);
 
     // Format service type breakdown
@@ -1533,9 +1668,27 @@ export class ProjectService {
       }
     }
 
+    // Format material type breakdown
+    const byMaterialType = (materialTypeBreakdown || []).map((item: any) => ({
+      materialType: item._id,
+      count: item.count || 0,
+      totalWeight: item.totalWeight || 0,
+      totalRevenue: item.totalRevenue || 0,
+    }));
+
+    // Format location type breakdown
+    const byLocationType = (locationTypeBreakdown || []).map((item: any) => ({
+      locationType: item._id,
+      count: item.count || 0,
+      totalWeight: item.totalWeight || 0,
+      totalRevenue: item.totalRevenue || 0,
+    }));
+
     const analytics = result[0] ? {
       ...result[0],
       byServiceType,
+      byMaterialType,
+      byLocationType,
     } : {
       totalCollections: 0,
       totalRevenue: 0,
@@ -1545,6 +1698,8 @@ export class ProjectService {
       inProgressCollections: 0,
       averageCollectionValue: 0,
       byServiceType: {},
+      byMaterialType: [],
+      byLocationType: [],
     };
 
     return {

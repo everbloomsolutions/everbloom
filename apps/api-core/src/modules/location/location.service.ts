@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Location, LocationDocument } from './schemas/location.schema';
 import { User, UserDocument } from '../user/schemas/user.schema';
+import { Project, ProjectDocument } from '../project/schemas/project.schema';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
@@ -49,6 +50,7 @@ export class LocationService {
   constructor(
     @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Project.name) private projectModel: Model<ProjectDocument>,
     @Inject(ValidationService) private validationService: ValidationService,
     @Inject(PaginationService) private paginationService: PaginationService,
     @Inject(DatabaseService) private databaseService: DatabaseService,
@@ -552,6 +554,8 @@ export class LocationService {
     totalUsage: number;
     averageUsage: number;
     byType: Record<string, number>;
+    mostUsed: Array<{ locationId: string; locationName: string; locationType: string; usageCount: number }>;
+    usageTrends: Array<{ date: string; count: number }>;
   }> {
     // Build base filter
     const baseFilter: Record<string, unknown> = {
@@ -632,6 +636,8 @@ export class LocationService {
         totalUsage: 0,
         averageUsage: 0,
         byType: {},
+        mostUsed: [],
+        usageTrends: [],
       };
     }
 
@@ -646,6 +652,72 @@ export class LocationService {
       });
     }
 
+    // Build a location filter without the createdAt date range for usage queries
+    const locationMatch: Record<string, unknown> = { ...baseFilter };
+    delete locationMatch.createdAt;
+
+    // Fetch top 10 most used locations
+    const mostUsedDocs = await this.locationModel
+      .find(locationMatch)
+      .sort({ usageCount: -1 })
+      .limit(10)
+      .select('locationName locationType usageCount')
+      .lean()
+      .exec();
+
+    const mostUsed = (mostUsedDocs || []).map((loc: any) => ({
+      locationId: loc._id?.toString() || '',
+      locationName: loc.locationName || 'Unknown',
+      locationType: loc.locationType || 'Unknown',
+      usageCount: loc.usageCount || 0,
+    }));
+
+    // Build usage trends from projects associated with the filtered locations
+    let usageTrends: Array<{ date: string; count: number }> = [];
+    try {
+      const locationIds = (await this.locationModel
+        .find(locationMatch)
+        .select('_id')
+        .lean()
+        .exec()).map((loc: any) => loc._id.toString());
+
+      if (locationIds.length > 0) {
+        const projectFilter: Record<string, unknown> = {
+          isDeleted: { $ne: true },
+          deletedAt: { $exists: false },
+          locationId: { $in: locationIds.map(id => this.validationService.validateObjectId(id, 'locationId')) },
+        };
+
+        if (filters?.startDate || filters?.endDate) {
+          projectFilter.createdAt = {};
+          if (filters.startDate) {
+            (projectFilter.createdAt as Record<string, unknown>).$gte = filters.startDate;
+          }
+          if (filters.endDate) {
+            (projectFilter.createdAt as Record<string, unknown>).$lte = filters.endDate;
+          }
+        }
+
+        const trendResult = await this.projectModel.aggregate([
+          { $match: projectFilter },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]).exec();
+
+        usageTrends = trendResult.map((item: any) => ({
+          date: item._id,
+          count: item.count || 0,
+        }));
+      }
+    } catch (_error) {
+      usageTrends = [];
+    }
+
     return {
       total: analytics.total || 0,
       active: analytics.active || 0,
@@ -653,6 +725,8 @@ export class LocationService {
       totalUsage: analytics.totalUsage || 0,
       averageUsage: analytics.averageUsage || 0,
       byType: byTypeObj,
+      mostUsed,
+      usageTrends,
     };
   }
 
