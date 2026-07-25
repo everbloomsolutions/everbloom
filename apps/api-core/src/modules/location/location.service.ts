@@ -12,6 +12,7 @@ import { PaginationService } from '../../common/pagination/pagination.service';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { PAGINATION } from '../../config/constants';
 import { CollectionLocationType } from '../../types/collections';
+import { logAuditEvent } from '../audit/audit.helper';
 
 // Export type for use in other service files
 export interface CreateLocationData {
@@ -56,7 +57,7 @@ export class LocationService {
     @Inject(DatabaseService) private databaseService: DatabaseService,
   ) {}
 
-  async createLocation(data: CreateLocationDto, createdBy: string): Promise<LocationDocument> {
+  async createLocation(data: CreateLocationDto, createdBy: string, req?: any): Promise<LocationDocument> {
     const expressService = await getExpressService();
     if (expressService && expressService.createLocation) {
       return expressService.createLocation(data, createdBy) as any;
@@ -82,6 +83,18 @@ export class LocationService {
 
     try {
       const saved = await doc.save();
+
+      void logAuditEvent(
+        {
+          entityType: 'location',
+          entityId: saved._id.toString(),
+          action: 'created',
+          description: `Location ${saved.locationName} created`,
+          performedBy: createdBy,
+        },
+        req,
+      );
+
       return saved;
     } catch (error: any) {
       // Unique index violation
@@ -265,7 +278,7 @@ export class LocationService {
     return location;
   }
 
-  async updateLocation(locationId: string, data: UpdateLocationDto, updatedBy: string): Promise<LocationDocument> {
+  async updateLocation(locationId: string, data: UpdateLocationDto, updatedBy: string, req?: any): Promise<LocationDocument> {
     const expressService = await getExpressService();
     if (expressService && expressService.updateLocation) {
       return expressService.updateLocation(locationId, data, updatedBy) as any;
@@ -285,6 +298,19 @@ export class LocationService {
       throw new NotFoundException('Location not found');
     }
 
+    // Capture pre-update values for the audit trail
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    const updateKeys = Object.keys(data) as (keyof UpdateLocationDto)[];
+    for (const key of updateKeys) {
+      const newValue = (data as any)[key];
+      if (newValue !== undefined) {
+        const oldValue = (location as any)[key];
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          changes[key] = { old: oldValue, new: newValue };
+        }
+      }
+    }
+
     if (data.locationType !== undefined) location.locationType = data.locationType;
     if (data.locationName !== undefined) location.locationName = data.locationName.trim();
     if (data.locality !== undefined) location.locality = data.locality.trim();
@@ -299,7 +325,23 @@ export class LocationService {
     if (data.notes !== undefined) location.notes = data.notes;
 
     try {
-      return await location.save();
+      const updated = await location.save();
+
+      if (Object.keys(changes).length > 0) {
+        void logAuditEvent(
+          {
+            entityType: 'location',
+            entityId: updated._id.toString(),
+            action: 'updated',
+            description: `Location ${updated.locationName} updated`,
+            performedBy: updatedBy,
+            changes,
+          },
+          req,
+        );
+      }
+
+      return updated;
     } catch (error: any) {
       if (error?.code === 11000) {
         throw new BadRequestException('A location with the same type/name/locality/address already exists');
@@ -309,7 +351,7 @@ export class LocationService {
     }
   }
 
-  async deleteLocation(locationId: string): Promise<void> {
+  async deleteLocation(locationId: string, deletedBy?: string, req?: any): Promise<void> {
     const expressService = await getExpressService();
     if (expressService && expressService.deleteLocation) {
       await expressService.deleteLocation(locationId);
@@ -334,6 +376,19 @@ export class LocationService {
     location.deletedAt = new Date();
     location.isActive = false;
     await location.save();
+
+    if (deletedBy) {
+      void logAuditEvent(
+        {
+          entityType: 'location',
+          entityId: location._id.toString(),
+          action: 'deleted',
+          description: `Location ${location.locationName} deleted`,
+          performedBy: deletedBy,
+        },
+        req,
+      );
+    }
   }
 
   async searchLocations(query: string, limit?: number, agentId?: string, hasDefaultUser?: boolean): Promise<LocationDocument[]> {

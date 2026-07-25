@@ -9,6 +9,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -239,6 +240,7 @@ export class LocationController {
   async createLocation(
     @Body() createLocationDto: CreateLocationDto,
     @CurrentUser() user: UserDocument,
+    @Req() req: any,
     @Query('checkFuzzyDuplicates') checkFuzzyDuplicates?: string,
   ) {
     await this.databaseService.ensureConnectionReady();
@@ -256,6 +258,7 @@ export class LocationController {
     const location = await this.locationService.createLocation(
       createLocationDto,
       user._id.toString(),
+      req,
     );
 
     return {
@@ -405,11 +408,13 @@ export class LocationController {
     @Param('id') id: string,
     @Body() updateLocationDto: UpdateLocationDto,
     @CurrentUser() user: UserDocument,
+    @Req() req: any,
   ) {
     const location = await this.locationService.updateLocation(
       id,
       updateLocationDto,
       user._id.toString(),
+      req,
     );
     return {
       success: true,
@@ -421,8 +426,12 @@ export class LocationController {
   @Delete(':id')
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async deleteLocation(@Param('id') id: string) {
-    await this.locationService.deleteLocation(id);
+  async deleteLocation(
+    @Param('id') id: string,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
+  ) {
+    await this.locationService.deleteLocation(id, user._id.toString(), req);
     return {
       success: true,
       message: 'Location deleted successfully',

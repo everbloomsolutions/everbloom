@@ -16,7 +16,7 @@ export class AuditLogQueryDto {
   limit?: number;
 
   @IsOptional()
-  @IsEnum(['project', 'receipt', 'user', 'location', 'contact', 'other'])
+  @IsEnum(['project', 'collection', 'receipt', 'user', 'location', 'contact', 'other'])
   entityType?: EntityType;
 
   @IsOptional()
@@ -84,7 +84,7 @@ export class AuditLogStatsQueryDto {
   endDate?: string;
 
   @IsOptional()
-  @IsEnum(['project', 'receipt', 'user', 'location', 'contact', 'other'])
+  @IsEnum(['project', 'collection', 'receipt', 'user', 'location', 'contact', 'other'])
   entityType?: EntityType;
 
   @IsOptional()

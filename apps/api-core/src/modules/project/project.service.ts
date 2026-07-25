@@ -10,6 +10,7 @@ import { ValidationService } from '../../common/validation/validation.service';
 import { PaginationService } from '../../common/pagination/pagination.service';
 import { PAGINATION } from '../../config/constants';
 import { DatabaseService } from '../../infrastructure/database/database.service';
+import { logAuditEvent } from '../audit/audit.helper';
 
 // Note: This service is in transition from Express to NestJS
 // Many methods still need full NestJS implementation
@@ -196,7 +197,7 @@ export class ProjectService {
 
   // Core functions - implement using NestJS schema
   // TODO: Migrate remaining complex functions gradually
-  async createProject(data: CreateProjectDto, userId: string, userRole?: string, _req?: any): Promise<ProjectDocument> {
+  async createProject(data: CreateProjectDto, userId: string, userRole?: string, req?: any): Promise<ProjectDocument> {
     await this.databaseService.ensureConnectionReady();
 
     const userObjectId = this.validationService.validateObjectId(userId, 'userId');
@@ -298,7 +299,20 @@ export class ProjectService {
       locationId: locationObjectId,
     } as any);
 
-    return project.save();
+    const savedProject = await project.save();
+
+    void logAuditEvent(
+      {
+        entityType: 'collection',
+        entityId: savedProject._id.toString(),
+        action: 'created',
+        description: `Collection ${savedProject.title || savedProject._id} created`,
+        performedBy: userId,
+      },
+      req,
+    );
+
+    return savedProject;
   }
 
   async getUserProjects(
@@ -538,7 +552,7 @@ export class ProjectService {
     userId: string,
     userRole: string,
     data: UpdateProjectDto,
-    _req?: any,
+    req?: any,
     defaultLocation?: string,
   ): Promise<ProjectDocument> {
     await this.databaseService.ensureConnectionReady();
@@ -580,6 +594,19 @@ export class ProjectService {
         const isCollector = project.collectedBy ? String(project.collectedBy) === String(requesterId) : false;
         if (!isOwner && !isCollector) {
           throw new NotFoundException('Collection not found');
+        }
+      }
+    }
+
+    // Capture pre-update values for the audit trail
+    const changes: Record<string, { old: unknown; new: unknown }> = {};
+    const updateKeys = Object.keys(data) as (keyof UpdateProjectDto)[];
+    for (const key of updateKeys) {
+      const newValue = (data as any)[key];
+      if (newValue !== undefined) {
+        const oldValue = project.get(key);
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          changes[key] = { old: oldValue, new: newValue };
         }
       }
     }
@@ -696,10 +723,26 @@ export class ProjectService {
     (project as any).gstAmount = subTotal * (gstRate / 100);
     (project as any).totalAmount = subTotal + (Number((project as any).gstAmount) || 0);
 
-    return project.save();
+    const updatedProject = await project.save();
+
+    if (Object.keys(changes).length > 0) {
+      void logAuditEvent(
+        {
+          entityType: 'collection',
+          entityId: updatedProject._id.toString(),
+          action: 'updated',
+          description: `Collection ${updatedProject.title || updatedProject._id} updated`,
+          performedBy: userId,
+          changes,
+        },
+        req,
+      );
+    }
+
+    return updatedProject;
   }
 
-  async deleteCollection(projectId: string, userId: string, userRole: string, _req?: any): Promise<void> {
+  async deleteCollection(projectId: string, userId: string, userRole: string, req?: any): Promise<void> {
     await this.databaseService.ensureConnectionReady();
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
 
@@ -735,9 +778,20 @@ export class ProjectService {
     (project as any).isDeleted = true;
     (project as any).deletedAt = new Date();
     await project.save();
+
+    void logAuditEvent(
+      {
+        entityType: 'collection',
+        entityId: project._id.toString(),
+        action: 'deleted',
+        description: `Collection ${project.title || project._id} deleted`,
+        performedBy: userId,
+      },
+      req,
+    );
   }
 
-  async transferCollection(projectId: string, newUserId: string, _adminId: string, _req?: any): Promise<ProjectDocument> {
+  async transferCollection(projectId: string, newUserId: string, adminId: string, req?: any): Promise<ProjectDocument> {
     await this.databaseService.ensureConnectionReady();
     const projectObjectId = this.validationService.validateObjectId(projectId, 'projectId');
     const newUserObjectId = this.validationService.validateObjectId(newUserId, 'newUserId');
@@ -759,13 +813,26 @@ export class ProjectService {
       project.modificationHistory = [];
     }
     project.modificationHistory.push({
-      modifiedBy: new Types.ObjectId(_adminId),
+      modifiedBy: new Types.ObjectId(adminId),
       modifiedAt: new Date(),
       action: 'transferred',
       notes: `Transferred to ${newUserId}`,
     } as any);
 
-    return project.save();
+    const transferredProject = await project.save();
+
+    void logAuditEvent(
+      {
+        entityType: 'collection',
+        entityId: transferredProject._id.toString(),
+        action: 'transferred',
+        description: `Collection transferred to ${newUserId}`,
+        performedBy: adminId,
+      },
+      req,
+    );
+
+    return transferredProject;
   }
 
   async getCollectionStatistics(filters?: any): Promise<any> {

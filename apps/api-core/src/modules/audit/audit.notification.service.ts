@@ -185,9 +185,9 @@ This is an automated notification for a critical audit event.
 
     // Send email to all admins
     // Note: This function is called outside NestJS context, so we can't inject the queue
-    // For now, we'll need to import and use the queue directly or convert this to a service
     // TODO: Convert this to a NestJS service or create a helper that can access the queue
-    throw new Error('sendAuditNotification needs to be converted to use NestJS email queue');
+    logger.warn('Audit email notifications skipped: email queue is not configured');
+    return;
   } catch (error) {
     logger.error('Failed to send audit notification:', error);
     // Don't throw - notifications should not break the main flow

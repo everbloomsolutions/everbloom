@@ -5,6 +5,7 @@ import {
   Put,
   Patch,
   Body,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -28,10 +29,12 @@ export class UserController {
   async updateProfile(
     @CurrentUser() user: UserDocument,
     @Body() updateProfileDto: UpdateProfileDto,
+    @Req() req: any,
   ) {
     const updatedUser = await this.userService.updateProfile(
       user._id.toString(),
       updateProfileDto,
+      req,
     );
     return {
       success: true,
@@ -46,10 +49,12 @@ export class UserController {
   async changePassword(
     @CurrentUser() user: UserDocument,
     @Body() changePasswordDto: ChangePasswordDto,
+    @Req() req: any,
   ) {
     await this.userService.changePassword(
       user._id.toString(),
       changePasswordDto,
+      req,
     );
     return {
       success: true,

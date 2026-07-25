@@ -17,6 +17,7 @@ import { PAGINATION } from '../../config/constants';
 import * as locationAssignmentService from '../location/location.assignment.service';
 import { Location, ILocation } from '../location/location.model';
 import { Project } from '../project/project.model';
+import { logAuditEvent } from '../audit/audit.helper';
 
  const normalizeEmailKey = (value: string): string => String(value || '').trim().toLowerCase();
 
@@ -411,8 +412,11 @@ const getAllowedRolesForCreation = (creatorRole: string): string[] => {
 export const createUser = async (
   data: CreateUserData,
   creatorRole: string,
-  mailService?: MailService
-, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+  mailService?: MailService,
+  verifiedConnection?: mongoose.Connection,
+  performedBy?: string,
+  req?: any,
+): Promise<IUserResponse> => {
   const UserModel = getUserModel(verifiedConnection);
   const LocationModel = getLocationModel(verifiedConnection);
   // Validate role creation permissions
@@ -601,7 +605,20 @@ export const createUser = async (
   const userWithLocation = await UserModel.findById(user._id)
     .populate('defaultLocation', 'locationName locality address city state locationType')
     .lean();
-  return toUserResponse(userWithLocation || user);
+  const createdUser = toUserResponse(userWithLocation || user);
+
+  void logAuditEvent(
+    {
+      entityType: 'user',
+      entityId: createdUser._id,
+      action: 'user_created',
+      description: `User ${createdUser.email} created`,
+      performedBy,
+    },
+    req,
+  );
+
+  return createdUser;
 };
 
 /**
@@ -625,8 +642,11 @@ export const createUser = async (
 export const updateUser = async (
   userId: string,
   data: UpdateUserData,
-  creatorRole?: string
-, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+  creatorRole?: string,
+  verifiedConnection?: mongoose.Connection,
+  performedBy?: string,
+  req?: any,
+): Promise<IUserResponse> => {
   const UserModel = getUserModel(verifiedConnection);
   const LocationModel = getLocationModel(verifiedConnection);
   const validationService = new ValidationService();
@@ -635,6 +655,29 @@ export const updateUser = async (
   const user = await UserModel.findById(userObjectId);
   if (!user) {
     throw new AppError('User not found', 404);
+  }
+
+  // Capture pre-update values for the audit trail
+  const changes: Record<string, { old: unknown; new: unknown }> = {};
+  const updateKeys = Object.keys(data) as (keyof UpdateUserData)[];
+  for (const key of updateKeys) {
+    if (key === 'password') continue;
+    const newValue = (data as any)[key];
+    if (newValue === undefined) continue;
+
+    let oldValue: unknown;
+    if (key === 'assignedLocationIds' && user.role === 'agent') {
+      const currentLocations = await locationAssignmentService.getAgentLocations(userId, verifiedConnection);
+      oldValue = currentLocations.map(loc => loc._id.toString());
+    } else if (key === 'defaultLocationId') {
+      oldValue = user.defaultLocation ? user.defaultLocation.toString() : null;
+    } else {
+      oldValue = (user as any)[key];
+    }
+
+    if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+      changes[key] = { old: oldValue, new: newValue };
+    }
   }
 
   // Check if email is being changed and if it's already taken
@@ -741,13 +784,34 @@ export const updateUser = async (
     .populate('defaultLocation', 'locationName locality address city state locationType')
     .lean();
 
-  return toUserResponse(updatedUser || user);
+  const response = toUserResponse(updatedUser || user);
+
+  if (Object.keys(changes).length > 0) {
+    void logAuditEvent(
+      {
+        entityType: 'user',
+        entityId: response._id,
+        action: 'user_updated',
+        description: `User ${response.email} updated`,
+        performedBy,
+        changes,
+      },
+      req,
+    );
+  }
+
+  return response;
 };
 
 /**
  * Delete user (soft delete)
  */
-export const deleteUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<void> => {
+export const deleteUser = async (
+  userId: string,
+  verifiedConnection?: mongoose.Connection,
+  performedBy?: string,
+  req?: any,
+): Promise<void> => {
   const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
@@ -774,6 +838,17 @@ export const deleteUser = async (userId: string, verifiedConnection?: mongoose.C
   user.markModified('isActive');
 
   await user.save();
+
+  void logAuditEvent(
+    {
+      entityType: 'user',
+      entityId: userId,
+      action: 'user_deleted',
+      description: `User ${user.email} deleted`,
+      performedBy,
+    },
+    req,
+  );
 
   // Verify deletion was successful
   const verifyUser = await UserModel.findById(userObjectId);
@@ -880,7 +955,12 @@ export const getDeletedUsers = async (params: UserListParams & {
 /**
  * Restore deleted user
  */
-export const restoreUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<IUserResponse> => {
+export const restoreUser = async (
+  userId: string,
+  verifiedConnection?: mongoose.Connection,
+  performedBy?: string,
+  req?: any,
+): Promise<IUserResponse> => {
   const UserModel = getUserModel(verifiedConnection);
   const validationService = new ValidationService();
   const userObjectId = validationService.validateObjectId(userId, 'userId');
@@ -905,13 +985,31 @@ export const restoreUser = async (userId: string, verifiedConnection?: mongoose.
 
   await user.save();
 
-  return toUserResponse(user);
+  const restoredUser = toUserResponse(user);
+
+  void logAuditEvent(
+    {
+      entityType: 'user',
+      entityId: restoredUser._id,
+      action: 'updated',
+      description: `User ${restoredUser.email} restored`,
+      performedBy,
+    },
+    req,
+  );
+
+  return restoredUser;
 };
 
 /**
  * Permanently delete user
  */
-export const permanentlyDeleteUser = async (userId: string, verifiedConnection?: mongoose.Connection): Promise<void> => {
+export const permanentlyDeleteUser = async (
+  userId: string,
+  verifiedConnection?: mongoose.Connection,
+  performedBy?: string,
+  req?: any,
+): Promise<void> => {
   const UserModel = getUserModel(verifiedConnection);
   const ProjectModel = getProjectModel(verifiedConnection);
   const validationService = new ValidationService();
@@ -942,6 +1040,17 @@ export const permanentlyDeleteUser = async (userId: string, verifiedConnection?:
   }
 
   await UserModel.deleteOne({ _id: userObjectId });
+
+  void logAuditEvent(
+    {
+      entityType: 'user',
+      entityId: userId,
+      action: 'user_deleted',
+      description: 'User permanently deleted',
+      performedBy,
+    },
+    req,
+  );
 };
 
 export const getUserStats = async (

@@ -8,6 +8,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -329,8 +330,9 @@ export class AdminController {
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @CurrentUser() user: UserDocument,
+    @Req() req: any,
   ) {
-    const newUser = await this.userAdminService.createUser(createUserDto, user.role);
+    const newUser = await this.userAdminService.createUser(createUserDto, user.role, user._id.toString(), req);
     return {
       success: true,
       data: newUser,
@@ -345,8 +347,9 @@ export class AdminController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
     @CurrentUser() user: UserDocument,
+    @Req() req: any,
   ) {
-    const updatedUser = await this.userAdminService.updateUser(id, updateUserDto, user.role);
+    const updatedUser = await this.userAdminService.updateUser(id, updateUserDto, user.role, user._id.toString(), req);
     return {
       success: true,
       data: updatedUser,
@@ -361,11 +364,13 @@ export class AdminController {
   async toggleUserStatus(
     @Param('id') id: string,
     @Body() toggleUserStatusDto: ToggleUserStatusDto,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
   ) {
-    const user = await this.userAdminService.toggleUserStatus(id, toggleUserStatusDto.isActive);
+    const statusUser = await this.userAdminService.toggleUserStatus(id, toggleUserStatusDto.isActive, user._id.toString(), req);
     return {
       success: true,
-      data: user,
+      data: statusUser,
       message: `User ${toggleUserStatusDto.isActive ? 'activated' : 'deactivated'} successfully`,
     };
   }
@@ -374,8 +379,12 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async deleteUser(@Param('id') id: string, @CurrentUser() user: UserDocument) {
-    await this.userAdminService.deleteUser(id, user.role);
+  async deleteUser(
+    @Param('id') id: string,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
+  ) {
+    await this.userAdminService.deleteUser(id, user.role, user._id.toString(), req);
     return {
       success: true,
       message: 'User deleted successfully',
@@ -462,11 +471,15 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async restoreUser(@Param('id') id: string) {
-    const user = await this.userAdminService.restoreUser(id);
+  async restoreUser(
+    @Param('id') id: string,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
+  ) {
+    const restoredUser = await this.userAdminService.restoreUser(id, user._id.toString(), req);
     return {
       success: true,
-      data: user,
+      data: restoredUser,
       message: 'User restored successfully',
     };
   }
@@ -475,8 +488,12 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @Roles('admin', 'super_admin')
   @HttpCode(HttpStatus.OK)
-  async permanentlyDeleteUser(@Param('id') id: string) {
-    await this.userAdminService.permanentlyDeleteUser(id);
+  async permanentlyDeleteUser(
+    @Param('id') id: string,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
+  ) {
+    await this.userAdminService.permanentlyDeleteUser(id, user._id.toString(), req);
     return {
       success: true,
       message: 'User permanently deleted',

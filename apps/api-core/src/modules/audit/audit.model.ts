@@ -21,6 +21,7 @@ export type AuditAction =
 
 export type EntityType = 
   | 'project'
+  | 'collection'
   | 'receipt'
   | 'user'
   | 'location'
@@ -61,7 +62,7 @@ const auditLogSchema = new Schema<IAuditLog>(
   {
     entityType: {
       type: String,
-      enum: ['project', 'receipt', 'user', 'location', 'contact', 'other'],
+      enum: ['project', 'collection', 'receipt', 'user', 'location', 'contact', 'other'],
       required: true,
       index: true,
     },

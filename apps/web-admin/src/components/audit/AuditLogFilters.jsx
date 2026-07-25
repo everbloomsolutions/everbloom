@@ -6,11 +6,9 @@ import SearchBar from '../forms/SearchBar';
 import Button from '../shared/Button';
 
 const ENTITY_TYPES = [
-  { value: 'project', label: 'Project' },
-  { value: 'receipt', label: 'Receipt' },
-  { value: 'user', label: 'User' },
+  { value: 'collection', label: 'Collection' },
   { value: 'location', label: 'Location' },
-  { value: 'contact', label: 'Contact' },
+  { value: 'user', label: 'User' },
 ];
 
 const ACTIONS = [

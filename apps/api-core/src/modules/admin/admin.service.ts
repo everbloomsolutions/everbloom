@@ -772,35 +772,34 @@ export class UserAdminService {
     return getUserById(userId, verifiedConnection);
   }
 
-  async createUser(data: any, creatorRole?: string): Promise<any> {
+  async createUser(data: any, creatorRole?: string, performedBy?: string, req?: any): Promise<any> {
     await this.databaseService.ensureConnectionReady();
     const { createUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
     // creatorRole is required by the Express service, default to 'admin' if not provided
-    return createUser(data, creatorRole || 'admin', this.mailService, verifiedConnection);
+    return createUser(data, creatorRole || 'admin', this.mailService, verifiedConnection, performedBy, req);
   }
 
-  async updateUser(userId: string, data: any, updaterRole?: string): Promise<any> {
+  async updateUser(userId: string, data: any, updaterRole?: string, performedBy?: string, req?: any): Promise<any> {
     await this.databaseService.ensureConnectionReady();
     const { updateUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    return updateUser(userId, data, updaterRole, verifiedConnection);
+    return updateUser(userId, data, updaterRole, verifiedConnection, performedBy, req);
   }
 
-  async toggleUserStatus(userId: string, isActive: boolean): Promise<any> {
+  async toggleUserStatus(userId: string, isActive: boolean, performedBy?: string, req?: any): Promise<any> {
     await this.databaseService.ensureConnectionReady();
     // Use updateUser to toggle status since toggleUserStatus doesn't exist
     const { updateUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    return updateUser(userId, { isActive }, undefined, verifiedConnection);
+    return updateUser(userId, { isActive }, undefined, verifiedConnection, performedBy, req);
   }
 
-  async deleteUser(userId: string, _deleterRole?: string): Promise<void> {
+  async deleteUser(userId: string, _deleterRole?: string, performedBy?: string, req?: any): Promise<void> {
     await this.databaseService.ensureConnectionReady();
     const { deleteUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    // deleteUser only takes userId, deleterRole is not used
-    await deleteUser(userId, verifiedConnection);
+    await deleteUser(userId, verifiedConnection, performedBy, req);
   }
 
   async getDeletedUsers(filters?: any): Promise<any> {
@@ -810,18 +809,18 @@ export class UserAdminService {
     return getDeletedUsers(filters, verifiedConnection);
   }
 
-  async restoreUser(userId: string): Promise<any> {
+  async restoreUser(userId: string, performedBy?: string, req?: any): Promise<any> {
     await this.databaseService.ensureConnectionReady();
     const { restoreUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    return restoreUser(userId, verifiedConnection);
+    return restoreUser(userId, verifiedConnection, performedBy, req);
   }
 
-  async permanentlyDeleteUser(userId: string): Promise<void> {
+  async permanentlyDeleteUser(userId: string, performedBy?: string, req?: any): Promise<void> {
     await this.databaseService.ensureConnectionReady();
     const { permanentlyDeleteUser } = await import('./user-admin.service');
     const verifiedConnection = this.databaseService.getConnection();
-    await permanentlyDeleteUser(userId, verifiedConnection);
+    await permanentlyDeleteUser(userId, verifiedConnection, performedBy, req);
   }
 
   async getUserStats(requesterId?: string, requesterRole?: string): Promise<any> {

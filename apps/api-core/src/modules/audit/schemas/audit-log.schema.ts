@@ -22,6 +22,7 @@ export type AuditAction =
 
 export type EntityType =
   | 'project'
+  | 'collection'
   | 'receipt'
   | 'user'
   | 'location'
@@ -34,7 +35,7 @@ export type AuditLogDocument = AuditLog & Document;
 export class AuditLog {
   @Prop({
     type: String,
-    enum: ['project', 'receipt', 'user', 'location', 'contact', 'other'],
+    enum: ['project', 'collection', 'receipt', 'user', 'location', 'contact', 'other'],
     required: true,
     index: true,
   })
