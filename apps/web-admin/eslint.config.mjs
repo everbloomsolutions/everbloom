@@ -54,6 +54,10 @@ export default [
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
+      'no-warning-comments': ['warn', {
+        terms: ['TODO', 'FIXME', 'HACK', 'BUG', 'XXX'],
+        location: 'anywhere',
+      }],
     },
   },
   {
@@ -82,6 +86,10 @@ export default [
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
+      }],
+      'no-warning-comments': ['warn', {
+        terms: ['TODO', 'FIXME', 'HACK', 'BUG', 'XXX'],
+        location: 'anywhere',
       }],
     },
   },

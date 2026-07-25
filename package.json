@@ -11,6 +11,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
+    "todos": "grep -R -E -w '(TODO|FIXME|HACK|BUG|XXX)' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' apps/*/src || true",
     "clean": "turbo run clean && rm -rf .turbo",
     "clean:cache": "rm -rf .turbo && pnpm store prune"
   },

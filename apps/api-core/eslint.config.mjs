@@ -37,6 +37,10 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-require-imports': 'warn',
       'no-case-declarations': 'warn',
+      'no-warning-comments': ['warn', {
+        terms: ['TODO', 'FIXME', 'HACK', 'BUG', 'XXX'],
+        location: 'anywhere',
+      }],
     },
   },
 ];
