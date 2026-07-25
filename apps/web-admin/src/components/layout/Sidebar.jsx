@@ -55,7 +55,7 @@ const Sidebar = () => {
           </h1>
           <button
             onClick={toggleSidebar}
-            className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-1 transition-colors"
+            className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
             aria-label="Close sidebar"
             aria-expanded={sidebarOpen}
           >

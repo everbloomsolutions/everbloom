@@ -387,12 +387,13 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="secondary"
             onClick={resetAndClose}
             disabled={isSubmitting}
+            className="w-full sm:w-auto justify-center"
           >
             Cancel
           </Button>
@@ -401,6 +402,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
             variant="primary"
             isLoading={isSubmitting}
             disabled={isSubmitting || showDuplicateWarning}
+            className="w-full sm:w-auto justify-center"
           >
             {isEditMode ? 'Update Location' : 'Create Location'}
           </Button>

@@ -114,14 +114,14 @@ const LocationsTable = memo(({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onEdit(location)}
-            className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg dark:hover:bg-primary-900/20 transition-colors"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-primary-600 hover:bg-primary-50 rounded-lg dark:hover:bg-primary-900/20 transition-colors"
             title="Edit"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onToggleStatus(location._id, location.isActive, location.locationName)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
               location.isActive
                 ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'
                 : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
@@ -133,7 +133,7 @@ const LocationsTable = memo(({
           <button
             onClick={() => onDelete(location._id, location.locationName)}
             disabled={location.usageCount > 0}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
               location.usageCount > 0
                 ? 'text-gray-400 cursor-not-allowed opacity-50'
                 : 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'

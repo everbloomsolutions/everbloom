@@ -256,7 +256,7 @@ const Archived = () => {
           <button
             onClick={() => handleRestore(collection._id, 'collection')}
             disabled={restoreMutation.isPending || deleteMutation.isPending}
-            className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Restore Collection"
           >
             <RotateCcw className="w-4 h-4" />
@@ -264,7 +264,7 @@ const Archived = () => {
           <button
             onClick={() => handlePermanentDelete(collection._id, 'collection', collection.locationName || collection.receiptNumber, 0)}
             disabled={restoreMutation.isPending || deleteMutation.isPending}
-            className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Permanently Delete"
           >
             <Trash2 className="w-4 h-4" />
@@ -338,7 +338,7 @@ const Archived = () => {
           <button
             onClick={() => handleRestore(location._id, 'location')}
             disabled={restoreMutation.isPending || deleteMutation.isPending}
-            className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Restore Location"
           >
             <RotateCcw className="w-4 h-4" />
@@ -346,7 +346,7 @@ const Archived = () => {
           <button
             onClick={() => handlePermanentDelete(location._id, 'location', location.locationName, location.collectionCount || 0)}
             disabled={restoreMutation.isPending || deleteMutation.isPending || (location.collectionCount > 0)}
-            className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={location.collectionCount > 0 ? "Cannot delete location with collections" : "Permanently Delete"}
           >
             <Trash2 className="w-4 h-4" />
@@ -415,7 +415,7 @@ const Archived = () => {
           <button
             onClick={() => handleRestore(user._id, 'user')}
             disabled={restoreMutation.isPending || deleteMutation.isPending}
-            className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Restore User"
           >
             <RotateCcw className="w-4 h-4" />
@@ -423,7 +423,7 @@ const Archived = () => {
           <button
             onClick={() => handlePermanentDelete(user._id, 'user', user.name || user.email, user.collectionCount || 0)}
             disabled={restoreMutation.isPending || deleteMutation.isPending || (user.collectionCount > 0)}
-            className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={user.collectionCount > 0 ? "Cannot delete user with collections" : "Permanently Delete"}
           >
             <Trash2 className="w-4 h-4" />
@@ -465,9 +465,9 @@ const Archived = () => {
 
   return (
     <div>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Archived</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Archived</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Review and manage deleted Collections, Locations, and Users
           </p>
@@ -477,7 +477,7 @@ const Archived = () => {
       {/* Tabs */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex -mb-px">
+          <nav className="flex flex-wrap -mb-px">
             <button
               onClick={() => handleTabChange('collections')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${

@@ -84,7 +84,7 @@ const UsersTable = memo(({
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-400" title="Manage locations in Assign page">
                 <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                 <span 
-                  className="truncate max-w-[200px]" 
+                  className="truncate max-w-[120px] md:max-w-[200px]" 
                   title={`${defaultLocation.locationName}${defaultLocation.address ? ` - ${defaultLocation.address}` : ''}`}
                 >
                   {defaultLocation.locationName}
@@ -136,7 +136,7 @@ const UsersTable = memo(({
           <div className="flex gap-2">
             <button
               onClick={() => onEdit(user)}
-              className="p-2.5 bg-primary-100 hover:bg-primary-200 dark:bg-primary-900 dark:hover:bg-primary-800 text-primary-600 dark:text-primary-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
+              className="p-3 min-w-[44px] min-h-[44px] bg-primary-100 hover:bg-primary-200 dark:bg-primary-900 dark:hover:bg-primary-800 text-primary-600 dark:text-primary-300 rounded-lg transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center"
               title="Edit user"
               aria-label={`Edit user ${user.name || 'Unknown'}`}
             >
@@ -144,7 +144,7 @@ const UsersTable = memo(({
             </button>
             <button
               onClick={() => onToggleStatus(user._id, user.isActive)}
-              className={`p-2.5 rounded-lg transition-all transform hover:scale-110 active:scale-95 ${
+              className={`p-3 min-w-[44px] min-h-[44px] rounded-lg transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center ${
                 user.isActive
                   ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-600 dark:text-red-300'
                   : 'bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-300'
@@ -160,7 +160,7 @@ const UsersTable = memo(({
             </button>
             <button
               onClick={() => onDelete(user._id, user.name || 'Unknown')}
-              className="p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-600 dark:text-red-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
+              className="p-3 min-w-[44px] min-h-[44px] bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-600 dark:text-red-300 rounded-lg transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center"
               title="Delete user"
               aria-label={`Delete user ${user.name || 'Unknown'}`}
             >

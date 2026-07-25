@@ -57,7 +57,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Basic Information
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Location Name
@@ -74,7 +74,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                   {getLocationTypeLabel(location.locationType)}
                 </p>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1 md:col-span-2">
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Address
                 </label>
@@ -83,7 +83,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                 </p>
               </div>
               {(location.city || location.state || location.zipCode) && (
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     City, State, Zip
                   </label>
@@ -101,7 +101,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
               <TrendingUp className="w-5 h-5 mr-2" />
               Usage Statistics
             </h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -179,13 +179,13 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={() => {
                 onEdit?.(location);
                 onClose();
               }}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Edit className="w-4 h-4" />
               Edit
@@ -195,7 +195,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                 onDeactivate?.(location);
                 onClose();
               }}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <XCircle className="w-4 h-4" />
               {location.isActive ? 'Deactivate' : 'Activate'}

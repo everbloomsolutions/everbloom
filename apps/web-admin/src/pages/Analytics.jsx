@@ -537,24 +537,24 @@ const Analytics = () => {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {user?.role === USER_ROLES.USER 
+            {user?.role === USER_ROLES.USER
               ? 'Your personal analytics and performance insights'
               : user?.role === USER_ROLES.AGENT
               ? 'Team analytics, user performance, and your personal metrics'
               : 'Comprehensive analytics and insights across your organization'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           {availableReportTypes.length > 0 ? (
             <>
               <select
                 value={selectedReportType || ''}
                 onChange={(e) => openReportGeneratorWithType(e.target.value)}
-                className="px-4 py-2 min-w-[200px] border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-medium"
+                className="px-4 py-2 w-full sm:min-w-[200px] sm:w-auto border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-medium"
               >
                 <option value="">Select Report Type</option>
                 {(availableReportTypes || []).map(type => (
@@ -573,6 +573,7 @@ const Analytics = () => {
                 icon={FileText}
                 disabled={!selectedReportType}
                 title={selectedReportType ? "Generate a report of the selected type" : "Please select a report type first"}
+                className="w-full sm:w-auto justify-center"
               >
                 Generate Report
               </Button>
@@ -592,7 +593,7 @@ const Analytics = () => {
       {/* Tabs */}
       {availableTabs.length > 1 && (
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8">
+          <nav className="flex flex-wrap space-x-8 overflow-x-auto">
             {(availableTabs || []).map((tab) => (
               <button
                 key={tab.id}

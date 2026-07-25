@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import TableCard from './TableCard';
 import VirtualizedTable from './VirtualizedTable';
 import EmptyState from '../shared/EmptyState';
 import { Package } from 'lucide-react';
@@ -12,10 +11,8 @@ const Table = memo(({ columns, data, onRowClick, virtualizeThreshold = 50 }) => 
 
   // Regular table for smaller lists
   return (
-    <>
-      {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
             {columns.map((column) => (
@@ -59,13 +56,7 @@ const Table = memo(({ columns, data, onRowClick, virtualizeThreshold = 50 }) => 
           )}
         </tbody>
       </table>
-      </div>
-      
-      {/* Mobile Card View */}
-      <div className="md:hidden">
-        <TableCard columns={columns} data={data} onRowClick={onRowClick} />
-      </div>
-    </>
+    </div>
   );
 }, (prevProps, nextProps) => {
   // Custom comparison function for better performance

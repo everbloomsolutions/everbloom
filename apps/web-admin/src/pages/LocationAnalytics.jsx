@@ -305,23 +305,27 @@ const LocationAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Usage by Location Type
           </h3>
-          <Pie data={pieData} />
+          <div className="h-64 md:h-80">
+            <Pie data={pieData} />
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Top 10 Most Used Locations
           </h3>
-          <Bar
-            data={barData}
-            options={{
-              indexAxis: 'y',
-              responsive: true,
-              plugins: {
-                legend: { display: false },
-              },
-            }}
-          />
+          <div className="h-64 md:h-80">
+            <Bar
+              data={barData}
+              options={{
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                },
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -329,7 +333,9 @@ const LocationAnalytics = () => {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Usage Over Time
         </h3>
-        <Line data={lineData} />
+        <div className="h-64 md:h-80">
+          <Line data={lineData} />
+        </div>
       </div>
 
       {/* Location Health Scores */}

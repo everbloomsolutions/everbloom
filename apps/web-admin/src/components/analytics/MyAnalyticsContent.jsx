@@ -197,7 +197,7 @@ const MyAnalyticsContent = memo(({
             Collections by Material Type
           </h3>
           {materialTypes.length > 0 ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Pie 
                 data={pieData} 
                 options={{ 
@@ -238,7 +238,7 @@ const MyAnalyticsContent = memo(({
             Weight by Material Type
           </h3>
           {materialTypes.length > 0 ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Bar
                 data={barData}
                 options={{

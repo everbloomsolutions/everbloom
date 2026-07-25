@@ -421,7 +421,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               title={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -430,7 +430,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
               type="button"
               onClick={generateSecurePassword}
               disabled={isGenerating}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
               title="Generate secure password"
             >
               <RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
@@ -532,7 +532,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
                     <button
                       type="button"
                       onClick={() => handleRemoveAssignedLocation(location._id)}
-                      className="ml-2 p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                      className="ml-2 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                       title="Remove location"
                     >
                       <X className="w-4 h-4" />
@@ -558,12 +558,13 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
           </label>
         </div>
 
-        <div className="flex gap-3 justify-end mt-6">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-6">
           <Button
             type="button"
             variant="secondary"
             onClick={handleClose}
             disabled={isSubmitting}
+            className="w-full sm:w-auto justify-center"
           >
             Cancel
           </Button>
@@ -572,6 +573,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
             variant="primary"
             isLoading={isSubmitting}
             disabled={isSubmitting}
+            className="w-full sm:w-auto justify-center"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Create User

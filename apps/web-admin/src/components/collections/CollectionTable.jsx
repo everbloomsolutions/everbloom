@@ -107,7 +107,7 @@ const CollectionTable = memo(({
                 onClick={() => onEdit(collection)}
                 variant="ghost"
                 size="sm"
-                className="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-600"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 text-yellow-600"
                 title="Edit Collection"
                 icon={Edit}
               />
@@ -115,7 +115,7 @@ const CollectionTable = memo(({
                 onClick={() => onDelete(collection._id)}
                 variant="ghost"
                 size="sm"
-                className="p-2 bg-red-100 hover:bg-red-200 text-red-600"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600"
                 title="Delete Collection"
                 icon={Trash2}
               />
@@ -124,7 +124,7 @@ const CollectionTable = memo(({
                   onClick={() => onTransfer(collection._id)}
                   variant="ghost"
                   size="sm"
-                  className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-600"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-indigo-100 hover:bg-indigo-200 text-indigo-600"
                   title="Transfer Collection"
                   icon={UserCog}
                 />
@@ -133,7 +133,7 @@ const CollectionTable = memo(({
                 onClick={() => onGenerateReceipt(collection._id)}
                 variant="ghost"
                 size="sm"
-                className="p-2 bg-green-100 hover:bg-green-200 text-green-600"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-100 hover:bg-green-200 text-green-600"
                 title="Generate Receipt"
                 icon={Receipt}
               />
@@ -146,7 +146,7 @@ const CollectionTable = memo(({
                 onClick={() => onPrintReceipt(collection._id)}
                 variant="ghost"
                 size="sm"
-                className="p-2 bg-primary-100 hover:bg-primary-200 text-primary-600"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-primary-100 hover:bg-primary-200 text-primary-600"
                 title="Print Receipt PDF"
                 icon={FileText}
               />
@@ -154,7 +154,7 @@ const CollectionTable = memo(({
                 onClick={() => onDownloadReceipt(collection._id)}
                 variant="ghost"
                 size="sm"
-                className="p-2 bg-purple-100 hover:bg-purple-200 text-purple-600"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-purple-100 hover:bg-purple-200 text-purple-600"
                 title="Download Receipt PDF"
                 icon={Download}
               />

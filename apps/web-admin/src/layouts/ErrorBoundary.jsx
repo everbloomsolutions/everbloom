@@ -49,7 +49,7 @@ class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
+          <div className="bg-white rounded-lg shadow-xl p-8 max-w-xs md:max-w-2xl w-full">
             <div className="flex items-center gap-4 mb-6">
               <div className="bg-red-100 p-3 rounded-full">
                 <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,16 +81,16 @@ class ErrorBoundary extends Component {
               </div>
             )}
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={this.handleReset}
-                className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium w-full sm:w-auto"
               >
                 Go to Home
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium w-full sm:w-auto"
               >
                 Reload Page
               </button>

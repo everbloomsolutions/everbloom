@@ -187,7 +187,7 @@ const AgentAnalyticsContent = memo(({
           </select>
         </div>
         {leaderboardData.length > 0 ? (
-          <div className="h-64 flex items-center justify-center">
+          <div className="h-64 md:h-80 flex items-center justify-center">
             <Bar
               data={{
                 labels: leaderboardLabels,
@@ -243,7 +243,7 @@ const AgentAnalyticsContent = memo(({
             <TrendingUp className="w-5 h-5" />
             Combined Performance Trends
           </h3>
-          <div className="h-96 flex items-center justify-center">
+          <div className="h-64 md:h-96 flex items-center justify-center">
             <Line
               data={{
                 labels: trendDates.length > 0

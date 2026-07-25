@@ -45,10 +45,10 @@ const Modal = memo(({ isOpen, onClose, title, children, size = 'md' }) => {
   if (!isOpen) return null;
 
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl',
+    sm: 'max-w-xs md:max-w-md',
+    md: 'max-w-sm md:max-w-2xl',
+    lg: 'max-w-md md:max-w-4xl',
+    xl: 'max-w-lg md:max-w-6xl',
   };
 
   return (

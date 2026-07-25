@@ -310,7 +310,7 @@ const AgentPerformance = () => {
           </select>
         </div>
         {leaderboardData.length > 0 ? (
-          <div className="h-64">
+          <div className="h-64 md:h-80">
             <Bar
               data={{
                 labels: leaderboardLabels,
@@ -353,7 +353,7 @@ const AgentPerformance = () => {
             <TrendingUp className="w-5 h-5" />
             Combined Performance Trends
           </h3>
-          <div className="h-96">
+          <div className="h-64 md:h-96">
             <Line
               data={{
                 labels: trendDates,

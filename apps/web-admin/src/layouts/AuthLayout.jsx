@@ -22,7 +22,7 @@ const AuthLayout = () => {
         }} />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-xs md:max-w-md relative z-10">
         {/* Logo/Brand Section */}
         <div className="text-center mb-8 animate-in fade-in slide-in-from-top-4">
           <div className="flex justify-center items-center mb-6">

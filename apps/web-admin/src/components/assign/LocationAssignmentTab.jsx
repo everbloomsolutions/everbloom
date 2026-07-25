@@ -129,7 +129,7 @@ const LocationAssignmentTab = () => {
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
               <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
               <span
-                className="truncate max-w-[200px]"
+                className="truncate max-w-[120px] md:max-w-[200px]"
                 title={`${location.locationName}${location.address ? ` - ${location.address}` : ''}`}
               >
                 {location.locationName}

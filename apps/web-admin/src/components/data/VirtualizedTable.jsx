@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import TableCard from './TableCard';
 import EmptyState from '../shared/EmptyState';
 import { Package } from 'lucide-react';
 
@@ -47,9 +46,63 @@ const VirtualizedTable = memo(({ columns, data, onRowClick, virtualizeThreshold 
 
   // Regular table for small lists or mobile
   const RegularTable = () => (
-    <>
-      {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto">
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-800">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-0">
+                <EmptyState
+                  icon={Package}
+                  title="No data available"
+                  description="There are no items to display."
+                />
+              </td>
+            </tr>
+          ) : (
+            (data || []).map((row, rowIndex) => (
+              <tr
+                key={row._id || row.id || rowIndex}
+                onClick={() => onRowClick && onRowClick(row)}
+                className={onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
+                  >
+                    {column.render ? column.render(row[column.key], row) : row[column.key]}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Virtualized table for large lists
+  const VirtualizedTableContent = () => {
+    if (!FixedSizeList) {
+      // Fallback to regular table if react-window is not available
+      return <RegularTable />;
+    }
+
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -63,100 +116,28 @@ const VirtualizedTable = memo(({ columns, data, onRowClick, virtualizeThreshold 
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {data.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length} className="p-0">
-                  <EmptyState
-                    icon={Package}
-                    title="No data available"
-                    description="There are no items to display."
-                  />
-                </td>
-              </tr>
-            ) : (
-              (data || []).map((row, rowIndex) => (
-                <tr
-                  key={row._id || row.id || rowIndex}
-                  onClick={() => onRowClick && onRowClick(row)}
-                  className={onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100"
-                    >
-                      {column.render ? column.render(row[column.key], row) : row[column.key]}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
         </table>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="md:hidden">
-        <TableCard columns={columns} data={data} onRowClick={onRowClick} />
-      </div>
-    </>
-  );
-
-  // Virtualized table for large lists
-  const VirtualizedTableContent = () => {
-    if (!FixedSizeList) {
-      // Fallback to regular table if react-window is not available
-      return <RegularTable />;
-    }
-
-    return (
-      <>
-        {/* Desktop Virtualized Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  {columns.map((column) => (
-                    <th
-                      key={column.key}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-            </table>
-            {data.length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  icon={Package}
-                  title="No data available"
-                  description="There are no items to display."
-                />
-              </div>
-            ) : (
-              <div style={{ height: Math.min(600, data.length * rowHeight), overflow: 'auto' }}>
-                <FixedSizeList
-                  height={Math.min(600, data.length * rowHeight)}
-                  itemCount={data.length}
-                  itemSize={rowHeight}
-                  width="100%"
-                >
-                  {Row}
-                </FixedSizeList>
-              </div>
-            )}
+        {data.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              icon={Package}
+              title="No data available"
+              description="There are no items to display."
+            />
           </div>
-        </div>
-
-        {/* Mobile Card View - Always use regular rendering */}
-        <div className="md:hidden">
-          <TableCard columns={columns} data={data} onRowClick={onRowClick} />
-        </div>
-      </>
+        ) : (
+          <div style={{ height: Math.min(600, data.length * rowHeight), overflow: 'auto' }}>
+            <FixedSizeList
+              height={Math.min(600, data.length * rowHeight)}
+              itemCount={data.length}
+              itemSize={rowHeight}
+              width="100%"
+            >
+              {Row}
+            </FixedSizeList>
+          </div>
+        )}
+      </div>
     );
   };
 

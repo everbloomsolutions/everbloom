@@ -515,7 +515,7 @@ const CollectionForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
           {editingCollectionId ? 'Edit Collection' : 'Create New Collection'}
         </h2>
@@ -659,8 +659,8 @@ const CollectionForm = ({
               />
 
               {/* Address */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2">
                   <FormInput
                     label="Address"
                     name="address"
@@ -736,8 +736,8 @@ const CollectionForm = ({
             </div>
             <div className="space-y-2">
               {formData.collectionItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-4">
+                <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                  <div className="col-span-1 sm:col-span-4">
                     <select
                       value={item.materialType}
                       onChange={(e) => handleCollectionItemChange(index, 'materialType', e.target.value)}
@@ -751,7 +751,7 @@ const CollectionForm = ({
                       <option value="copper">Copper</option>
                     </select>
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-1 sm:col-span-3">
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Weight (kg)</label>
                     <input
                       type="number"
@@ -763,7 +763,7 @@ const CollectionForm = ({
                       placeholder="0.0"
                     />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-1 sm:col-span-3">
                     <div className="flex items-center gap-1 mb-1">
                       <label className="block text-xs text-gray-600 dark:text-gray-400">Rate (₹/kg)</label>
                       {autoPopulatedRates.has(index) && (
@@ -794,13 +794,13 @@ const CollectionForm = ({
                       placeholder="0.00"
                     />
                   </div>
-                  <div className="col-span-1">
+                  <div className="col-span-1 sm:col-span-1">
                     <span className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Amount</span>
                     <span className="block text-sm font-medium text-gray-900 dark:text-white">
                       {formatCurrency(calculateItemAmount(item), { maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="col-span-1">
+                  <div className="col-span-1 sm:col-span-1">
                     {formData.collectionItems.length > 1 && (
                       <Button
                         onClick={() => handleRemoveCollectionItem(index)}
@@ -860,11 +860,12 @@ const CollectionForm = ({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 justify-end pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-4">
             <Button
               onClick={onClose}
               variant="secondary"
               disabled={isLoading}
+              className="w-full sm:w-auto justify-center"
             >
               Cancel
             </Button>
@@ -873,6 +874,7 @@ const CollectionForm = ({
               variant="primary"
               isLoading={isLoading}
               loadingText={editingCollectionId ? 'Updating...' : 'Creating...'}
+              className="w-full sm:w-auto justify-center"
             >
               {editingCollectionId ? 'Update Collection' : 'Create Collection'}
             </Button>

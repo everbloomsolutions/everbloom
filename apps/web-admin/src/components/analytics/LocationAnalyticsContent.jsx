@@ -239,7 +239,7 @@ const LocationAnalyticsContent = memo(({
             Usage by Location Type
           </h3>
           {Object.keys(byType).length > 0 ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Pie 
                 data={pieData} 
                 options={{
@@ -280,7 +280,7 @@ const LocationAnalyticsContent = memo(({
             Top 10 Most Used Locations
           </h3>
           {mostUsed.length > 0 ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Bar
                 data={barData}
                 options={{
@@ -321,7 +321,7 @@ const LocationAnalyticsContent = memo(({
           Usage Over Time
         </h3>
         {usageTrends.length > 0 ? (
-          <div className="h-64 flex items-center justify-center">
+          <div className="h-64 md:h-80 flex items-center justify-center">
             <Line 
               data={lineData} 
               options={{

@@ -326,7 +326,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Format
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
               onClick={() => setFormat('pdf')}
@@ -429,7 +429,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
                 </select>
               </div>
               {dateRangeType === 'custom' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
                       Start Date
@@ -456,7 +456,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
                   Start Date

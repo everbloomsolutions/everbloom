@@ -422,7 +422,7 @@ const Projects = () => {
       {/* Quote Modal */}
       {showQuoteModal && selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-md">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Send Quote for {selectedProject.title}
             </h2>
@@ -463,20 +463,20 @@ const Projects = () => {
                   placeholder="e.g., 2-3 weeks"
                 />
               </div>
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
                 <button
                   onClick={() => {
                     closeQuoteModal();
                     closeQuoteModalData();
                   }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSendQuote}
                   disabled={sendQuoteMutation.isPending}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto"
                 >
                   {sendQuoteMutation.isPending ? 'Sending...' : 'Send Quote'}
                 </button>

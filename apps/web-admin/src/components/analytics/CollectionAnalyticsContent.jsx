@@ -246,7 +246,7 @@ const CollectionAnalyticsContent = memo(({
                 Collection Item Types (Pie Chart)
               </h3>
               {materialTypes.length > 0 ? (
-                <div className="h-64 flex items-center justify-center">
+                <div className="h-64 md:h-80 flex items-center justify-center">
                   <Pie 
                     data={pieData} 
                     options={{ 
@@ -287,7 +287,7 @@ const CollectionAnalyticsContent = memo(({
                 Collection Item Types (Bar Chart)
               </h3>
               {materialTypes.length > 0 ? (
-                <div className="h-64 flex items-center justify-center">
+                <div className="h-64 md:h-80 flex items-center justify-center">
                   <Bar
                     data={barData}
                     options={{
@@ -436,7 +436,7 @@ const CollectionAnalyticsContent = memo(({
                 Revenue Trends
               </h3>
               {timeSeriesAnalytics.trends && timeSeriesAnalytics.trends.length > 0 ? (
-                <div className="h-96 flex items-center justify-center">
+                <div className="h-64 md:h-96 flex items-center justify-center">
                   <Line
                     data={{
                       labels: (timeSeriesAnalytics.trends || []).map(t => formatDate(t.date, 'MMM d')),

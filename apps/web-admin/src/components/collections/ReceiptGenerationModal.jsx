@@ -83,7 +83,7 @@ const ReceiptGenerationModal = ({ isOpen, onClose, collection, onConfirm, isGene
             <h3 className="font-semibold text-gray-900 dark:text-white">Collection Details</h3>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
               <span className="text-gray-600 dark:text-gray-400">Location:</span>
               <p className="font-medium text-gray-900 dark:text-white mt-1">
@@ -150,12 +150,13 @@ const ReceiptGenerationModal = ({ isOpen, onClose, collection, onConfirm, isGene
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={isGenerating}
+            className="w-full sm:w-auto justify-center"
           >
             Cancel
           </Button>
@@ -165,6 +166,7 @@ const ReceiptGenerationModal = ({ isOpen, onClose, collection, onConfirm, isGene
             isLoading={isGenerating}
             disabled={isGenerating || upiTransactionId.length !== 12}
             icon={Receipt}
+            className="w-full sm:w-auto justify-center"
           >
             Generate Receipt
           </Button>

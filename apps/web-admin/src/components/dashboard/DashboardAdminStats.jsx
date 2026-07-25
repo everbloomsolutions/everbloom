@@ -73,7 +73,7 @@ const DashboardAdminStats = ({ stats, navigate }) => {
             User Growth (Last 12 Months)
           </h2>
           <ChartCard title="User Growth Trend">
-            <div className="h-64">
+            <div className="h-64 md:h-80">
               <Line
                 data={{
                   labels: stats.userGrowth.map((item) => 

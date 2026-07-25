@@ -147,7 +147,7 @@ const Settings = () => {
               </span>
             </div>
 
-            <Button type="submit" variant="primary" isLoading={profileForm.isSubmitting}>
+            <Button type="submit" variant="primary" isLoading={profileForm.isSubmitting} className="w-full sm:w-auto">
               Update Profile
             </Button>
           </form>
@@ -206,7 +206,7 @@ const Settings = () => {
               </p>
             </div>
 
-            <Button type="submit" variant="primary" isLoading={passwordForm.isSubmitting}>
+            <Button type="submit" variant="primary" isLoading={passwordForm.isSubmitting} className="w-full sm:w-auto">
               Change Password
             </Button>
           </form>

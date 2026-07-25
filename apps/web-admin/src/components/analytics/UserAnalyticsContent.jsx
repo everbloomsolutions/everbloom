@@ -125,7 +125,7 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
             User Status Distribution
           </h3>
           {hasData ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Pie 
                 data={statusPieData} 
                 options={{ 
@@ -166,7 +166,7 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
             User Status Overview
           </h3>
           {hasData ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-64 md:h-80 flex items-center justify-center">
               <Bar
                 data={{
                   labels: ['Total', 'Active', 'Inactive'],

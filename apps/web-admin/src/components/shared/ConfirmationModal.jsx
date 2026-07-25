@@ -123,7 +123,7 @@ function ConfirmationModal({
       aria-labelledby="confirmation-modal-title"
       aria-describedby="confirmation-modal-message"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-md shadow-xl">
         <div className="flex items-start gap-4">
           <div className={`flex-shrink-0 p-3 rounded-full ${styles.bg}`}>
             <Icon className={`w-6 h-6 ${styles.icon}`} aria-hidden="true" />

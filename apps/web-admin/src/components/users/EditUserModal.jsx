@@ -483,7 +483,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                             <button
                               type="button"
                               onClick={() => handleRemoveAssignedLocation(location._id)}
-                              className="ml-3 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
+                              className="ml-3 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
                               aria-label="Remove location"
                             >
                               <X className="w-5 h-5" />
@@ -505,12 +505,13 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
             )}
           </div>
 
-          <div className="flex gap-3 justify-end mt-6">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-6">
             <Button
               type="button"
               variant="secondary"
               onClick={handleClose}
               disabled={isSubmitting}
+              className="w-full sm:w-auto justify-center"
             >
               Cancel
             </Button>
@@ -519,6 +520,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
               variant="primary"
               isLoading={isSubmitting}
               disabled={isSubmitting}
+              className="w-full sm:w-auto justify-center"
             >
               <User className="w-4 h-4 mr-2" />
               Update User

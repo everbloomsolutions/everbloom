@@ -200,7 +200,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   </div>
                 </div>
                 {recentData.collectionsGrowth.trend && recentData.collectionsGrowth.trend.length > 0 && (
-                  <div className="h-48">
+                  <div className="h-40 md:h-48">
                     <Line
                       data={{
                         labels: (recentData.collectionsGrowth?.trend || []).map((item) => item.date),
@@ -258,7 +258,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
               {hasCollections(recentData) ? (
                 <div className="space-y-4">
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {getCollections(recentData).length}
@@ -398,7 +398,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
         {recentData.recentUsage?.last7Days && !isUser && (
           <div className="mt-6">
             <ChartCard title={isAgent ? "My Recent Usage (Last 7 Days)" : "Recent Usage (Last 7 Days)"}>
-              <div className="h-64">
+              <div className="h-64 md:h-80">
                 <Line
                   data={{
                     labels: recentData.recentUsage.last7Days.map((item) => item.date),

@@ -88,7 +88,7 @@ const Navbar = () => {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 block">
                 {user?.name}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 block truncate max-w-[100px]">
+              <span className="text-xs text-gray-500 dark:text-gray-400 block truncate max-w-[80px] md:max-w-[100px]">
                 {user?.role}
               </span>
             </div>

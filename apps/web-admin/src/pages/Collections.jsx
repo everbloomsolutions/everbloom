@@ -840,7 +840,7 @@ const Collections = () => {
       {/* Transfer Collection Modal */}
       {showTransferModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-xs md:max-w-md">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Transfer Collection
             </h2>
@@ -877,7 +877,7 @@ const Collections = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 justify-end pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
               <Button
                 onClick={() => {
                   closeTransferModal();
@@ -886,6 +886,7 @@ const Collections = () => {
                 }}
                 variant="secondary"
                 disabled={isTransferring}
+                className="w-full sm:w-auto justify-center"
               >
                 Cancel
               </Button>
@@ -896,6 +897,7 @@ const Collections = () => {
                 isLoading={isTransferring}
                 loadingText="Transferring..."
                 icon={UserCog}
+                className="w-full sm:w-auto justify-center"
               >
                 Transfer
               </Button>

@@ -30,7 +30,7 @@ const EmptyState = ({
       )}
       
       {description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs md:max-w-md mx-auto">
           {description}
         </p>
       )}

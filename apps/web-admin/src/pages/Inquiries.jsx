@@ -136,7 +136,7 @@ const Inquiries = () => {
           {inquiry.status !== 'read' && inquiry.status !== 'new' && (
             <button
               onClick={() => handleUpdateStatus(inquiry._id, 'pending')}
-              className="p-2.5 bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900 dark:hover:bg-yellow-800 text-yellow-600 dark:text-yellow-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
+              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900 dark:hover:bg-yellow-800 text-yellow-600 dark:text-yellow-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
               title="Mark as read"
             >
               <Clock className="w-4 h-4" />
@@ -145,7 +145,7 @@ const Inquiries = () => {
           {inquiry.status !== 'replied' && (
             <button
               onClick={() => handleUpdateStatus(inquiry._id, 'completed')}
-              className="p-2.5 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
+              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
               title="Mark as replied"
             >
               <CheckCircle className="w-4 h-4" />
@@ -154,7 +154,7 @@ const Inquiries = () => {
           {inquiry.status !== 'archived' && (
             <button
               onClick={() => handleUpdateStatus(inquiry._id, 'cancelled')}
-              className="p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-600 dark:text-red-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
+              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-600 dark:text-red-300 rounded-lg transition-all transform hover:scale-110 active:scale-95"
               title="Archive"
             >
               <XCircle className="w-4 h-4" />

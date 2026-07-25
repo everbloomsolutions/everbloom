@@ -66,7 +66,7 @@ class ErrorBoundary extends Component {
       // Default error UI
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-xs md:max-w-2xl w-full">
             <div className="flex items-center gap-4 mb-6">
               <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded-full">
                 <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

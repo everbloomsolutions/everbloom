@@ -274,7 +274,7 @@ const CollectionImport = ({
           }
         }}
       >
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h2 id="import-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
               Import Collections
@@ -517,7 +517,7 @@ const CollectionImport = ({
             </div>
           )}
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
             <Button
               onClick={() => {
                 if (!importJobId) {
@@ -527,6 +527,7 @@ const CollectionImport = ({
               disabled={!!importJobId}
               variant="secondary"
               aria-label={importJobId ? 'Cannot close during import' : 'Cancel import'}
+              className="w-full sm:w-auto justify-center"
             >
               {importJobId ? 'Close' : 'Cancel'}
             </Button>
@@ -535,7 +536,7 @@ const CollectionImport = ({
                 onClick={handleValidateImport}
                 disabled={!importFile || isLoading('validating')}
                 variant="primary"
-                className="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500"
+                className="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 w-full sm:w-auto justify-center"
                 isLoading={isLoading('validating')}
                 loadingText="Validating..."
               >
@@ -550,6 +551,7 @@ const CollectionImport = ({
                   variant="primary"
                   isLoading={isLoading('importing')}
                   loadingText="Importing..."
+                  className="w-full sm:w-auto justify-center"
                 >
                   Import Now
                 </Button>
@@ -559,6 +561,7 @@ const CollectionImport = ({
                   variant="success"
                   isLoading={isLoading('importing')}
                   loadingText="Queuing..."
+                  className="w-full sm:w-auto justify-center"
                 >
                   Import in Background
                 </Button>
@@ -571,6 +574,7 @@ const CollectionImport = ({
                 variant="primary"
                 isLoading={isLoading('importing')}
                 loadingText="Importing..."
+                className="w-full sm:w-auto justify-center"
               >
                 Import
               </Button>
