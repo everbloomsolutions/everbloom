@@ -44,17 +44,25 @@ export const projectApi = {
   },
 
   startProject: async (id, assignedTo) => {
-    const response = await axiosInstance.post(`/admin/collections/${id}/start`, { assignedTo });
+    const response = await axiosInstance.put(`/admin/collections/${id}`, {
+      status: 'in-progress',
+      ...(assignedTo ? { assignedTo } : {}),
+    });
     return response.data;
   },
 
   updateProgress: async (id, progressData) => {
-    const response = await axiosInstance.patch(`/admin/collections/${id}/progress`, progressData);
+    const response = await axiosInstance.put(`/admin/collections/${id}`, {
+      ...progressData,
+      status: 'in-progress',
+    });
     return response.data;
   },
 
   completeProject: async (id) => {
-    const response = await axiosInstance.post(`/admin/collections/${id}/complete`);
+    const response = await axiosInstance.put(`/admin/collections/${id}`, {
+      status: 'completed',
+    });
     return response.data;
   },
 

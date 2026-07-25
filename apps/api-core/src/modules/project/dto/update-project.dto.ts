@@ -126,4 +126,14 @@ export class UpdateProjectDto {
   @IsString()
   @MaxLength(200)
   estimatedTimeline?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  progress?: number;
+
+  @IsOptional()
+  @IsString()
+  assignedTo?: string;
 }

@@ -587,7 +587,18 @@ export class ProjectService {
     if (data.title !== undefined) project.title = data.title;
     if (data.description !== undefined) project.description = data.description;
     if (data.priority !== undefined) (project as any).priority = data.priority;
-    if (data.status !== undefined) (project as any).status = data.status;
+
+    if (data.status !== undefined) {
+      const previousStatus = (project as any).status;
+      (project as any).status = data.status;
+      if (data.status === 'in-progress' && previousStatus !== 'in-progress') {
+        (project as any).startedAt = new Date();
+      }
+      if (data.status === 'completed' && previousStatus !== 'completed') {
+        (project as any).completedAt = new Date();
+      }
+    }
+
     if (data.location !== undefined) (project as any).location = data.location;
     if (data.locationType !== undefined) (project as any).locationType = data.locationType;
     if (data.locationName !== undefined) (project as any).locationName = data.locationName;
@@ -596,13 +607,23 @@ export class ProjectService {
     if (data.quoteAmount !== undefined) {
       (project as any).quoteAmount = Number(data.quoteAmount);
       (project as any).status = 'quoted';
-    }
-    if (data.quoteDetails !== undefined) (project as any).quoteDetails = data.quoteDetails;
-    if (data.estimatedTimeline !== undefined) (project as any).estimatedTimeline = data.estimatedTimeline;
-    if (data.quoteAmount !== undefined) {
       (project as any).quotedAt = new Date();
       (project as any).quotedBy = requesterId;
     }
+    if (data.quoteDetails !== undefined) (project as any).quoteDetails = data.quoteDetails;
+    if (data.estimatedTimeline !== undefined) (project as any).estimatedTimeline = data.estimatedTimeline;
+
+    if (data.assignedTo !== undefined) {
+      if (data.assignedTo) {
+        (project as any).assignedTo = this.validationService.validateObjectId(
+          String(data.assignedTo),
+          'assignedTo',
+        );
+      } else {
+        (project as any).assignedTo = undefined;
+      }
+    }
+    if (data.progress !== undefined) (project as any).progress = Number(data.progress);
 
     if (data.locationId !== undefined) {
       if (data.locationId === null || data.locationId === '') {

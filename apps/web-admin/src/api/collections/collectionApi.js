@@ -52,7 +52,8 @@ export const collectionApi = {
   },
 
   generateReceipt: async (collectionId, upiTransactionId) => {
-    const response = await axiosInstance.post(`/admin/collections/${collectionId}/receipt`, {
+    const response = await axiosInstance.post('/receipts/generate', {
+      collectionId,
       upiTransactionId,
     });
     return response.data;
