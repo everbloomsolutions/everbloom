@@ -14,3 +14,20 @@ spec:
           limits:
             cpu: 500m
             memory: 512Mi
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-public
+spec:
+  minReplicas: 2
+  maxReplicas: 5
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-public
+spec:
+  minAvailable: 1
