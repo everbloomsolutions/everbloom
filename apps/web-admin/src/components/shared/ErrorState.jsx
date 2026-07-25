@@ -22,11 +22,11 @@ const ErrorState = ({
         </div>
       </div>
       
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-2">
         {title}
       </h3>
       
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs md:max-w-md mx-auto">
+      <p className="text-sm sm:text-base leading-relaxed text-gray-500 dark:text-gray-400 mb-6 max-w-xs md:max-w-md mx-auto">
         {description}
       </p>
       

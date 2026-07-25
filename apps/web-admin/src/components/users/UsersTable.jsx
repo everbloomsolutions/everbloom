@@ -81,7 +81,7 @@ const UsersTable = memo(({
           
           if (defaultLocation && defaultLocation.locationName) {
             return (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400" title="Manage locations in Assign page">
+              <div className="flex items-center text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400" title="Manage locations in Assign page">
                 <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
                 <span 
                   className="truncate max-w-[120px] md:max-w-[200px]" 
@@ -100,7 +100,7 @@ const UsersTable = memo(({
           // We need to get this from the user data if available, or show placeholder
           const locationCount = user.locationCount || 0;
           return (
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400" title="Manage locations in Assign page">
+            <div className="flex items-center text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400" title="Manage locations in Assign page">
               <MapPin className="w-4 h-4 mr-1" />
               <span>{locationCount} location{locationCount !== 1 ? 's' : ''}</span>
             </div>

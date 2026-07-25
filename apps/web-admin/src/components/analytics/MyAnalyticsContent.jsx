@@ -93,7 +93,7 @@ const MyAnalyticsContent = memo(({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Time Period
             </label>
             <select
@@ -113,7 +113,7 @@ const MyAnalyticsContent = memo(({
           {dateRangeType === 'custom' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Date
                 </label>
                 <input
@@ -124,7 +124,7 @@ const MyAnalyticsContent = memo(({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Date
                 </label>
                 <input
@@ -148,7 +148,7 @@ const MyAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Collections
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.overview?.totalCollections || 0}
           </p>
         </div>
@@ -160,7 +160,7 @@ const MyAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Receipts
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.overview?.totalReceipts || 0}
           </p>
         </div>
@@ -172,7 +172,7 @@ const MyAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Weight
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {(analytics.overview?.totalWeight || 0).toFixed(2)} kg
           </p>
         </div>
@@ -184,7 +184,7 @@ const MyAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Revenue
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {formatCurrency(analytics.overview?.totalAmount || 0)}
           </p>
         </div>
@@ -193,7 +193,7 @@ const MyAnalyticsContent = memo(({
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Collections by Material Type
           </h3>
           {materialTypes.length > 0 ? (
@@ -234,7 +234,7 @@ const MyAnalyticsContent = memo(({
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Weight by Material Type
           </h3>
           {materialTypes.length > 0 ? (
@@ -277,7 +277,7 @@ const MyAnalyticsContent = memo(({
 
       {/* Material Type Details */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
           Material Type Breakdown
         </h3>
         <div className="space-y-3">
@@ -308,7 +308,7 @@ const MyAnalyticsContent = memo(({
       {/* Location Type Breakdown */}
       {locationTypes.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Collections by Location Type
           </h3>
           <div className="space-y-3">
@@ -329,17 +329,17 @@ const MyAnalyticsContent = memo(({
       {/* Recent Collections - Simplified */}
       {analytics.recentCollections && analytics.recentCollections.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Recent Collections
           </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receipt</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Location</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Receipt</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">

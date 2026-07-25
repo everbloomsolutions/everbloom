@@ -70,7 +70,7 @@ const Notifications = () => {
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             {unreadCount} unread notifications
           </p>
@@ -108,7 +108,7 @@ const Notifications = () => {
                   <h3 className="font-semibold text-gray-900 dark:text-white">
                     {notification.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                     {notification.message}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">

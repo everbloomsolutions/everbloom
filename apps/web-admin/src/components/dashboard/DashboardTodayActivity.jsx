@@ -43,7 +43,7 @@ const DashboardTodayActivity = ({ todayData, isAdmin, isAgent, isUser }) => {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
         {isUser ? 'My Activity Today' : isAgent ? 'My Performance Today' : "Today's Activity Overview"}
       </h2>
         <div className={`grid grid-cols-1 ${isUser ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-6`}>
@@ -58,11 +58,11 @@ const DashboardTodayActivity = ({ todayData, isAdmin, isAgent, isUser }) => {
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
             {isUser ? 'My Collections' : isAgent ? 'My Collections' : "Today's Collections"}
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mb-2">
             {collectionsCount}
           </p>
           {collectionsCount === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               No collections for your scope today.
             </p>
           ) : (
@@ -106,7 +106,7 @@ const DashboardTodayActivity = ({ todayData, isAdmin, isAgent, isUser }) => {
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
             {isUser ? 'My Receipts' : isAgent ? 'My Receipts' : "Today's Receipts"}
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mb-2">
             {receiptsCount}
           </p>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -136,7 +136,7 @@ const DashboardTodayActivity = ({ todayData, isAdmin, isAgent, isUser }) => {
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
             {isUser ? 'My Revenue' : isAgent ? 'My Revenue' : "Today's Revenue"}
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mb-2">
             {formatCurrency(revenueTotal)}
           </p>
           <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -163,7 +163,7 @@ const DashboardTodayActivity = ({ todayData, isAdmin, isAgent, isUser }) => {
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
               Today&apos;s New Users
             </h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
               {newUsersCount}
             </p>
           </div>

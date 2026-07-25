@@ -57,7 +57,7 @@ class ErrorBoundary extends Component {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Oops! Something went wrong</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-800">Oops! Something went wrong</h1>
                 <p className="text-gray-600 mt-1">The application encountered an unexpected error.</p>
               </div>
             </div>
@@ -97,7 +97,7 @@ class ErrorBoundary extends Component {
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 If this problem persists, please contact support or check the browser console for more details.
               </p>
             </div>

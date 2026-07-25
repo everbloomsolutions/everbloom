@@ -37,7 +37,7 @@ const CollectionFilters = memo(({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white flex items-center gap-2">
           <Filter className="w-5 h-5" />
           Filters
         </h2>
@@ -57,7 +57,7 @@ const CollectionFilters = memo(({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
         {/* Time Period Selector */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Time Period
           </label>
           <select
@@ -75,7 +75,7 @@ const CollectionFilters = memo(({
 
         {/* Filter by Locality */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Filter by Locality
           </label>
           <SearchBar
@@ -90,7 +90,7 @@ const CollectionFilters = memo(({
 
         {/* Location Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Location Type
           </label>
           <select
@@ -109,7 +109,7 @@ const CollectionFilters = memo(({
 
         {/* Status Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Status
           </label>
           <select
@@ -125,7 +125,7 @@ const CollectionFilters = memo(({
 
         {/* Sort By */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Sort By
           </label>
           <select
@@ -161,7 +161,7 @@ const CollectionFilters = memo(({
         <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-4">
           {/* Quick Date Range Filters */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Quick Date Range
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -207,7 +207,7 @@ const CollectionFilters = memo(({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Start Date
               </label>
               <div className="relative">
@@ -226,7 +226,7 @@ const CollectionFilters = memo(({
 
             {/* End Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 End Date
               </label>
               <div className="relative">
@@ -247,7 +247,7 @@ const CollectionFilters = memo(({
           {/* Agent Filter (Admin Only) */}
           {isAdmin(user) && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Agent
               </label>
               <select

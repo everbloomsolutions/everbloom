@@ -73,7 +73,7 @@ const AgentAnalyticsContent = memo(({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Time Period
             </label>
             <select
@@ -93,7 +93,7 @@ const AgentAnalyticsContent = memo(({
           {dateRangeType === 'custom' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Date
                 </label>
                 <input
@@ -104,7 +104,7 @@ const AgentAnalyticsContent = memo(({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Date
                 </label>
                 <input
@@ -128,7 +128,7 @@ const AgentAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Agents
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.agents?.length || 0}
           </p>
         </div>
@@ -139,7 +139,7 @@ const AgentAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Collections
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.agents?.reduce((sum, agent) => sum + (agent.totalCollections || 0), 0) || 0}
           </p>
         </div>
@@ -150,7 +150,7 @@ const AgentAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Revenue
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {formatCurrency(analytics.agents?.reduce((sum, agent) => sum + (agent.totalRevenue || 0), 0) || 0)}
           </p>
         </div>
@@ -161,7 +161,7 @@ const AgentAnalyticsContent = memo(({
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Avg Collections/Day
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.agents?.length 
               ? (analytics.agents.reduce((sum, agent) => sum + (agent.collectionsPerDay || 0), 0) / analytics.agents.length).toFixed(1)
               : '0.0'}
@@ -172,7 +172,7 @@ const AgentAnalyticsContent = memo(({
       {/* Leaderboard */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
             Leaderboard
           </h3>
@@ -239,7 +239,7 @@ const AgentAnalyticsContent = memo(({
       {/* Performance Trends */}
       {trendDates.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
             Combined Performance Trends
           </h3>
@@ -299,7 +299,7 @@ const AgentAnalyticsContent = memo(({
       {/* Performance Insights - Simplified */}
       {analytics.agents && analytics.agents.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary-500" />
             Performance Insights
           </h3>
@@ -328,7 +328,7 @@ const AgentAnalyticsContent = memo(({
                 return (
                   <div key={index} className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
                     <p className="font-semibold text-gray-900 dark:text-white mb-1">{agent.agentName}</p>
-                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <ul className="list-disc list-inside text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 space-y-1">
                       {recommendations.map((rec, i) => (
                         <li key={i}>{rec}</li>
                       ))}
@@ -342,7 +342,7 @@ const AgentAnalyticsContent = memo(({
               agent.comparison.collectionsPerDayVsAverage < -10
             )).length === 0 && (
               <div className="p-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                   All agents are performing at or above team average. Great job!
                 </p>
               </div>
@@ -354,37 +354,37 @@ const AgentAnalyticsContent = memo(({
       {/* Team Averages - Simplified */}
       {analytics.teamAverages && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Team Averages
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Collections</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-1">Avg Collections</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {analytics.teamAverages.averageCollections?.toFixed(1) || '0.0'}
               </p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-1">Avg Revenue</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {formatCurrency(analytics.teamAverages.averageRevenue || 0)}
               </p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Weight</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-1">Avg Weight</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {analytics.teamAverages.averageWeight?.toFixed(2) || '0.00'} kg
               </p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Collections/Day</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-1">Avg Collections/Day</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {analytics.teamAverages.averageCollectionsPerDay?.toFixed(2) || '0.00'}
               </p>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg Collection Value</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-1">Avg Collection Value</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {formatCurrency(analytics.teamAverages.averageCollectionValue || 0)}
               </p>
             </div>
@@ -395,18 +395,18 @@ const AgentAnalyticsContent = memo(({
       {/* Agent Details Table - Simplified */}
       {analytics.agents && analytics.agents.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Agent Performance Details
           </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Agent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Collections</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Weight (kg)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Collections/Day</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Agent</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Collections</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Weight (kg)</th>
+                  <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Collections/Day</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">

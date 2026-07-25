@@ -66,7 +66,7 @@ const Login = () => {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl mb-4 shadow-lg">
           <Shield className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Welcome Back</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold leading-tight mb-2 text-gray-900 dark:text-white">Welcome Back</h2>
         <p className="text-gray-600 dark:text-gray-400">Sign in to access your admin dashboard</p>
       </div>
       
@@ -83,7 +83,7 @@ const Login = () => {
 
       <form onSubmit={loginForm.handleSubmit} noValidate className="space-y-6">
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Email Address
           </label>
           <div className="relative">
@@ -111,7 +111,7 @@ const Login = () => {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Password
           </label>
           <div className="relative">

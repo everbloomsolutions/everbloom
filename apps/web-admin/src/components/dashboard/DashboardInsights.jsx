@@ -17,39 +17,39 @@ const DashboardInsights = ({ todayData, isUser, isAgent, navigate }) => {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
         {isUser ? 'My Insights' : 'Performance Insights'}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Today's Summary Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             {isUser ? "Today's Summary" : "Today's Performance"}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Collections</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Collections</span>
+              <span className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 {collectionsCount}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Total Weight</span>
-              <span className="text-lg font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Total Weight</span>
+              <span className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 {formatNumber(totalWeight)} kg
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Revenue</span>
-              <span className="text-lg font-semibold text-primary-600 dark:text-primary-400">
+              <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Revenue</span>
+              <span className="text-lg sm:text-xl font-semibold leading-snug text-primary-600 dark:text-primary-400">
                 {formatCurrency(revenueTotal)}
               </span>
             </div>
             {isAgent && collectionsCount > 0 && (
               <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Avg. per Collection</span>
+                  <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Avg. per Collection</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {formatCurrency(revenueTotal / collectionsCount)}
                   </span>
@@ -61,7 +61,7 @@ const DashboardInsights = ({ todayData, isUser, isAgent, navigate }) => {
 
         {/* Suggestions Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             Suggestions
           </h3>

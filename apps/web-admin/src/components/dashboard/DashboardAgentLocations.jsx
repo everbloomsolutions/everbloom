@@ -10,14 +10,14 @@ const DashboardAgentLocations = ({ assignedLocations, navigate }) => {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
         My Assigned Locations
       </h2>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Assigned Locations</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Total Assigned Locations</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
               {assignedLocations.length}
             </p>
           </div>

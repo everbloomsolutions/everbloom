@@ -277,10 +277,10 @@ const LocationRatesTab = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="text-center py-8">
           <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-2">
             Configuration Error
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
             Material types are not configured. Please contact support.
           </p>
         </div>
@@ -293,7 +293,7 @@ const LocationRatesTab = () => {
       {/* Location Selector Card */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center justify-between mb-3">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
             Select Location
           </label>
           {selectedLocation && (
@@ -336,7 +336,7 @@ const LocationRatesTab = () => {
                   <div className="font-medium text-gray-900 dark:text-white">
                     {selectedLocation.locationName}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                     {selectedLocation.address}
                     {selectedLocation.city && `, ${selectedLocation.city}`}
                   </div>
@@ -358,19 +358,19 @@ const LocationRatesTab = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <div className="text-xs text-gray-600 dark:text-gray-400">Rates Configured</div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 {stats.configured}/{stats.total}
               </div>
             </div>
             <div>
               <div className="text-xs text-gray-600 dark:text-gray-400">Average Rate</div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 ₹ {stats.average.toFixed(2)}/kg
               </div>
             </div>
             <div>
               <div className="text-xs text-gray-600 dark:text-gray-400">Range</div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+              <div className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 ₹ {stats.min.toFixed(2)} - ₹ {stats.max.toFixed(2)}
               </div>
             </div>
@@ -462,7 +462,7 @@ const LocationRatesTab = () => {
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Collection Item Type Rates
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Set default rates per kg for each material type at this location. These rates will be used when creating new collections.
                 </p>
               </div>
@@ -509,16 +509,16 @@ const LocationRatesTab = () => {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Material Type
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Rate (₹/kg)
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
@@ -609,7 +609,7 @@ const LocationRatesTab = () => {
             <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <div className="flex items-center gap-4">
                 {hasChanges && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                     {changedCount} rate{changedCount !== 1 ? 's' : ''} will be updated
                   </div>
                 )}
@@ -679,7 +679,7 @@ const LocationRatesTab = () => {
       >
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Source Location
             </label>
             <LocationAutocomplete
@@ -700,7 +700,7 @@ const LocationRatesTab = () => {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {copySourceLocation.locationName}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                       {copySourceLocation.address}
                       {copySourceLocation.city && `, ${copySourceLocation.city}`}
                     </div>

@@ -234,7 +234,7 @@ const Projects = () => {
       render: (user) => (
         <div>
           <div className="text-gray-900 dark:text-white">{user?.name || 'N/A'}</div>
-          <div className="text-sm text-gray-500">{user?.email || ''}</div>
+          <div className="text-xs sm:text-sm text-gray-500">{user?.email || ''}</div>
         </div>
       ),
     },
@@ -283,7 +283,7 @@ const Projects = () => {
                 style={{ width: `${progress || 0}%` }}
               />
             </div>
-            <span className="text-sm text-gray-600">{progress || 0}%</span>
+            <span className="text-sm sm:text-base leading-relaxed text-gray-600">{progress || 0}%</span>
           </div>
         );
       },
@@ -361,7 +361,7 @@ const Projects = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Projects</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white">Projects</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Manage service requests and projects
         </p>
@@ -423,12 +423,12 @@ const Projects = () => {
       {showQuoteModal && selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-bold leading-snug mb-4 text-gray-900 dark:text-white">
               Send Quote for {selectedProject.title}
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Quote Amount (₹)
                 </label>
                 <input
@@ -440,7 +440,7 @@ const Projects = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Quote Details
                 </label>
                 <textarea
@@ -452,7 +452,7 @@ const Projects = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Estimated Timeline
                 </label>
                 <input

@@ -54,12 +54,12 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
         <div className="space-y-6">
           {/* Basic Information */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
               Basic Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Location Name
                 </label>
                 <p className="text-gray-900 dark:text-white font-medium mt-1">
@@ -67,7 +67,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Location Type
                 </label>
                 <p className="text-gray-900 dark:text-white mt-1">
@@ -75,7 +75,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
                 </p>
               </div>
               <div className="col-span-1 md:col-span-2">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Address
                 </label>
                 <p className="text-gray-900 dark:text-white mt-1">
@@ -84,7 +84,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
               </div>
               {(location.city || location.state || location.zipCode) && (
                 <div className="col-span-1 md:col-span-2">
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <label className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                     City, State, Zip
                   </label>
                   <p className="text-gray-900 dark:text-white mt-1">
@@ -97,7 +97,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
 
           {/* Usage Statistics */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2" />
               Usage Statistics
             </h3>
@@ -105,8 +105,8 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Collections</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Collections</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-1">
                       {location.collectionsCount || 0}
                     </p>
                   </div>
@@ -116,8 +116,8 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Usage Count</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Usage Count</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-1">
                       {location.usageCount || 0}
                     </p>
                   </div>
@@ -127,7 +127,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Last Used</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Last Used</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
                       {location.lastUsedAt ? formatDate(location.lastUsedAt) : 'Never'}
                     </p>
@@ -141,7 +141,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
           {/* Recent Collections */}
           {location.recentCollections && location.recentCollections.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
                 Recent Collections
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -167,7 +167,7 @@ const LocationDetailsModal = ({ isOpen, onClose, locationId, onEdit, onDeactivat
           {/* Notes */}
           {location.notes && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-2">
                 Notes
               </h3>
               <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">

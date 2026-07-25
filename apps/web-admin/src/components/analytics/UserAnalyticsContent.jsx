@@ -64,10 +64,10 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Total Users
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.total || 0}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {analytics.users || analytics.total || 0} regular users
           </p>
         </div>
@@ -79,10 +79,10 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Active Users
           </h3>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-green-600 dark:text-green-400">
             {analytics.active || 0}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {activePercentage}% of total
           </p>
         </div>
@@ -94,10 +94,10 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Inactive Users
           </h3>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-red-600 dark:text-red-400">
             {analytics.inactive || 0}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {inactivePercentage}% of total
           </p>
         </div>
@@ -109,10 +109,10 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
             Recent Users
           </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
             {analytics.recent || 0}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Last 7 days
           </p>
         </div>
@@ -121,7 +121,7 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             User Status Distribution
           </h3>
           {hasData ? (
@@ -162,7 +162,7 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             User Status Overview
           </h3>
           {hasData ? (
@@ -226,26 +226,26 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
 
       {/* User Statistics Details */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
           User Statistics Summary
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <span className="text-gray-600 dark:text-gray-400 font-medium">Total Users</span>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {analytics.total || 0}
               </span>
             </div>
             <div className="flex justify-between items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <span className="text-gray-600 dark:text-gray-400 font-medium">Active Users</span>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-green-600 dark:text-green-400">
                 {analytics.active || 0}
               </span>
             </div>
             <div className="flex justify-between items-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <span className="text-gray-600 dark:text-gray-400 font-medium">Inactive Users</span>
-              <span className="text-2xl font-bold text-red-600 dark:text-red-400">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-red-600 dark:text-red-400">
                 {analytics.inactive || 0}
               </span>
             </div>
@@ -253,21 +253,21 @@ const UserAnalyticsContent = memo(({ analytics, loading, error }) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <span className="text-gray-600 dark:text-gray-400 font-medium">New Users (7 days)</span>
-              <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-purple-600 dark:text-purple-400">
                 {analytics.recent || 0}
               </span>
             </div>
             {analytics.users !== undefined && (
               <div className="flex justify-between items-center p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">Regular Users</span>
-                <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-primary-600 dark:text-primary-400">
                   {analytics.users || 0}
                 </span>
               </div>
             )}
             <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <span className="text-gray-600 dark:text-gray-400 font-medium">Activation Rate</span>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {activePercentage}%
               </span>
             </div>

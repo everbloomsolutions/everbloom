@@ -126,7 +126,7 @@ const LocationAssignmentTab = () => {
         
         if (location && typeof location === 'object' && location.locationName) {
           return (
-            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
               <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
               <span
                 className="truncate max-w-[120px] md:max-w-[200px]"
@@ -222,7 +222,7 @@ const LocationAssignmentTab = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
               Users ({users.length})
             </h2>
           </div>
@@ -233,10 +233,10 @@ const LocationAssignmentTab = () => {
           ) : error ? (
             <div className="text-center py-8">
               <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-2">
                 Error Loading Users
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error?.message || error}</p>
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-4">{error?.message || error}</p>
               <Button variant="primary" onClick={refetch}>
                 Try Again
               </Button>
@@ -279,7 +279,7 @@ const LocationAssignmentTab = () => {
         {selectedUser && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Location
               </label>
               <LocationAutocomplete
@@ -300,7 +300,7 @@ const LocationAssignmentTab = () => {
                       <div className="font-medium text-gray-900 dark:text-white">
                         {selectedLocation.locationName}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                         {selectedLocation.address}
                         {selectedLocation.city && `, ${selectedLocation.city}`}
                       </div>

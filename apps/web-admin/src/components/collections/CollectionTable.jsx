@@ -65,7 +65,7 @@ const CollectionTable = memo(({
       render: (items) => (
         <div className="space-y-1">
           {items?.map((item, idx) => (
-            <div key={idx} className="text-sm text-gray-600 dark:text-gray-400">
+            <div key={idx} className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
               {getMaterialTypeLabel(item.materialType)}: {item.weight} kg @ {formatCurrency(item.rate, { maximumFractionDigits: 2 })}/kg
             </div>
           ))}

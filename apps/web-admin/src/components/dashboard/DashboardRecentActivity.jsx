@@ -18,7 +18,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
       {/* User Activity Summary - Only for User role */}
       {isUser && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             My Activity Overview
           </h2>
           
@@ -30,8 +30,8 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   <Package className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Collections</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Total Collections</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                     {stats?.overview?.totalCollections || getCollections(recentData).length || 0}
                   </p>
                   {stats?.overview?.totalCollections && hasCollections(recentData) && (
@@ -49,8 +49,8 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">With Receipts</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">With Receipts</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                     {getCollections(recentData).filter(c => c.receiptNumber).length || 0}
                   </p>
                 </div>
@@ -63,8 +63,8 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   <IndianRupee className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Earnings</p>
-                  <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Total Earnings</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-primary-600 dark:text-primary-400">
                     {formatCurrency(
                       getCollections(recentData).reduce((sum, c) => sum + (c.totalAmount || 0), 0) || 0
                     )}
@@ -79,7 +79,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
       {/* User Activity Timeline - Only for User role */}
       {isUser && hasCollections(recentData) && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             My Activity Timeline
           </h2>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -110,7 +110,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                           <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                             {collection.receiptNumber ? 'Receipt Generated' : 'Collection Recorded'}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                             {collection.locationName || 'Collection Location'}
                           </p>
                         </div>
@@ -167,7 +167,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
 
       {/* Recent Data - Simplified for User role */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
           {isUser ? 'My Collections Overview' : isAgent ? 'My Recent Activity' : 'Recent Data'}
         </h2>
         <div className={`grid grid-cols-1 ${isUser ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-6`}>
@@ -177,19 +177,19 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">This Month</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">This Month</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                       {recentData.collectionsGrowth.thisMonth}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Last Month</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Last Month</p>
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                       {recentData.collectionsGrowth.lastMonth}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Growth</p>
+                    <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">Growth</p>
                     {recentData.collectionsGrowth.growth !== undefined && (
                       <div className={`flex items-center gap-1 text-sm font-medium ${
                         recentData.collectionsGrowth.growth >= 0 ? 'text-green-600' : 'text-red-600'
@@ -243,7 +243,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
           {isUser ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white flex items-center gap-2">
                   <Briefcase className="w-5 h-5" />
                   My Collections Summary
                 </h3>
@@ -260,13 +260,13 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                   {/* Summary Stats */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                         {getCollections(recentData).length}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Collections</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                         {formatNumber(
                           getCollections(recentData).reduce((sum, c) => sum + (c.totalWeight || 0), 0)
                         )}
@@ -274,7 +274,7 @@ const DashboardRecentActivity = ({ recentData, stats, isAdmin: _isAdmin, isAgent
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Weight</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-primary-600 dark:text-primary-400">
                         {formatCurrency(
                           getCollections(recentData).reduce((sum, c) => sum + (c.totalAmount || 0), 0)
                         )}

@@ -18,7 +18,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+      <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
         {isAgent ? 'My Performance Metrics' : "Today's Performance Metrics"}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -31,7 +31,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Collections per Hour
               </h3>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {performanceData.collectionsPerHour}
               </p>
             </div>
@@ -47,7 +47,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Peak Activity Time
               </h3>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
+              <p className="text-lg sm:text-xl font-bold leading-snug text-gray-900 dark:text-white">
                 {performanceData.peakActivityTime}
               </p>
             </div>
@@ -63,7 +63,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Revenue per Collection
               </h3>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {formatCurrency(performanceData.revenuePerCollection)}
               </p>
             </div>
@@ -74,7 +74,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
       {/* Active Agents (Admin/Super Admin only) */}
       {isAdmin && performanceData.activeAgents && performanceData.activeAgents.length > 0 && (
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <UserCog className="w-5 h-5" />
             Active Agents Today
           </h3>
@@ -85,7 +85,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
                 className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
                 <p className="font-medium text-gray-900 dark:text-white mb-2">{agent.agentName}</p>
-                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <div className="space-y-1 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                   <div className="flex justify-between">
                     <span>Collections:</span>
                     <span className="font-medium">{agent.collections}</span>
@@ -104,7 +104,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
       {/* Active Locations */}
       {performanceData.activeLocations && performanceData.activeLocations.length > 0 && (
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5" />
             {isAgent ? 'My Active Locations Today' : 'Active Locations Today'}
           </h3>
@@ -127,7 +127,7 @@ const DashboardPerformanceMetrics = ({ performanceData, isAdmin, isAgent, assign
                 className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
                 <p className="font-medium text-gray-900 dark:text-white mb-2">{location.locationName}</p>
-                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <div className="space-y-1 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                   <div className="flex justify-between">
                     <span>Collections:</span>
                     <span className="font-medium">{location.collections}</span>

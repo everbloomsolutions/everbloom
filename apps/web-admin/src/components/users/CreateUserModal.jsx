@@ -456,7 +456,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Location Selection for User Role */}
         {formData.role === USER_ROLES.USER && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Default Location <span className="text-red-500">*</span>
             </label>
             <LocationAutocomplete
@@ -481,7 +481,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {selectedDefaultLocation.locationName}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                       {selectedDefaultLocation.locality || selectedDefaultLocation.address}
                       {selectedDefaultLocation.city && `, ${selectedDefaultLocation.city}`}
                     </div>
@@ -495,7 +495,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Location Selection for Agent Role */}
         {formData.role === USER_ROLES.AGENT && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Assigned Locations <span className="text-red-500">*</span>
             </label>
             <LocationAutocomplete
@@ -509,7 +509,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
             )}
             {selectedAssignedLocations.length > 0 && (
               <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Selected Locations ({selectedAssignedLocations.length})
                 </label>
                 {(selectedAssignedLocations || []).map((location) => (
@@ -523,7 +523,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="font-medium text-gray-900 dark:text-white">
                           {location.locationName}
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                           {location.locality || location.address}
                           {location.city && `, ${location.city}`}
                         </div>

@@ -89,7 +89,7 @@ const FormInput = ({
       {helperText && !error && (
         <p 
           id={`${name}-helper`}
-          className="mt-1 text-sm text-gray-500 dark:text-gray-400"
+          className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400"
         >
           {helperText}
         </p>

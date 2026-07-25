@@ -394,7 +394,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
             {/* Default Location for User Role */}
             {formData.role === USER_ROLES.USER && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Default Location
                 </label>
                 <LocationAutocomplete
@@ -420,7 +420,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                           <div className="font-medium text-gray-900 dark:text-white">
                             {selectedDefaultLocation.locationName}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <div className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mt-1">
                             {selectedDefaultLocation.address}
                             {selectedDefaultLocation.city && `, ${selectedDefaultLocation.city}`}
                           </div>
@@ -442,11 +442,11 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
             {/* Assigned Locations for Agent Role */}
             {formData.role === USER_ROLES.AGENT && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Assigned Locations
                 </label>
                 {loadingLocations ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Loading locations...</div>
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Loading locations...</div>
                 ) : (
                   <>
                     <LocationAutocomplete
@@ -460,7 +460,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                     )}
                     {selectedAssignedLocations.length > 0 && (
                       <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                           Selected Locations ({selectedAssignedLocations.length})
                         </label>
                         {(selectedAssignedLocations || []).map((location) => (
@@ -499,7 +499,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
 
             {/* Info for other roles */}
             {formData.role !== USER_ROLES.USER && formData.role !== USER_ROLES.AGENT && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
                 Location assignment is only available for User and Agent roles.
               </p>
             )}

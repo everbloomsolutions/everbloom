@@ -30,7 +30,7 @@ const AuthLayout = () => {
               <Logo size="lg" className="max-w-[200px] max-h-[80px] w-auto h-auto" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{appConfig.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white mb-2">{appConfig.name}</h1>
           <p className="text-gray-600 dark:text-gray-400">Onestop Recycling Solution Dashboard</p>
         </div>
 
@@ -40,7 +40,7 @@ const AuthLayout = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400 animate-in fade-in">
+        <div className="text-center mt-6 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 animate-in fade-in">
           <p>&copy; {new Date().getFullYear()} Everbloom. All rights reserved.</p>
         </div>
       </div>

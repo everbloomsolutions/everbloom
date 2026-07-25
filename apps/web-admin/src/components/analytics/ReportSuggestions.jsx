@@ -106,7 +106,7 @@ const ReportSuggestions = ({ reportType, currentFilters = {}, onGenerateReport }
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="w-5 h-5 text-yellow-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
             Report Suggestions
           </h3>
         </div>
@@ -122,7 +122,7 @@ const ReportSuggestions = ({ reportType, currentFilters = {}, onGenerateReport }
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="w-5 h-5 text-yellow-500" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
             Report Suggestions
           </h3>
         </div>
@@ -138,11 +138,11 @@ const ReportSuggestions = ({ reportType, currentFilters = {}, onGenerateReport }
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
         <Lightbulb className="w-5 h-5 text-yellow-500" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
           Report Suggestions
         </h3>
       </div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-4">
         Based on your current view and role, here are some suggested reports:
       </p>
       <div className="space-y-3">

@@ -74,7 +74,7 @@ class ErrorBoundary extends Component {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-800 dark:text-white">
                   {this.props.title || 'Oops! Something went wrong'}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">

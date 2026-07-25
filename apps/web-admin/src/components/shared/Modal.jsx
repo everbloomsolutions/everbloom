@@ -70,7 +70,7 @@ const Modal = memo(({ isOpen, onClose, title, children, size = 'md' }) => {
         <div className={`inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full ${sizes[size]}`}>
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             {title && (
-              <h3 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 id="modal-title" className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
                 {title}
               </h3>
             )}

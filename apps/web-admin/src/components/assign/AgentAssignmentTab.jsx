@@ -423,7 +423,7 @@ const AgentAssignmentTab = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
               Agents ({agents.length})
             </h2>
           </div>
@@ -434,10 +434,10 @@ const AgentAssignmentTab = () => {
           ) : error ? (
             <div className="text-center py-8">
               <AlertCircle className="w-12 h-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-2">
                 Error Loading Agents
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-4">{error}</p>
               <Button variant="primary" onClick={() => refetch()}>
                 Try Again
               </Button>
@@ -497,7 +497,7 @@ const AgentAssignmentTab = () => {
         {selectedAgent && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Add Locations
               </label>
               <LocationAutocomplete
@@ -509,7 +509,7 @@ const AgentAssignmentTab = () => {
             </div>
             {selectedLocations.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Selected Locations ({selectedLocations.length})
                 </label>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -596,11 +596,11 @@ const AgentAssignmentTab = () => {
             </div>
 
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-4">
                 Select an agent to transfer this location to. This will reassign the location from the current agent to the selected agent.
               </p>
 
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Agent
               </label>
               <select

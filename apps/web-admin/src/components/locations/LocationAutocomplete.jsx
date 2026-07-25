@@ -233,7 +233,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
                   <div className="font-medium text-gray-900 dark:text-white">
                     {location.locationName}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     {location.locality || location.address}{location.city ? `, ${location.city}` : ''}
                   </div>
                   <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -262,7 +262,7 @@ const LocationAutocomplete = ({ value, onChange, onLocationSelect, onSearchChang
                   <div className="font-medium text-gray-900 dark:text-white">
                     {location.locationName}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     {location.locality || location.address}{location.city ? `, ${location.city}` : ''}
                   </div>
                   <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">

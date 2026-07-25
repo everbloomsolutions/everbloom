@@ -132,13 +132,13 @@ function ConfirmationModal({
           <div className="flex-1">
             <h2
               id="confirmation-modal-title"
-              className="text-xl font-bold text-gray-900 dark:text-white mb-2"
+              className="text-lg sm:text-xl font-bold leading-snug text-gray-900 dark:text-white mb-2"
             >
               {title}
             </h2>
             <p
               id="confirmation-modal-message"
-              className="text-sm text-gray-600 dark:text-gray-400"
+              className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400"
             >
               {message}
             </p>

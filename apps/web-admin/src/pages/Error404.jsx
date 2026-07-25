@@ -7,8 +7,8 @@ const Error404 = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="text-center">
-        <h1 className="text-9xl font-bold text-primary-600 dark:text-primary-400">404</h1>
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mt-4">
+        <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold leading-none text-primary-600 dark:text-primary-400">404</h1>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight text-gray-900 dark:text-white mt-4">
           Page Not Found
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mt-4 mb-8">

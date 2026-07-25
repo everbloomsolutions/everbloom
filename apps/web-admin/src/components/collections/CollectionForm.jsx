@@ -516,7 +516,7 @@ const CollectionForm = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <h2 className="text-lg sm:text-xl font-bold leading-snug mb-4 text-gray-900 dark:text-white">
           {editingCollectionId ? 'Edit Collection' : 'Create New Collection'}
         </h2>
         <div className="space-y-4">
@@ -565,7 +565,7 @@ const CollectionForm = ({
             <>
               {/* Location Autocomplete */}
               <div data-location-field>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Select Location <span className="text-red-500">*</span>
                 </label>
                 {user?.role === USER_ROLES.AGENT && (
@@ -620,7 +620,7 @@ const CollectionForm = ({
             <>
               {/* Location Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Location Type *
                 </label>
                 <select
@@ -680,7 +680,7 @@ const CollectionForm = ({
                   placeholder="City"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     State
                   </label>
                   <select
@@ -721,7 +721,7 @@ const CollectionForm = ({
           {/* Collection Items */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 Collection Items *
               </label>
               <Button
@@ -819,7 +819,7 @@ const CollectionForm = ({
 
           {/* GST Rate (Read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               GST Rate (%)
             </label>
             <input

@@ -147,7 +147,7 @@ const CollectionAnalyticsContent = memo(({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Time Period
             </label>
             <select
@@ -166,7 +166,7 @@ const CollectionAnalyticsContent = memo(({
           </div>
           {activeSubTab === 'time-series' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Granularity
               </label>
               <select
@@ -183,7 +183,7 @@ const CollectionAnalyticsContent = memo(({
           {dateRangeType === 'custom' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Date
                 </label>
                 <input
@@ -194,7 +194,7 @@ const CollectionAnalyticsContent = memo(({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Date
                 </label>
                 <input
@@ -226,10 +226,10 @@ const CollectionAnalyticsContent = memo(({
               <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">
                 {stat.title}
               </h3>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mb-1">
                 {stat.value}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {stat.subtext}
               </p>
             </div>
@@ -242,7 +242,7 @@ const CollectionAnalyticsContent = memo(({
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
                 Collection Item Types (Pie Chart)
               </h3>
               {materialTypes.length > 0 ? (
@@ -283,7 +283,7 @@ const CollectionAnalyticsContent = memo(({
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
                 Collection Item Types (Bar Chart)
               </h3>
               {materialTypes.length > 0 ? (
@@ -325,7 +325,7 @@ const CollectionAnalyticsContent = memo(({
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
               Material Type Statistics
             </h3>
             <div className="space-y-3">
@@ -361,19 +361,19 @@ const CollectionAnalyticsContent = memo(({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Average Collection Value</h3>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {formatCurrency(financialAnalytics.averageCollectionValue || 0)}
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">With Receipt</h3>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {financialAnalytics.collectionsWithReceipt || 0}
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Without Receipt</h3>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white">
                 {financialAnalytics.collectionsWithoutReceipt || 0}
               </p>
             </div>
@@ -381,7 +381,7 @@ const CollectionAnalyticsContent = memo(({
 
           {financialAnalytics.revenueByMaterialType && financialAnalytics.revenueByMaterialType.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
                 Revenue by Material Type
               </h3>
               <div className="space-y-4">
@@ -432,7 +432,7 @@ const CollectionAnalyticsContent = memo(({
 
           {timeSeriesAnalytics.trends && timeSeriesAnalytics.trends.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
                 Revenue Trends
               </h3>
               {timeSeriesAnalytics.trends && timeSeriesAnalytics.trends.length > 0 ? (

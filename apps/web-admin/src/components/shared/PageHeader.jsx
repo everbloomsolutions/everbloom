@@ -10,7 +10,7 @@ const PageHeader = memo(({
     <div className={`mb-6 sm:mb-8 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white mb-1 sm:mb-2">
             {title}
           </h1>
           {subtitle && (

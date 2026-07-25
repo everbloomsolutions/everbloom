@@ -311,7 +311,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
 
         {/* Report Type Display */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Report Type
           </label>
           <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -323,7 +323,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
 
         {/* Format Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Format
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -359,7 +359,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
         {/* Options */}
         {format === 'pdf' && (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
               Options
             </label>
             <div className="space-y-2">
@@ -391,7 +391,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
 
         {/* Report Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Report Title (Optional)
           </label>
           <input
@@ -405,7 +405,7 @@ const ReportGenerator = ({ isOpen, onClose, reportType, currentFilters = {} }) =
 
         {/* Date Range Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Date Range (Optional)
           </label>
           {showTimePeriodSelector ? (

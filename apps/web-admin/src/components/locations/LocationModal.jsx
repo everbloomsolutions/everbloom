@@ -228,7 +228,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Location Type *
             </label>
             <SelectInput
@@ -279,7 +279,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               State
             </label>
             <SelectInput
@@ -304,7 +304,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tags (comma-separated)
             </label>
             <input
@@ -317,7 +317,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Group
             </label>
             <SelectInput
@@ -334,7 +334,7 @@ const LocationModal = ({ isOpen, onClose, onSuccess, location = null }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Notes (Admin only)
           </label>
           <textarea

@@ -44,11 +44,11 @@ const Assign = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white flex items-center gap-3">
             <UserCheck className="w-8 h-8 text-primary-600" />
             Assign
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
             Manage agent assignments and material rates
           </p>
         </div>

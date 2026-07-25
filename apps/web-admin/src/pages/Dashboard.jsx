@@ -179,7 +179,7 @@ const Dashboard = () => {
     return (
       <div>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white mb-2">Dashboard</h1>
         </div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
           <p className="text-red-800 dark:text-red-200">{error?.message || 'Failed to load dashboard data. Please refresh the page.'}</p>

@@ -55,7 +55,7 @@ const FileUploader = ({
   return (
     <div className="mb-4">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {label}
         </label>
       )}
@@ -72,7 +72,7 @@ const FileUploader = ({
         />
         <label htmlFor={name} className="cursor-pointer">
           <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
             Click to upload or drag and drop
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">

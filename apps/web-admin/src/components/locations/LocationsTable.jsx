@@ -44,7 +44,7 @@ const LocationsTable = memo(({
       render: (name, location) => (
         <div>
           <div className="font-medium text-gray-900 dark:text-white">{name}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {getLocationTypeLabel(location.locationType)}
           </div>
         </div>
@@ -83,7 +83,7 @@ const LocationsTable = memo(({
       render: (date) => (
         <div>
           {date ? (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {formatDate(date)}
             </span>
           ) : (

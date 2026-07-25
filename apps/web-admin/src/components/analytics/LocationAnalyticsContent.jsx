@@ -120,7 +120,7 @@ const LocationAnalyticsContent = memo(({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className={`grid grid-cols-1 gap-4 ${dateRangeType === 'custom' ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Time Period
             </label>
             <select
@@ -140,7 +140,7 @@ const LocationAnalyticsContent = memo(({
           {dateRangeType === 'custom' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Date
                 </label>
                 <input
@@ -151,7 +151,7 @@ const LocationAnalyticsContent = memo(({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Date
                 </label>
                 <input
@@ -164,7 +164,7 @@ const LocationAnalyticsContent = memo(({
             </>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Location Type
             </label>
             <select
@@ -186,8 +186,8 @@ const LocationAnalyticsContent = memo(({
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Locations</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Locations</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-1">
                 {analytics.total}
               </p>
             </div>
@@ -198,8 +198,8 @@ const LocationAnalyticsContent = memo(({
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Active Locations</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Active Locations</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-green-600 dark:text-green-400 mt-1">
                 {analytics.active}
               </p>
             </div>
@@ -210,8 +210,8 @@ const LocationAnalyticsContent = memo(({
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Usage</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Usage</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-1">
                 {analytics.totalUsage}
               </p>
             </div>
@@ -222,8 +222,8 @@ const LocationAnalyticsContent = memo(({
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg Usage</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Avg Usage</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-1">
                 {analytics.averageUsage.toFixed(1)}
               </p>
             </div>
@@ -235,7 +235,7 @@ const LocationAnalyticsContent = memo(({
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Usage by Location Type
           </h3>
           {Object.keys(byType).length > 0 ? (
@@ -276,7 +276,7 @@ const LocationAnalyticsContent = memo(({
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Top 10 Most Used Locations
           </h3>
           {mostUsed.length > 0 ? (
@@ -317,7 +317,7 @@ const LocationAnalyticsContent = memo(({
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
           Usage Over Time
         </h3>
         {usageTrends.length > 0 ? (

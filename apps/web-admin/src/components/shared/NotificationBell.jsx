@@ -166,7 +166,7 @@ const NotificationBell = () => {
             ) : (
               <div className="px-4 py-8 text-center">
                 <Bell className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">No notifications</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">No notifications</p>
               </div>
             )}
           </div>

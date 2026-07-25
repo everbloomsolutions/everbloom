@@ -57,7 +57,7 @@ const StatCard = ({ label, value, icon: Icon, color }) => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{value}</p>
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mt-2">{value}</p>
         </div>
         <div className={`p-3 ${bg} rounded-lg`}>
           <Icon className={`w-6 h-6 ${text}`} />
@@ -171,7 +171,7 @@ const AuditLogs = () => {
         key: 'action',
         label: 'Action',
         render: (action) => (
-          <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+          <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 capitalize">
             {action.replace(/_/g, ' ')}
           </span>
         ),
@@ -226,7 +226,7 @@ const AuditLogs = () => {
           subtitle="System activity and audit trails"
         />
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-red-800 dark:text-red-200 mb-2">
             Error loading audit logs
           </h3>
           <p className="text-red-600 dark:text-red-300 mb-4">
@@ -279,7 +279,7 @@ const AuditLogs = () => {
 
       {showAnalytics && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Audit Log Analytics
           </h2>
 
@@ -298,7 +298,7 @@ const AuditLogs = () => {
                 <div className="space-y-2">
                   {analytics.topActions?.slice(0, 5).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                      <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 capitalize">
                         {item.action.replace(/_/g, ' ')}
                       </span>
                       <div className="flex items-center gap-2">
@@ -322,7 +322,7 @@ const AuditLogs = () => {
                 </h3>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-lg font-bold ${
+                    className={`text-lg sm:text-xl font-bold leading-snug ${
                       analytics.activityTrend === 'increasing'
                         ? 'text-green-600'
                         : analytics.activityTrend === 'decreasing'
@@ -336,7 +336,7 @@ const AuditLogs = () => {
                         ? '↓'
                         : '→'}
                   </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                  <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 capitalize">
                     {analytics.activityTrend}
                   </span>
                 </div>
@@ -350,7 +350,7 @@ const AuditLogs = () => {
                       .slice(0, 5)
                       .map(([action, count]) => (
                         <div key={action} className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                          <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 capitalize">
                             {action.replace(/_/g, ' ')}
                           </span>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -394,7 +394,7 @@ const AuditLogs = () => {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
             Audit Log Entries
           </h2>
         </div>

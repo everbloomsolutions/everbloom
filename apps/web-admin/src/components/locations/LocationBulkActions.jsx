@@ -38,7 +38,7 @@ const LocationBulkActions = ({
         </Button>
         <button
           onClick={onClearSelection}
-          className="px-3 py-2 min-h-[44px] text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 w-full sm:w-auto text-center"
+          className="px-3 py-2 min-h-[44px] text-sm sm:text-base leading-relaxed text-gray-600 hover:text-gray-800 dark:text-gray-400 w-full sm:w-auto text-center"
         >
           Clear
         </button>

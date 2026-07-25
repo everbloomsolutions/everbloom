@@ -841,17 +841,17 @@ const Collections = () => {
       {showTransferModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-xs md:max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-bold leading-snug mb-4 text-gray-900 dark:text-white">
               Transfer Collection
             </h2>
 
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                 Select an agent to transfer this collection to. This action will change the ownership of the collection.
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Agent
                 </label>
                 <select

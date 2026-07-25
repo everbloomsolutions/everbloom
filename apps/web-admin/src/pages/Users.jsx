@@ -210,14 +210,14 @@ const Users = () => {
       <div>
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Users</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white mb-2">Users</h1>
             <p className="text-gray-600 dark:text-gray-400">
               Manage all registered users and their permissions
             </p>
           </div>
         </div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-red-800 dark:text-red-200 mb-2">
             Error loading users
           </h3>
           <p className="text-red-600 dark:text-red-300 mb-4">

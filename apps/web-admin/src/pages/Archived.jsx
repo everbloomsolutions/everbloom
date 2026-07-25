@@ -467,7 +467,7 @@ const Archived = () => {
     <div>
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Archived</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white">Archived</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Review and manage deleted Collections, Locations, and Users
           </p>

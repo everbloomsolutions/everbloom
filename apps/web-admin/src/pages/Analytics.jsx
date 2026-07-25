@@ -539,7 +539,7 @@ const Analytics = () => {
     <div>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white mb-2">Analytics</h1>
           <p className="text-gray-600 dark:text-gray-400">
             {user?.role === USER_ROLES.USER
               ? 'Your personal analytics and performance insights'
@@ -579,11 +579,11 @@ const Analytics = () => {
               </Button>
             </>
           ) : user?.role ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               No report types available for your role
             </div>
           ) : (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               Loading report options...
             </div>
           )}
@@ -688,12 +688,12 @@ const Analytics = () => {
       {/* Report Suggestions - At the bottom for all roles */}
       <div className="mb-6 mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
             Report Suggestions
           </h3>
           <button
             onClick={() => setSuggestionsCollapsed(!suggestionsCollapsed)}
-            className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="flex items-center gap-1 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
             title={suggestionsCollapsed ? 'Show report suggestions' : 'Hide report suggestions'}
           >
             {suggestionsCollapsed ? (

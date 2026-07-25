@@ -17,7 +17,7 @@ const DashboardAdminStats = ({ stats, navigate }) => {
       {/* Recent Users - Admin only */}
       {stats.recentUsers && stats.recentUsers.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             Recent Users
           </h2>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -69,7 +69,7 @@ const DashboardAdminStats = ({ stats, navigate }) => {
       {/* User Growth Chart - Admin only */}
       {stats.userGrowth && stats.userGrowth.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white mb-4">
             User Growth (Last 12 Months)
           </h2>
           <ChartCard title="User Growth Trend">
@@ -146,7 +146,7 @@ const DashboardAdminStats = ({ stats, navigate }) => {
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">
                     {card.title}
                   </p>
-                  <p className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold leading-none text-gray-900 dark:text-white mb-1">
                     {card.value.toLocaleString()}
                   </p>
                 </div>

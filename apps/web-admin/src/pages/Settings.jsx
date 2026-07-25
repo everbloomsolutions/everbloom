@@ -85,7 +85,7 @@ const Settings = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Manage your account settings
         </p>
@@ -97,7 +97,7 @@ const Settings = () => {
             <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
               <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
               Profile Information
             </h2>
           </div>
@@ -134,7 +134,7 @@ const Settings = () => {
             />
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Role
               </label>
               <span className={`px-3 py-2 inline-block text-sm rounded-lg font-medium ${
@@ -158,7 +158,7 @@ const Settings = () => {
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-semibold leading-snug text-gray-900 dark:text-white">
               Change Password
             </h2>
           </div>

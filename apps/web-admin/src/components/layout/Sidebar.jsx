@@ -50,7 +50,7 @@ const Sidebar = () => {
         aria-label="Main navigation"
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-gray-800 dark:to-gray-800">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-lg sm:text-xl font-bold leading-snug text-gray-900 dark:text-white">
             {appConfig.name}
           </h1>
           <button

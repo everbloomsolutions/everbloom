@@ -276,7 +276,7 @@ const CollectionImport = ({
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-xs md:max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
-            <h2 id="import-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 id="import-modal-title" className="text-lg sm:text-xl font-bold leading-snug text-gray-900 dark:text-white">
               Import Collections
             </h2>
             {!importJobId && (
@@ -293,7 +293,7 @@ const CollectionImport = ({
 
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
               Download the template to see the required format
             </p>
             <Button
@@ -424,7 +424,7 @@ const CollectionImport = ({
             <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Import Progress</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">{importProgress}%</span>
+                <span className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">{importProgress}%</span>
               </div>
               <div 
                 className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2"
@@ -461,7 +461,7 @@ const CollectionImport = ({
               <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                 Import Results
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400">
                 Success: {importResults.success} | Failed: {importResults.failed}
               </p>
               {importResults.errorReport && (
