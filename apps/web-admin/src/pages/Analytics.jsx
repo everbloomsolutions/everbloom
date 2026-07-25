@@ -10,6 +10,7 @@ import { createQueryFn } from '../utils/queryAdapter';
 import { analyticsApi } from '../api';
 import logger from '../utils/logger';
 import { USER_ROLES } from '../utils/constants';
+import { hasPermission } from '../utils/permissionUtils';
 import { formatCurrency as formatCurrencyUtil } from '../utils/formatCurrency';
 import { validateReportType, validateDateRange } from '../utils/reportValidation';
 import { handleReportError } from '../utils/reportErrorHandler';
@@ -20,6 +21,14 @@ import AgentAnalyticsContent from '../components/analytics/AgentAnalyticsContent
 import CollectionAnalyticsContent from '../components/analytics/CollectionAnalyticsContent';
 import ReportSuggestions from '../components/analytics/ReportSuggestions';
 import ReportGenerator from '../components/analytics/ReportGenerator';
+
+const ANALYTICS_ROLE_MAP = {
+  location: ['admin', 'super_admin', 'agent'],
+  user: ['admin', 'super_admin', 'agent'],
+  agent: ['admin', 'super_admin', 'agent'],
+  'my-analytics': ['admin', 'super_admin', 'agent', 'user'],
+  collection: ['admin', 'super_admin', 'agent', 'user'],
+};
 
 const Analytics = () => {
   const { user } = useAuth();
@@ -124,21 +133,25 @@ const Analytics = () => {
     dateRangeType: filters.dateRangeType,
     customDateRange,
     locationTypeFilter: filters.locationTypeFilter,
+    enabled: filters.tab === 'location' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.location),
   });
 
   const myAnalyticsQuery = useAnalytics('my-analytics', {
     dateRangeType: filters.dateRangeType,
     customDateRange,
+    enabled: filters.tab === 'my-analytics' && hasPermission(user?.role, ANALYTICS_ROLE_MAP['my-analytics']),
   });
 
   const userAnalyticsQuery = useAnalytics('user', {
     dateRangeType: filters.dateRangeType,
     customDateRange,
+    enabled: filters.tab === 'user' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.user),
   });
 
   const agentAnalyticsQuery = useAnalytics('agent', {
     dateRangeType: filters.dateRangeType,
     customDateRange,
+    enabled: filters.tab === 'agent' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.agent),
   });
 
   // Collection analytics - use direct query (simplified for now)
@@ -152,7 +165,7 @@ const Analytics = () => {
       params.granularity = filters.granularity;
       return analyticsApi.getCollectionAnalytics(params);
     }),
-    enabled: filters.tab === 'collection',
+    enabled: filters.tab === 'collection' && hasPermission(user?.role, ANALYTICS_ROLE_MAP.collection),
     staleTime: 60000,
   });
 

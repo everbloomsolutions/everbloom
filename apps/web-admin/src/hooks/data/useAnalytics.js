@@ -86,6 +86,7 @@ const calculateDateRange = (dateRangeType, customDateRange) => {
  * @param {Object} options.customDateRange - Custom date range { startDate, endDate }
  * @param {string} options.locationTypeFilter - Location type filter
  * @param {string} options.granularity - Time granularity (for collection analytics)
+ * @param {boolean} options.enabled - Whether the query should be enabled (default true)
  * @returns {Object} { data, loading, error, refetch }
  */
 export const useAnalytics = (type, options = {}) => {
@@ -94,6 +95,7 @@ export const useAnalytics = (type, options = {}) => {
     customDateRange = {},
     locationTypeFilter = 'all',
     granularity = 'daily',
+    enabled: enabledOption = true,
   } = options;
 
   const dateRange = useMemo(
@@ -130,6 +132,7 @@ export const useAnalytics = (type, options = {}) => {
 
   // Query function with response adapter
   const queryFn = useMemo(() => {
+    if (!enabledOption) return null;
     let apiFunction;
     switch (type) {
       case 'location':
@@ -151,7 +154,7 @@ export const useAnalytics = (type, options = {}) => {
         return null;
     }
     return createQueryFn(apiFunction);
-  }, [type, queryParams]);
+  }, [type, queryParams, enabledOption]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
