@@ -199,10 +199,10 @@ const Archived = () => {
   }, [setSearchParams]);
 
 
-  // Get counts for tabs (from cached queries)
-  const collectionsCount = collectionsQuery.data?.projects?.length || 0;
-  const locationsCount = locationsQuery.data?.locations?.length || 0;
-  const usersCount = usersQuery.data?.users?.length || 0;
+  // Get counts for tabs (from cached queries - prefer total count)
+  const collectionsCount = collectionsQuery.data?.total || collectionsQuery.data?.projects?.length || 0;
+  const locationsCount = locationsQuery.data?.total || locationsQuery.data?.locations?.length || 0;
+  const usersCount = usersQuery.data?.total || usersQuery.data?.users?.length || 0;
 
 
   // Collections columns
@@ -381,9 +381,13 @@ const Archived = () => {
       label: 'Role',
       render: (role) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          role === 'admin' 
-            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' 
-            : 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+          role === 'super_admin'
+            ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+            : role === 'admin'
+            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+            : role === 'agent'
+            ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+            : 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300'
         }`}>
           {role || '-'}
         </span>

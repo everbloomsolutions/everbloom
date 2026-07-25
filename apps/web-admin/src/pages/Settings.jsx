@@ -138,6 +138,7 @@ const Settings = () => {
                 Role
               </label>
               <span className={`px-3 py-2 inline-block text-sm rounded-lg font-medium ${
+                user?.role === 'super_admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                 user?.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
                 user?.role === 'agent' ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' :
                 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'

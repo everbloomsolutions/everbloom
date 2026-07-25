@@ -192,7 +192,7 @@ const AuditLogs = () => {
       label: 'Action',
       render: (action) => (
         <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-          {action.replace('_', ' ')}
+          {action.replace(/_/g, ' ')}
         </span>
       ),
     },
@@ -313,7 +313,7 @@ const AuditLogs = () => {
                 {analytics.topActions?.slice(0, 5).map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                      {item.action.replace('_', ' ')}
+                      {item.action.replace(/_/g, ' ')}
                     </span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">

@@ -79,7 +79,6 @@ const Sidebar = () => {
                 animation: `fadeInLeft 0.3s ease-out ${index * 0.05}s both`
               }}
               aria-label={`Navigate to ${item.label}`}
-              aria-current={({ isActive }) => isActive ? 'page' : undefined}
             >
               <item.icon className={`w-5 h-5 mr-3 transition-transform group-hover:scale-110 ${
                 sidebarOpen ? '' : ''

@@ -314,7 +314,6 @@ const Users = () => {
         isOpen={showDeleteConfirm}
         onClose={() => {
           closeDeleteConfirm();
-          closeDeleteConfirm();
           closeDeleteConfirmData();
         }}
         onConfirm={confirmDeleteUser}
@@ -328,7 +327,6 @@ const Users = () => {
       <ConfirmationModal
         isOpen={showRoleChangeConfirm}
         onClose={() => {
-          closeRoleChangeConfirm();
           closeRoleChangeConfirm();
           closeRoleChangeConfirmData();
         }}
