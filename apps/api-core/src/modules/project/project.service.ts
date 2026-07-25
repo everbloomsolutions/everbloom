@@ -953,14 +953,14 @@ export class ProjectService {
       deletedAt: { $exists: false },
     };
 
-    // Date range filter
+    // Date range filter on collectionDate (consistent with financial/time-series analytics)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.createdAt = {};
+      baseQuery.collectionDate = {};
       if (filters.startDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$gte = new Date(filters.startDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
       }
       if (filters.endDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$lte = new Date(filters.endDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
       }
     }
 
@@ -1018,22 +1018,22 @@ export class ProjectService {
     switch (granularity) {
       case 'weekly':
         dateGroupFormat = {
-          year: { $year: '$createdAt' },
-          week: { $week: '$createdAt' },
+          year: { $year: '$collectionDate' },
+          week: { $week: '$collectionDate' },
         };
         break;
       case 'monthly':
         dateGroupFormat = {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' },
+          year: { $year: '$collectionDate' },
+          month: { $month: '$collectionDate' },
         };
         break;
       case 'daily':
       default:
         dateGroupFormat = {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' },
-          day: { $dayOfMonth: '$createdAt' },
+          year: { $year: '$collectionDate' },
+          month: { $month: '$collectionDate' },
+          day: { $dayOfMonth: '$collectionDate' },
         };
         break;
     }
@@ -1044,9 +1044,9 @@ export class ProjectService {
       {
         $group: {
           _id: dateGroupFormat,
-          date: { $first: '$createdAt' },
+          date: { $first: '$collectionDate' },
           count: { $sum: 1 },
-          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
           completed: {
             $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
@@ -1069,7 +1069,7 @@ export class ProjectService {
         $group: {
           _id: null,
           totalCollections: { $sum: 1 },
-          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
           completedCollections: {
             $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
@@ -1083,7 +1083,7 @@ export class ProjectService {
           byServiceType: {
             $push: {
               serviceType: '$serviceType',
-              value: { $ifNull: ['$totalValue', 0] },
+              value: { $ifNull: ['$totalAmount', 0] },
               weight: { $ifNull: ['$totalWeight', 0] },
             },
           },
@@ -1241,6 +1241,9 @@ export class ProjectService {
         $group: {
           _id: null,
           totalCollections: { $sum: 1 },
+          collectionsWithReceipt: {
+            $sum: { $cond: [{ $and: [{ $ne: ['$receiptNumber', null] }, { $ne: ['$receiptNumber', ''] }] }, 1, 0] },
+          },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
           subTotal: { $sum: { $ifNull: ['$subTotal', 0] } },
           gstAmount: { $sum: { $ifNull: ['$gstAmount', 0] } },
@@ -1252,21 +1255,27 @@ export class ProjectService {
     const result = await this.projectModel.aggregate(pipeline as any);
     const row = result?.[0] || {
       totalCollections: 0,
+      collectionsWithReceipt: 0,
       totalWeight: 0,
       subTotal: 0,
       gstAmount: 0,
       totalAmount: 0,
     };
 
+    const totalCollections = row.totalCollections || 0;
+    const collectionsWithReceipt = row.collectionsWithReceipt || 0;
+
     return {
       success: true,
       data: {
-        totalCollections: row.totalCollections,
+        totalCollections,
+        collectionsWithReceipt,
+        collectionsWithoutReceipt: Math.max(0, totalCollections - collectionsWithReceipt),
         totalWeight: row.totalWeight,
         subTotal: row.subTotal,
         gstAmount: row.gstAmount,
         totalAmount: row.totalAmount,
-        averageCollectionValue: row.totalCollections > 0 ? row.totalAmount / row.totalCollections : 0,
+        averageCollectionValue: totalCollections > 0 ? row.totalAmount / totalCollections : 0,
       },
     };
   }
@@ -1349,14 +1358,14 @@ export class ProjectService {
       deletedAt: { $exists: false },
     };
 
-    // Date range filter
+    // Date range filter on collectionDate (consistent with other analytics endpoints)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.createdAt = {};
+      baseQuery.collectionDate = {};
       if (filters.startDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$gte = new Date(filters.startDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
       }
       if (filters.endDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$lte = new Date(filters.endDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
       }
     }
 
@@ -1381,7 +1390,7 @@ export class ProjectService {
         $group: {
           _id: '$collectedBy',
           totalCollections: { $sum: 1 },
-          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
           completedCollections: {
             $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
@@ -1427,7 +1436,7 @@ export class ProjectService {
         $group: {
           _id: {
             collectedBy: '$collectedBy',
-            date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$collectionDate' } },
           },
           count: { $sum: 1 },
         },
@@ -1496,6 +1505,20 @@ export class ProjectService {
         averageCollectionValue: 0,
       };
 
+    // Attach comparison metrics to each agent
+    const pctDiff = (value: number, avg: number): number =>
+      avg > 0 ? Number((((value - avg) / avg) * 100).toFixed(2)) : 0;
+
+    (agents || []).forEach((agent: any) => {
+      agent.comparison = {
+        collectionsVsAverage: pctDiff(agent.totalCollections || 0, teamAverages.averageCollections),
+        revenueVsAverage: pctDiff(agent.totalRevenue || 0, teamAverages.averageRevenue),
+        weightVsAverage: pctDiff(agent.totalWeight || 0, teamAverages.averageWeight),
+        collectionsPerDayVsAverage: pctDiff(agent.collectionsPerDay || 0, teamAverages.averageCollectionsPerDay),
+        averageCollectionValueVsAverage: pctDiff(agent.averageCollectionValue || 0, teamAverages.averageCollectionValue),
+      };
+    });
+
     // Build leaderboard with explicit value key
     const buildLeaderboard = (metric: 'totalCollections' | 'totalRevenue' | 'totalWeight') =>
       [...agents]
@@ -1545,13 +1568,17 @@ export class ProjectService {
         return {
           success: true,
           data: {
-            totalCollections: 0,
-            totalRevenue: 0,
-            totalWeight: 0,
-            completedCollections: 0,
-            pendingCollections: 0,
-            inProgressCollections: 0,
-            averageCollectionValue: 0,
+            overview: {
+              totalCollections: 0,
+              totalReceipts: 0,
+              totalRevenue: 0,
+              totalWeight: 0,
+              totalAmount: 0,
+              completedCollections: 0,
+              pendingCollections: 0,
+              inProgressCollections: 0,
+              averageCollectionValue: 0,
+            },
             byServiceType: {},
             byMaterialType: [],
             byLocationType: [],
@@ -1566,14 +1593,14 @@ export class ProjectService {
       ];
     }
 
-    // Date range filter
+    // Date range filter on collectionDate (consistent with other analytics endpoints)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.createdAt = {};
+      baseQuery.collectionDate = {};
       if (filters.startDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$gte = new Date(filters.startDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
       }
       if (filters.endDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$lte = new Date(filters.endDate);
+        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
       }
     }
 
@@ -1594,7 +1621,10 @@ export class ProjectService {
         $group: {
           _id: null,
           totalCollections: { $sum: 1 },
-          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          totalReceipts: {
+            $sum: { $cond: [{ $and: [{ $ne: ['$receiptNumber', null] }, { $ne: ['$receiptNumber', ''] }] }, 1, 0] },
+          },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
           completedCollections: {
             $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
@@ -1611,6 +1641,7 @@ export class ProjectService {
         $project: {
           _id: 0,
           totalCollections: 1,
+          totalReceipts: 1,
           totalRevenue: 1,
           totalWeight: 1,
           completedCollections: 1,
@@ -1634,7 +1665,7 @@ export class ProjectService {
         $group: {
           _id: '$serviceType',
           count: { $sum: 1 },
-          revenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          revenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
           weight: { $sum: { $ifNull: ['$totalWeight', 0] } },
         },
       },
@@ -1664,7 +1695,7 @@ export class ProjectService {
           _id: '$locationType',
           count: { $sum: 1 },
           totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
-          totalRevenue: { $sum: { $ifNull: ['$totalValue', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
         },
       },
       { $sort: { count: -1 } },
@@ -1705,22 +1736,32 @@ export class ProjectService {
       totalRevenue: item.totalRevenue || 0,
     }));
 
-    const analytics = result[0] ? {
-      ...result[0],
-      byServiceType,
-      byMaterialType,
-      byLocationType,
-    } : {
+    const baseAnalytics = result[0] || {
       totalCollections: 0,
+      totalReceipts: 0,
       totalRevenue: 0,
       totalWeight: 0,
       completedCollections: 0,
       pendingCollections: 0,
       inProgressCollections: 0,
       averageCollectionValue: 0,
-      byServiceType: {},
-      byMaterialType: [],
-      byLocationType: [],
+    };
+
+    const analytics = {
+      overview: {
+        totalCollections: baseAnalytics.totalCollections || 0,
+        totalReceipts: baseAnalytics.totalReceipts || 0,
+        totalWeight: baseAnalytics.totalWeight || 0,
+        totalAmount: baseAnalytics.totalRevenue || 0,
+        totalRevenue: baseAnalytics.totalRevenue || 0,
+        completedCollections: baseAnalytics.completedCollections || 0,
+        pendingCollections: baseAnalytics.pendingCollections || 0,
+        inProgressCollections: baseAnalytics.inProgressCollections || 0,
+        averageCollectionValue: baseAnalytics.averageCollectionValue || 0,
+      },
+      byServiceType,
+      byMaterialType,
+      byLocationType,
     };
 
     return {

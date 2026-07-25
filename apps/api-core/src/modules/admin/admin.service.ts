@@ -236,6 +236,330 @@ export class AdminService {
     }
   }
 
+  /**
+   * Compute today's collection statistics for the dashboard
+   */
+  private async getTodayCollectionStats(
+    projectFilter: Record<string, unknown>,
+    todayStart: Date,
+    todayEnd: Date,
+  ): Promise<Record<string, number>> {
+    const pipeline: any[] = [
+      {
+        $match: {
+          ...projectFilter,
+          collectionDate: { $gte: todayStart, $lte: todayEnd },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          collections: { $sum: 1 },
+          totalWeight: { $sum: { $ifNull: ['$totalWeight', 0] } },
+          totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
+          withReceipt: {
+            $sum: { $cond: [{ $and: [{ $ne: ['$receiptNumber', null] }, { $ne: ['$receiptNumber', ''] }] }, 1, 0] },
+          },
+          receiptsCount: {
+            $sum: { $cond: [{ $and: [{ $ne: ['$receiptNumber', null] }, { $ne: ['$receiptNumber', ''] }] }, 1, 0] },
+          },
+          revenueGst: { $sum: { $ifNull: ['$gstAmount', 0] } },
+          revenueNet: { $sum: { $ifNull: ['$subTotal', 0] } },
+        },
+      },
+    ];
+
+    const result = await this.projectModel.aggregate(pipeline as any).exec();
+    const row = result?.[0] || {};
+    const collections = Number(row.collections) || 0;
+    const withReceipt = Number(row.withReceipt) || 0;
+    const totalRevenue = Number(row.totalRevenue) || 0;
+    const revenueNet = Number(row.revenueNet) || 0;
+    const revenueGst = Number(row.revenueGst) || 0;
+
+    return {
+      collections,
+      totalWeight: Number(row.totalWeight) || 0,
+      totalRevenue,
+      withReceipt,
+      withoutReceipt: Math.max(0, collections - withReceipt),
+      receiptsCount: withReceipt,
+      receiptsTotalAmount: totalRevenue,
+      revenueTotal: totalRevenue,
+      revenueGst,
+      revenueNet: revenueNet > 0 ? revenueNet : totalRevenue - revenueGst,
+    };
+  }
+
+  /**
+   * Compute performance metrics for admin/agent dashboard
+   */
+  private async getPerformanceMetrics(
+    projectFilter: Record<string, unknown>,
+    locationFilter: Record<string, unknown>,
+    todayStart: Date,
+    todayEnd: Date,
+  ): Promise<Record<string, unknown>> {
+    const todayProjectFilter = {
+      ...projectFilter,
+      collectionDate: { $gte: todayStart, $lte: todayEnd },
+    };
+
+    const [todayStats, activeLocations, activeAgents] = await Promise.all([
+      this.projectModel.aggregate([
+        { $match: todayProjectFilter },
+        {
+          $group: {
+            _id: null,
+            collections: { $sum: 1 },
+            totalRevenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
+            hours: { $addToSet: { $hour: '$collectionDate' } },
+          },
+        },
+      ]).exec(),
+      this.locationModel
+        .find({ ...locationFilter, isActive: true })
+        .select('locationName usageCount')
+        .sort({ usageCount: -1 })
+        .limit(9)
+        .lean()
+        .exec(),
+      this.userModel
+        .find({ role: 'agent', isActive: true, isDeleted: { $ne: true }, deletedAt: { $exists: false } })
+        .select('_id name')
+        .lean()
+        .exec(),
+    ]);
+
+    const stats = todayStats?.[0] || { collections: 0, totalRevenue: 0, hours: [] };
+    const collections = Number(stats.collections) || 0;
+    const hours: number[] = (stats.hours || []).filter((h: any) => typeof h === 'number') as number[];
+    const collectionsPerHour = hours.length > 0 ? Number((collections / hours.length).toFixed(2)) : 0;
+    const revenuePerCollection = collections > 0 ? Number((Number(stats.totalRevenue) / collections).toFixed(2)) : 0;
+
+    // Determine peak activity hour (or string fallback)
+    const hourCounts: Record<number, number> = {};
+    const todayProjects = await this.projectModel
+      .find(todayProjectFilter)
+      .select('collectionDate')
+      .lean()
+      .exec();
+    todayProjects.forEach((p: any) => {
+      const h = p.collectionDate ? new Date(p.collectionDate).getHours() : null;
+      if (h !== null) {
+        hourCounts[h] = (hourCounts[h] || 0) + 1;
+      }
+    });
+    let peakHour: number | null = null;
+    let peakCount = 0;
+    Object.entries(hourCounts).forEach(([h, count]) => {
+      if (count > peakCount) {
+        peakCount = count;
+        peakHour = Number(h);
+      }
+    });
+    const peakActivityTime = peakHour !== null
+      ? `${String(peakHour).padStart(2, '0')}:00 - ${String(peakHour + 1).padStart(2, '0')}:00`
+      : 'No activity yet';
+
+    // Active agents with today's collection counts
+    const agentIds = activeAgents.map((u: any) => u._id.toString());
+    const agentStats = await this.projectModel.aggregate([
+      {
+        $match: {
+          ...todayProjectFilter,
+          collectedBy: { $in: agentIds.map((id) => this.validationService.validateObjectId(id, 'agentId')) },
+        },
+      },
+      {
+        $group: {
+          _id: '$collectedBy',
+          collections: { $sum: 1 },
+          revenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
+        },
+      },
+    ]).exec();
+
+    const agentStatsMap: Record<string, { collections: number; revenue: number }> = {};
+    agentStats.forEach((item: any) => {
+      const id = item._id?.toString?.() || String(item._id);
+      agentStatsMap[id] = { collections: item.collections || 0, revenue: item.revenue || 0 };
+    });
+
+    return {
+      collectionsPerHour,
+      peakActivityTime,
+      revenuePerCollection,
+      activeAgents: activeAgents.map((agent: any) => {
+        const id = agent._id.toString();
+        const stat = agentStatsMap[id] || { collections: 0, revenue: 0 };
+        return {
+          agentId: id,
+          agentName: agent.name || 'Unknown',
+          collections: stat.collections,
+          revenue: stat.revenue,
+        };
+      }).filter((a: any) => a.collections > 0),
+      activeLocations: activeLocations.map((loc: any) => ({
+        locationName: loc.locationName || 'Unknown',
+        collections: loc.usageCount || 0,
+        revenue: 0, // Revenue by location requires aggregation; fallback to 0
+      })),
+    };
+  }
+
+  /**
+   * Get recent collections for dashboard
+   */
+  private async getRecentCollections(
+    projectFilter: Record<string, unknown>,
+    limit = 8,
+  ): Promise<any[]> {
+    const collections = await this.projectModel
+      .find(projectFilter)
+      .sort({ collectionDate: -1, createdAt: -1 })
+      .limit(limit)
+      .select('locationName collectionDate totalWeight totalAmount receiptNumber')
+      .lean()
+      .exec();
+
+    return collections.map((c: any) => ({
+      _id: c._id?.toString() || '',
+      locationName: c.locationName || 'Collection',
+      collectionDate: c.collectionDate ? c.collectionDate.toISOString() : null,
+      totalWeight: Number(c.totalWeight) || 0,
+      totalAmount: Number(c.totalAmount) || 0,
+      receiptNumber: c.receiptNumber || '',
+    }));
+  }
+
+  /**
+   * Compute collections growth: this month vs last month and 30-day trend
+   */
+  private async getCollectionsGrowth(
+    projectFilter: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(thisMonthStart.getTime() - 1);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const [thisMonth, lastMonth, trend] = await Promise.all([
+      this.projectModel.countDocuments({
+        ...projectFilter,
+        collectionDate: { $gte: thisMonthStart },
+      }).exec(),
+      this.projectModel.countDocuments({
+        ...projectFilter,
+        collectionDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
+      }).exec(),
+      this.projectModel.aggregate([
+        {
+          $match: {
+            ...projectFilter,
+            collectionDate: { $gte: thirtyDaysAgo },
+          },
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$collectionDate' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]).exec(),
+    ]);
+
+    const growth = lastMonth > 0 ? Number((((thisMonth - lastMonth) / lastMonth) * 100).toFixed(2)) : 0;
+
+    return {
+      thisMonth,
+      lastMonth,
+      growth,
+      trend: trend.map((item: any) => ({ date: item._id, count: item.count || 0 })),
+    };
+  }
+
+  /**
+   * Compute last 7 days usage for dashboard chart
+   */
+  private async getRecentUsage(
+    projectFilter: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const trend = await this.projectModel.aggregate([
+      {
+        $match: {
+          ...projectFilter,
+          collectionDate: { $gte: sevenDaysAgo },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$collectionDate' } },
+          collections: { $sum: 1 },
+          revenue: { $sum: { $ifNull: ['$totalAmount', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]).exec();
+
+    // Fill missing days with 0
+    const trendMap: Record<string, { collections: number; revenue: number }> = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+      const key = d.toISOString().split('T')[0];
+      trendMap[key] = { collections: 0, revenue: 0 };
+    }
+    trend.forEach((item: any) => {
+      if (trendMap[item._id]) {
+        trendMap[item._id] = { collections: item.collections || 0, revenue: item.revenue || 0 };
+      }
+    });
+
+    const last7Days = Object.entries(trendMap).map(([date, values]) => ({
+      date,
+      collections: values.collections,
+      revenue: values.revenue,
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return { last7Days };
+  }
+
+  /**
+   * Compute user growth by month for the last 12 months
+   */
+  private async getUserGrowth(userFilter: Record<string, unknown>): Promise<any[]> {
+    const now = new Date();
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const growth = await this.userModel.aggregate([
+      {
+        $match: {
+          ...userFilter,
+          createdAt: { $gte: twelveMonthsAgo },
+        },
+      },
+      {
+        $group: {
+          _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]).exec();
+
+    return growth.map((item: any) => ({
+      _id: item._id,
+      count: item.count || 0,
+    }));
+  }
+
   async getDashboard(userId: string, userRole?: string): Promise<DashboardResponseDto> {
     const cacheKey = this.getDashboardCacheKey(userId, userRole);
     const cached = await this.getCachedDashboard<DashboardResponseDto>(cacheKey);
@@ -253,31 +577,40 @@ export class AdminService {
     const locationFilter = this.buildLocationFilter(locationIds);
     const { start: todayStart, end: todayEnd } = this.getTodayRange();
 
-    const todayDateFilter = { createdAt: { $gte: todayStart, $lte: todayEnd } };
+    const todayCreatedAtFilter = { createdAt: { $gte: todayStart, $lte: todayEnd } };
 
     const [
       totalUsers,
       activeUsers,
       totalProjects,
       totalLocations,
-      todayProjects,
       todayUsers,
       todayLocations,
+      todayCollectionStats,
+      recentCollections,
+      performance,
+      collectionsGrowth,
+      recentUsage,
+      userGrowth,
     ] = await Promise.all([
       this.userModel.countDocuments(userFilter),
       this.userModel.countDocuments({ ...userFilter, isActive: true }),
       this.projectModel.countDocuments(projectFilter),
       this.locationModel.countDocuments(locationFilter),
-      this.projectModel.countDocuments({ ...projectFilter, ...todayDateFilter }),
-      this.userModel.countDocuments({ ...userFilter, ...todayDateFilter }),
-      this.locationModel.countDocuments({ ...locationFilter, ...todayDateFilter }),
+      this.userModel.countDocuments({ ...userFilter, ...todayCreatedAtFilter }),
+      this.locationModel.countDocuments({ ...locationFilter, ...todayCreatedAtFilter }),
+      this.getTodayCollectionStats(projectFilter, todayStart, todayEnd),
+      this.getRecentCollections(projectFilter, 8),
+      this.getPerformanceMetrics(projectFilter, locationFilter, todayStart, todayEnd),
+      this.getCollectionsGrowth(projectFilter),
+      this.getRecentUsage(projectFilter),
+      this.getUserGrowth(userFilter),
     ]);
 
     // Ensure all values are numbers (defensive check)
     const safeTotalUsers = Number(totalUsers) || 0;
     const safeActiveUsers = Number(activeUsers) || 0;
     const safeTotalProjects = Number(totalProjects) || 0;
-    const safeTodayProjects = Number(todayProjects) || 0;
     const safeTotalLocations = Number(totalLocations) || 0;
     const safeTodayUsers = Number(todayUsers) || 0;
     const safeTodayLocations = Number(todayLocations) || 0;
@@ -290,7 +623,7 @@ export class AdminService {
       },
       projects: {
         total: safeTotalProjects,
-        today: safeTodayProjects,
+        today: todayCollectionStats.collections,
         collections: safeTotalProjects, // Alias for backward compatibility
       },
       locations: {
@@ -300,10 +633,19 @@ export class AdminService {
 
     const today: TodayActivityDto = {
       newUsers: safeTodayUsers,
-      newProjects: safeTodayProjects,
+      newProjects: todayCollectionStats.collections,
       newLocations: safeTodayLocations,
-      collections: safeTodayProjects, // Alias for backward compatibility
+      collections: todayCollectionStats.collections,
       date: todayStart.toISOString().split('T')[0],
+      totalWeight: todayCollectionStats.totalWeight,
+      totalRevenue: todayCollectionStats.totalRevenue,
+      withReceipt: todayCollectionStats.withReceipt,
+      withoutReceipt: todayCollectionStats.withoutReceipt,
+      receiptsCount: todayCollectionStats.receiptsCount,
+      receiptsTotalAmount: todayCollectionStats.receiptsTotalAmount,
+      revenueTotal: todayCollectionStats.revenueTotal,
+      revenueGst: todayCollectionStats.revenueGst,
+      revenueNet: todayCollectionStats.revenueNet,
     };
 
     const recentUsers = await this.userModel
@@ -318,8 +660,13 @@ export class AdminService {
       overview,
       today,
       collections: safeTotalProjects, // Top-level alias for backward compatibility (total collections)
-      stats: overview,
+      stats: { ...overview, recentUsers, userGrowth } as any,
       recentUsers,
+      performance,
+      recentCollections,
+      collectionsGrowth,
+      recentUsage,
+      userGrowth,
     };
 
     await this.setCachedDashboard(cacheKey, result);
@@ -343,25 +690,34 @@ export class AdminService {
     const locationFilter = this.buildLocationFilter(locationIds);
     const { start: todayStart, end: todayEnd } = this.getTodayRange();
 
-    const todayDateFilter = { createdAt: { $gte: todayStart, $lte: todayEnd } };
+    const todayCreatedAtFilter = { createdAt: { $gte: todayStart, $lte: todayEnd } };
 
-    const [newUsers, newProjects, newLocations] = await Promise.all([
-      this.userModel.countDocuments({ ...userFilter, ...todayDateFilter }),
-      this.projectModel.countDocuments({ ...projectFilter, ...todayDateFilter }),
-      this.locationModel.countDocuments({ ...locationFilter, ...todayDateFilter }),
+    const [newUsers, newLocations, todayCollectionStats] = await Promise.all([
+      this.userModel.countDocuments({ ...userFilter, ...todayCreatedAtFilter }),
+      this.locationModel.countDocuments({ ...locationFilter, ...todayCreatedAtFilter }),
+      this.getTodayCollectionStats(projectFilter, todayStart, todayEnd),
     ]);
 
     // Ensure all values are numbers (defensive check)
     const safeNewUsers = Number(newUsers) || 0;
-    const safeNewProjects = Number(newProjects) || 0;
     const safeNewLocations = Number(newLocations) || 0;
+    const safeNewProjects = todayCollectionStats.collections;
 
     const result: TodayActivityDto = {
       newUsers: safeNewUsers,
       newProjects: safeNewProjects,
       newLocations: safeNewLocations,
-      collections: safeNewProjects, // Alias for backward compatibility
+      collections: safeNewProjects,
       date: todayStart.toISOString().split('T')[0],
+      totalWeight: todayCollectionStats.totalWeight,
+      totalRevenue: todayCollectionStats.totalRevenue,
+      withReceipt: todayCollectionStats.withReceipt,
+      withoutReceipt: todayCollectionStats.withoutReceipt,
+      receiptsCount: todayCollectionStats.receiptsCount,
+      receiptsTotalAmount: todayCollectionStats.receiptsTotalAmount,
+      revenueTotal: todayCollectionStats.revenueTotal,
+      revenueGst: todayCollectionStats.revenueGst,
+      revenueNet: todayCollectionStats.revenueNet,
     };
 
     await this.setCachedDashboard(cacheKey, result);

@@ -557,22 +557,11 @@ export class LocationService {
     mostUsed: Array<{ locationId: string; locationName: string; locationType: string; usageCount: number }>;
     usageTrends: Array<{ date: string; count: number }>;
   }> {
-    // Build base filter
+    // Build base filter for locations (date range is applied to project usage trends, not location creation)
     const baseFilter: Record<string, unknown> = {
       isDeleted: { $ne: true },
       deletedAt: { $exists: false },
     };
-
-    // Apply date filters (if locations were created/updated in date range)
-    if (filters?.startDate || filters?.endDate) {
-      baseFilter.createdAt = {};
-      if (filters.startDate) {
-        (baseFilter.createdAt as Record<string, unknown>).$gte = filters.startDate;
-      }
-      if (filters.endDate) {
-        (baseFilter.createdAt as Record<string, unknown>).$lte = filters.endDate;
-      }
-    }
 
     // Apply location type filter
     if (filters?.locationType) {

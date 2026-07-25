@@ -57,6 +57,17 @@ export class TodayActivityDto {
 
   @IsString()
   date!: string;
+
+  // Enriched collection stats for the dashboard
+  totalWeight?: number;
+  totalRevenue?: number;
+  withReceipt?: number;
+  withoutReceipt?: number;
+  receiptsCount?: number;
+  receiptsTotalAmount?: number;
+  revenueTotal?: number;
+  revenueGst?: number;
+  revenueNet?: number;
 }
 
 export class DashboardResponseDto {
@@ -76,4 +87,11 @@ export class DashboardResponseDto {
   stats?: DashboardOverviewDto;
 
   recentUsers?: unknown[];
+
+  // Enriched dashboard sections
+  performance?: any;
+  recentCollections?: any[];
+  collectionsGrowth?: any;
+  recentUsage?: any;
+  userGrowth?: any[];
 }

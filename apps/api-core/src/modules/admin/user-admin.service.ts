@@ -968,13 +968,14 @@ export const getUserStats = async (
   // Use verified connection if provided, otherwise use default
   const _connection = verifiedConnection || mongoose.connection;
   const UserModel = getUserModel(verifiedConnection);
+  const LocationModel = getLocationModel(verifiedConnection);
 
   if (isAgent) {
     let allowedLocationIds: string[] = [];
 
     if (requesterId) {
       const agentObjectId = new mongoose.Types.ObjectId(requesterId);
-      const assignedLocations = await Location.find({
+      const assignedLocations = await LocationModel.find({
         assignedToAgent: agentObjectId,
         isDeleted: { $ne: true },
         deletedAt: { $exists: false },
