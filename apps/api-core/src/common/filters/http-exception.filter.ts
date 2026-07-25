@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import { AppError } from '../exceptions/app-error';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -20,15 +21,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: string | object = 'Internal Server Error';
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal Server Error';
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.getResponse();
+    } else if (exception instanceof AppError) {
+      status = exception.statusCode;
+      message = exception.message;
+    }
 
     const req = request as Request & { id?: string };
     const requestId =
@@ -51,6 +53,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       errorResponse.errors = msgObj.message.map((msg: string) => ({
         message: msg,
       }));
+    } else if (exception instanceof AppError && exception.errors) {
+      errorResponse.errors = exception.errors;
     }
 
     // Include stack trace in development only
