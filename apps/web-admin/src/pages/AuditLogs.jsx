@@ -1,226 +1,208 @@
-import ErrorBoundary from '../components/shared/ErrorBoundary';
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState, useCallback } from 'react';
+import {
+  Activity,
+  BarChart3,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  PlusCircle,
+  Receipt,
+  Trash2,
+  ArrowLeftRight,
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { auditApi } from '../api';
-import { Activity, User, Search, Filter, Clock, FileText, Receipt, Package, Download, BarChart3 } from 'lucide-react';
+import ErrorBoundary from '../components/shared/ErrorBoundary';
 import Skeleton from '../components/shared/Skeleton';
 import Table from '../components/data/Table';
 import Pagination from '../components/shared/Pagination';
 import Button from '../components/shared/Button';
+import PageHeader from '../components/shared/PageHeader';
+import EmptyState from '../components/shared/EmptyState';
+import AuditLogFilters from '../components/audit/AuditLogFilters';
+import { useAuditFilters, useAuditLogs, useAuditLogStats } from '../hooks';
 import { formatDate } from '../utils/formatDate';
 import logger from '../utils/logger';
-import { toast } from 'react-hot-toast';
-import { useDebounce } from '../hooks';
-import { createQueryFn } from '../utils/queryAdapter';
+
+const getActionIcon = (action) => {
+  switch (action) {
+    case 'created':
+      return { icon: PlusCircle, color: 'text-green-600', bgColor: 'bg-green-100' };
+    case 'updated':
+      return { icon: Activity, color: 'text-blue-600', bgColor: 'bg-blue-100' };
+    case 'deleted':
+      return { icon: Trash2, color: 'text-red-600', bgColor: 'bg-red-100' };
+    case 'receipt_generated':
+      return { icon: Receipt, color: 'text-amber-600', bgColor: 'bg-amber-100' };
+    case 'transferred':
+      return { icon: ArrowLeftRight, color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    default:
+      return { icon: Activity, color: 'text-gray-600', bgColor: 'bg-gray-100' };
+  }
+};
+
+const StatCard = ({ label, value, icon: Icon, color }) => {
+  const colorMap = {
+    blue: { text: 'text-blue-600', bg: 'bg-blue-100' },
+    indigo: { text: 'text-indigo-600', bg: 'bg-indigo-100' },
+    green: { text: 'text-green-600', bg: 'bg-green-100' },
+  };
+
+  const { text, bg } = colorMap[color] || colorMap.blue;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{label}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{value}</p>
+        </div>
+        <div className={`p-3 ${bg} rounded-lg`}>
+          <Icon className={`w-6 h-6 ${text}`} />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AuditLogs = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Parse filters from URL
-  const filters = useMemo(() => ({
-    entityType: searchParams.get('entityType') || '',
-    action: searchParams.get('action') || '',
-    search: searchParams.get('search') || '',
-    startDate: searchParams.get('startDate') || '',
-    endDate: searchParams.get('endDate') || '',
-    page: parseInt(searchParams.get('page') || '1', 10),
-  }), [searchParams]);
-
-  const [searchQuery, setSearchQuery] = useState(filters.search);
-  const debouncedSearch = useDebounce(searchQuery, 300);
-
-  // Only trigger search for empty input or when at least 2 characters are typed
-  const effectiveSearch = useMemo(() => {
-    const trimmed = debouncedSearch.trim();
-    return trimmed === '' || trimmed.length >= 2 ? debouncedSearch : '';
-  }, [debouncedSearch]);
-
-  // Update URL when effective search changes
-  useEffect(() => {
-    if (effectiveSearch !== filters.search) {
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        if (effectiveSearch) {
-          newParams.set('search', effectiveSearch);
-        } else {
-          newParams.delete('search');
-        }
-        newParams.set('page', '1'); // Reset to first page
-        return newParams;
-      });
-    }
-  }, [effectiveSearch, filters.search, setSearchParams]);
+  const { filters, updateFilter, clearFilters, setPage } = useAuditFilters();
+  const { page, entityType, action, search, startDate, endDate } = filters;
 
   const [showFilters, setShowFilters] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  // Build query params for API call
-  const queryParams = useMemo(() => ({
-    page: filters.page,
-    limit: 20,
-    ...(filters.entityType && { entityType: filters.entityType }),
-    ...(filters.action && { action: filters.action }),
-    ...(effectiveSearch && { search: effectiveSearch }),
-    ...(filters.startDate && { startDate: filters.startDate }),
-    ...(filters.endDate && { endDate: filters.endDate }),
-  }), [filters.page, filters.entityType, filters.action, effectiveSearch, filters.startDate, filters.endDate]);
+  const { auditLogs, total, totalPages, loading, error, refetch } = useAuditLogs(filters);
+  const {
+    analytics,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useAuditLogStats(
+    { startDate, endDate, entityType },
+    { enabled: showAnalytics }
+  );
 
-  // Use TanStack Query for data fetching
-  const { data: auditLogsData, isLoading: loading, error: _error, refetch: _refetch } = useQuery({
-    queryKey: ['auditLogs', filters.page, filters.entityType, filters.action, effectiveSearch, filters.startDate, filters.endDate],
-    queryFn: createQueryFn(() => auditApi.getAuditLogs(queryParams)),
-    staleTime: 30000, // 30 seconds
-  });
+  const handleSearch = useCallback(
+    (searchTerm) => {
+      updateFilter('search', searchTerm);
+    },
+    [updateFilter]
+  );
 
-  // Extract data from response (after adapter transformation)
-  const result = auditLogsData || {};
-  const auditLogs = result.auditLogs || [];
-  const total = result.total || 0;
-  const totalPages = result.totalPages || 1;
-  const currentPage = filters.page;
+  const handleExport = useCallback(async () => {
+    if (exporting) return;
 
-  // Fetch analytics when shown
-  const analyticsParams = useMemo(() => ({
-    enhanced: 'true',
-    groupBy: 'day',
-    ...(filters.startDate && { startDate: filters.startDate }),
-    ...(filters.endDate && { endDate: filters.endDate }),
-    ...(filters.entityType && { entityType: filters.entityType }),
-  }), [filters.startDate, filters.endDate, filters.entityType]);
+    setExporting(true);
+    try {
+      const params = {
+        ...(entityType && { entityType }),
+        ...(action && { action }),
+        ...(search && { search }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+      };
 
-  const { data: analyticsData } = useQuery({
-    queryKey: ['auditLogs', 'analytics', filters.startDate, filters.endDate, filters.entityType],
-    queryFn: createQueryFn(() => auditApi.getAuditLogStats(analyticsParams)),
-    enabled: showAnalytics, // Only fetch when analytics is shown
-    staleTime: 60000, // 1 minute
-  });
-
-  const analytics = analyticsData;
-
-  const handleFilterChange = (key, value) => {
-    setSearchParams(prev => {
-      const newParams = new URLSearchParams(prev);
-      if (value) {
-        newParams.set(key, value);
-      } else {
-        newParams.delete(key);
-      }
-      newParams.set('page', '1'); // Reset to first page when filters change
-      return newParams;
-    });
-    
-    // Update local search query if it's the search filter
-    if (key === 'search') {
-      setSearchQuery(value);
+      const blob = await auditApi.exportCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      logger.error('Failed to export audit logs:', err);
+      toast.error('Failed to export audit logs');
+    } finally {
+      setExporting(false);
     }
-  };
+  }, [exporting, entityType, action, search, startDate, endDate]);
 
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
-    setSearchQuery('');
-  };
+  const formattedLogs = useMemo(
+    () =>
+      (auditLogs || []).map((log) => {
+        const { icon, color, bgColor } = getActionIcon(log.action);
+        return {
+          id: log._id,
+          icon,
+          color,
+          bgColor,
+          entityType: log.entityType,
+          action: log.action,
+          description: log.description || `${log.action} ${log.entityType}`,
+          performedBy: log.performedBy?.name || log.performedBy?.email || 'System',
+          timestamp: log.createdAt,
+          changes: log.changes,
+          notes: log.notes,
+          ipAddress: log.ipAddress,
+        };
+      }),
+    [auditLogs]
+  );
 
-  const setPage = (page) => {
-    setSearchParams(prev => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set('page', page.toString());
-      return newParams;
-    });
-  };
-
-  const getActionIcon = (action) => {
-    switch (action) {
-      case 'created':
-        return { icon: FileText, color: 'text-green-600', bgColor: 'bg-green-100' };
-      case 'updated':
-        return { icon: Activity, color: 'text-primary-600', bgColor: 'bg-primary-100' };
-      case 'deleted':
-        return { icon: Activity, color: 'text-red-600', bgColor: 'bg-red-100' };
-      case 'receipt_generated':
-        return { icon: Receipt, color: 'text-purple-600', bgColor: 'bg-purple-100' };
-      case 'transferred':
-        return { icon: Package, color: 'text-orange-600', bgColor: 'bg-orange-100' };
-      default:
-        return { icon: Activity, color: 'text-gray-600', bgColor: 'bg-gray-100' };
-    }
-  };
-
-  const formattedLogs = (auditLogs || []).map(log => {
-    const { icon, color, bgColor } = getActionIcon(log.action);
-    return {
-      id: log._id,
-      icon,
-      color,
-      bgColor,
-      entityType: log.entityType,
-      action: log.action,
-      description: log.description || `${log.action} ${log.entityType}`,
-      performedBy: log.performedBy?.name || log.performedBy?.email || 'System',
-      timestamp: log.createdAt,
-      changes: log.changes,
-      notes: log.notes,
-      ipAddress: log.ipAddress,
-    };
-  });
-
-  const columns = [
-    {
-      key: 'icon',
-      label: 'Action',
-      render: (_, row) => {
-        const Icon = row.icon;
-        return (
-          <div className={`p-2 rounded-lg ${row.bgColor} inline-flex`}>
-            <Icon className={`w-5 h-5 ${row.color}`} />
-          </div>
-        );
+  const columns = useMemo(
+    () => [
+      {
+        key: 'icon',
+        label: 'Type',
+        render: (_, row) => {
+          const Icon = row.icon;
+          return (
+            <div className={`p-2 rounded-lg ${row.bgColor} inline-flex`}>
+              <Icon className={`w-5 h-5 ${row.color}`} aria-label={row.action} />
+            </div>
+          );
+        },
       },
-    },
-    {
-      key: 'entityType',
-      label: 'Entity',
-      render: (entityType) => (
-        <span className="font-medium text-gray-900 dark:text-white capitalize">
-          {entityType}
-        </span>
-      ),
-    },
-    {
-      key: 'action',
-      label: 'Action',
-      render: (action) => (
-        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-          {action.replace(/_/g, ' ')}
-        </span>
-      ),
-    },
-    {
-      key: 'description',
-      label: 'Description',
-      render: (description) => (
-        <span className="text-gray-900 dark:text-white">{description}</span>
-      ),
-    },
-    {
-      key: 'performedBy',
-      label: 'Performed By',
-      render: (performedBy) => (
-        <span className="text-gray-600 dark:text-gray-400">{performedBy}</span>
-      ),
-    },
-    {
-      key: 'timestamp',
-      label: 'Time',
-      render: (timestamp) => (
-        <div className="flex items-center text-gray-500 dark:text-gray-400">
-          <Clock className="w-4 h-4 mr-2" />
-          {formatDate(timestamp, 'PPp')}
-        </div>
-      ),
-    },
-  ];
+      {
+        key: 'entityType',
+        label: 'Entity',
+        render: (entityType) => (
+          <span className="font-medium text-gray-900 dark:text-white capitalize">
+            {entityType}
+          </span>
+        ),
+      },
+      {
+        key: 'action',
+        label: 'Action',
+        render: (action) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+            {action.replace(/_/g, ' ')}
+          </span>
+        ),
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        render: (description) => (
+          <span className="text-gray-900 dark:text-white">{description}</span>
+        ),
+      },
+      {
+        key: 'performedBy',
+        label: 'Performed By',
+        render: (performedBy) => (
+          <span className="text-gray-600 dark:text-gray-400">{performedBy}</span>
+        ),
+      },
+      {
+        key: 'timestamp',
+        label: 'Time',
+        render: (timestamp) => (
+          <div className="flex items-center text-gray-500 dark:text-gray-400">
+            <Clock className="w-4 h-4 mr-2" />
+            {formatDate(timestamp, 'PPp')}
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
   if (loading) {
     return (
@@ -229,276 +211,185 @@ const AuditLogs = () => {
           <Skeleton variant="text" width="150px" height="2rem" className="mb-2" />
           <Skeleton variant="text" width="300px" height="1rem" />
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <Skeleton variant="table" lines={5} />
         </div>
       </div>
     );
   }
 
-  return (
-    <div>
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            System activity and audit trails
+  if (error) {
+    return (
+      <div>
+        <PageHeader
+          title="Audit Logs"
+          subtitle="System activity and audit trails"
+        />
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+            Error loading audit logs
+          </h3>
+          <p className="text-red-600 dark:text-red-300 mb-4">
+            {error?.message || 'Failed to load audit logs. Please try again.'}
           </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={() => setShowAnalytics(!showAnalytics)}
-            variant="secondary"
-            icon={BarChart3}
-          >
-            Analytics
-          </Button>
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            variant="secondary"
-            icon={Filter}
-          >
-            Filters
-          </Button>
-          <Button
-            onClick={async () => {
-              if (exporting) return;
-              setExporting(true);
-              try {
-                const params = {
-                  ...(filters.entityType && { entityType: filters.entityType }),
-                  ...(filters.action && { action: filters.action }),
-                  ...(filters.search && { search: filters.search }),
-                  ...(filters.startDate && { startDate: filters.startDate }),
-                  ...(filters.endDate && { endDate: filters.endDate }),
-                };
-                const blob = await auditApi.exportCSV(params);
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-              } catch (error) {
-                logger.error('Failed to export audit logs:', error);
-                toast.error('Failed to export audit logs');
-              } finally {
-                setExporting(false);
-              }
-            }}
-            variant="success"
-            icon={Download}
-            disabled={exporting}
-            isLoading={exporting}
-            loadingText="Exporting..."
-          >
-            Export CSV
+          <Button variant="primary" onClick={() => refetch()}>
+            Retry
           </Button>
         </div>
       </div>
+    );
+  }
 
-      {showAnalytics && analytics && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+  const pageActions = (
+    <>
+      <Button
+        onClick={() => setShowAnalytics(!showAnalytics)}
+        variant="secondary"
+        icon={BarChart3}
+      >
+        Analytics
+      </Button>
+      <Button
+        onClick={() => setShowFilters(!showFilters)}
+        variant="secondary"
+        icon={Filter}
+      >
+        Filters
+      </Button>
+      <Button
+        onClick={handleExport}
+        variant="success"
+        icon={Download}
+        disabled={exporting}
+        isLoading={exporting}
+        loadingText="Exporting..."
+      >
+        Export CSV
+      </Button>
+    </>
+  );
+
+  return (
+    <div>
+      <PageHeader
+        title="Audit Logs"
+        subtitle="System activity and audit trails"
+        actions={pageActions}
+      />
+
+      {showAnalytics && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Audit Log Analytics
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Top Actions
-              </h3>
-              <div className="space-y-2">
-                {analytics.topActions?.slice(0, 5).map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                      {item.action.replace(/_/g, ' ')}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-primary-600 h-2 rounded-full"
-                          style={{ width: `${item.percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white w-12 text-right">
-                        {item.count}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+
+          {analyticsLoading ? (
+            <Skeleton variant="text" lines={3} />
+          ) : analyticsError ? (
+            <div className="text-red-600 dark:text-red-300">
+              {analyticsError?.message || 'Failed to load analytics. Please try again.'}
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Activity Trend
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className={`text-lg font-bold ${
-                  analytics.activityTrend === 'increasing' ? 'text-green-600' :
-                  analytics.activityTrend === 'decreasing' ? 'text-red-600' :
-                  'text-gray-600'
-                }`}>
-                  {analytics.activityTrend === 'increasing' ? '↑' :
-                   analytics.activityTrend === 'decreasing' ? '↓' : '→'}
-                </span>
-                <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                  {analytics.activityTrend}
-                </span>
-              </div>
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  By Entity Type
-                </h4>
+          ) : analytics ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Top Actions
+                </h3>
                 <div className="space-y-2">
-                  {Object.entries(analytics.byEntityType || {})
-                    .sort(([, a], [, b]) => b - a)
-                    .slice(0, 5)
-                    .map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                          {type}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {count}
+                  {analytics.topActions?.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                        {item.action.replace(/_/g, ' ')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-primary-600 h-2 rounded-full"
+                            style={{ width: `${item.percentage}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white w-12 text-right">
+                          {item.count}
                         </span>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Activity Trend
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-lg font-bold ${
+                      analytics.activityTrend === 'increasing'
+                        ? 'text-green-600'
+                        : analytics.activityTrend === 'decreasing'
+                          ? 'text-red-600'
+                          : 'text-gray-600'
+                    }`}
+                  >
+                    {analytics.activityTrend === 'increasing'
+                      ? '↑'
+                      : analytics.activityTrend === 'decreasing'
+                        ? '↓'
+                        : '→'}
+                  </span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                    {analytics.activityTrend}
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    By Action Type
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(analytics.byAction || {})
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 5)
+                      .map(([action, count]) => (
+                        <div key={action} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                            {action.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {count}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="No analytics data"
+              description="No analytics available for the selected filters."
+            />
+          )}
         </div>
       )}
 
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Entity Type
-              </label>
-              <select
-                value={filters.entityType}
-                onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="">All Types</option>
-                <option value="project">Project</option>
-                <option value="receipt">Receipt</option>
-                <option value="user">User</option>
-                <option value="location">Location</option>
-                <option value="contact">Contact</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Action
-              </label>
-              <select
-                value={filters.action}
-                onChange={(e) => handleFilterChange('action', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
-                <option value="">All Actions</option>
-                <option value="created">Created</option>
-                <option value="updated">Updated</option>
-                <option value="deleted">Deleted</option>
-                <option value="receipt_generated">Receipt Generated</option>
-                <option value="transferred">Transferred</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Search
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search descriptions..."
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={clearFilters}
-                variant="secondary"
-                fullWidth
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </div>
+        <AuditLogFilters
+          filters={filters}
+          updateFilter={updateFilter}
+          clearFilters={clearFilters}
+          onSearch={handleSearch}
+        />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Logs</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                {total}
-              </p>
-            </div>
-            <div className="p-3 bg-primary-100 rounded-lg">
-              <Activity className="w-6 h-6 text-primary-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Current Page</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                {currentPage} / {totalPages}
-              </p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <FileText className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Showing</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                {auditLogs.length}
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <User className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
+        <StatCard label="Total Logs" value={total} icon={Activity} color="blue" />
+        <StatCard
+          label="Current Page"
+          value={`${page} / ${totalPages}`}
+          icon={FileText}
+          color="indigo"
+        />
+        <StatCard label="Showing" value={auditLogs.length} icon={Eye} color="green" />
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -508,28 +399,21 @@ const AuditLogs = () => {
           </h2>
         </div>
         <Table columns={columns} data={formattedLogs} />
-        {totalPages > 1 && (
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
       </div>
 
-      {formattedLogs.length === 0 && !loading && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mt-6">
-          <Activity className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">No audit logs found</p>
+      {totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>
   );
 };
 
-// Wrap component in ErrorBoundary for better error handling
 const AuditLogsWithErrorBoundary = () => {
   return (
     <ErrorBoundary

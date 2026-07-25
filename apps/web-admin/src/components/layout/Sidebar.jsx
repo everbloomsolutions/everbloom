@@ -43,11 +43,11 @@ const Sidebar = () => {
       )}
 
       <aside
+        id="main-sidebar"
         className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg lg:shadow-none transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         aria-label="Main navigation"
-        role="navigation"
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-gray-800 dark:to-gray-800">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -64,25 +64,21 @@ const Sidebar = () => {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Primary navigation">
-          {filteredMenuItems.map((item, index) => (
+          {filteredMenuItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => sidebarOpen && toggleSidebar()}
               className={({ isActive }) =>
                 `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group ${
                   isActive
-                    ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/50'
+                    ? 'bg-primary-600 text-white'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:translate-x-1'
                 }`
               }
-              style={{
-                animation: `fadeInLeft 0.3s ease-out ${index * 0.05}s both`
-              }}
               aria-label={`Navigate to ${item.label}`}
             >
-              <item.icon className={`w-5 h-5 mr-3 transition-transform group-hover:scale-110 ${
-                sidebarOpen ? '' : ''
-              }`} aria-hidden="true" />
+              <item.icon className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" aria-hidden="true" />
               <span>{item.label}</span>
             </NavLink>
           ))}

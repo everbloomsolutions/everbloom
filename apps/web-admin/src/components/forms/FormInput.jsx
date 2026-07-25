@@ -65,7 +65,7 @@ const FormInput = ({
           {...(autoComplete && { autoComplete })}
           className={`
             w-full px-4 py-2 border rounded-lg 
-            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
             disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-700
             ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
             ${disabled ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}

@@ -8,7 +8,7 @@ import { Logo } from '../brand/Logo';
 import NotificationBell from '../shared/NotificationBell';
 
 const Navbar = () => {
-  const { toggleSidebar } = useUI();
+  const { sidebarOpen, toggleSidebar } = useUI();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -50,6 +50,8 @@ const Navbar = () => {
           onClick={toggleSidebar}
           className="text-gray-500 hover:text-gray-700 dark:text-gray-400 lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:scale-110 active:scale-95"
           aria-label="Toggle sidebar"
+          aria-expanded={sidebarOpen}
+          aria-controls="main-sidebar"
         >
           <Menu className="w-6 h-6" />
         </button>

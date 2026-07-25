@@ -1,4 +1,6 @@
 export { useUsers } from './useUsers';
+export { useAuditLogs } from './useAuditLogs';
+export { useAuditLogStats } from './useAuditLogStats';
 export { useLocations } from './useLocations';
 export { useCollections } from './useCollections';
 export { useAnalytics } from './useAnalytics';

@@ -29,7 +29,7 @@ const VirtualizedTable = memo(({ columns, data, onRowClick, virtualizeThreshold 
       <div
         style={style}
         onClick={() => onRowClick && onRowClick(row)}
-        className={`flex border-b border-gray-200 dark:border-gray-700 ${onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''
+        className={`flex border-b border-gray-200 dark:border-gray-700 ${onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''
           }`}
       >
         {columns.map((column) => (
@@ -114,7 +114,7 @@ const VirtualizedTable = memo(({ columns, data, onRowClick, virtualizeThreshold 
       <>
         {/* Desktop Virtualized Table View */}
         <div className="hidden md:block overflow-x-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>

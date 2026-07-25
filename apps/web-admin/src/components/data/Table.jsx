@@ -44,7 +44,7 @@ const Table = memo(({ columns, data, onRowClick, virtualizeThreshold = 50 }) => 
               <tr
                 key={row._id || row.id || rowIndex}
                 onClick={() => onRowClick && onRowClick(row)}
-                className={onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}
+                className={onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}
               >
                 {columns.map((column) => (
                   <td
