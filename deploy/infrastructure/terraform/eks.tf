@@ -39,7 +39,7 @@ resource "aws_iam_role_policy_attachment" "eks_vpc_policy" {
 resource "aws_eks_cluster" "everbloom" {
   name     = "everbloom-production"
   role_arn = aws_iam_role.eks_cluster.arn
-  version  = "1.32"
+  version  = "1.34"
 
   vpc_config {
     subnet_ids         = concat(aws_subnet.private[*].id, aws_subnet.public[*].id)
@@ -56,12 +56,13 @@ resource "aws_eks_cluster" "everbloom" {
     bootstrap_cluster_creator_admin_permissions = true
   }
 
+  upgrade_policy {
+    support_type = "STANDARD"
+  }
+
   enabled_cluster_log_types = [
-    "api",
     "audit",
-    "authenticator",
-    "controllerManager",
-    "scheduler"
+    "authenticator"
   ]
 
   tags = {
@@ -225,14 +226,17 @@ resource "aws_eks_node_group" "application" {
   subnet_ids      = aws_subnet.private[*].id
 
   scaling_config {
-    desired_size = 4
-    min_size     = 2
-    max_size     = 5
+    desired_size = 2
+    min_size     = 1
+    max_size     = 6
   }
 
-  instance_types = ["t3.medium"]
+  instance_types = ["t4g.large"]
+  ami_type       = "AL2023_ARM_64_STANDARD"
 
-  disk_size = 50
+  disk_size = 30
+
+  version = "1.34"
 
   labels = {
     node-type   = "application"

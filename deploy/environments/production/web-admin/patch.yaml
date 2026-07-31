@@ -6,6 +6,8 @@ spec:
   replicas: 2
   template:
     spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
       containers:
       - name: web-admin
         resources:
