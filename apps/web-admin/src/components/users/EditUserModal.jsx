@@ -10,6 +10,7 @@ import { User, Loader2, MapPin, X } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { USER_ROLES } from '../../utils/constants';
 import logger from '../../utils/logger';
+import { EMAIL_REGEX, validators } from '../../utils/validation';
 
 const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
   const { user: currentUser } = useAuth();
@@ -109,12 +110,16 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
     
     if (!formData.name?.trim()) {
       newErrors.name = 'Name is required';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'Name must be at most 100 characters';
     }
-    
+
     if (!formData.email?.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!EMAIL_REGEX.test(formData.email)) {
       newErrors.email = 'Invalid email format';
+    } else if (formData.email.length > 255) {
+      newErrors.email = 'Email must be at most 255 characters';
     }
 
     if (!formData.role) {
@@ -135,9 +140,13 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
       const confirmPassword = formData.confirmPassword || '';
       if (password.trim().length > 0) {
         const trimmedPassword = password.trim();
-        const policyOk = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(trimmedPassword);
-        if (!policyOk) {
-          newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
+        if (trimmedPassword.length > 128) {
+          newErrors.password = 'Password must be at most 128 characters';
+        } else {
+          const policyOk = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(trimmedPassword);
+          if (!policyOk) {
+            newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
+          }
         }
         if (password !== confirmPassword) {
           newErrors.confirmPassword = 'Passwords do not match';
@@ -319,6 +328,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
             placeholder="John Doe"
             required
             error={errors.name}
+            maxLength={100}
           />
 
           <FormInput
@@ -330,6 +340,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
             placeholder="john.doe@example.com"
             required
             error={errors.email}
+            maxLength={255}
           />
 
           <SelectInput
@@ -356,6 +367,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                 onChange={handleChange}
                 placeholder="Leave blank to keep unchanged"
                 error={errors.password}
+                maxLength={128}
               />
               <FormInput
                 label="Confirm New Password"
@@ -366,6 +378,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSuccess }) => {
                 onChange={handleChange}
                 placeholder="Re-enter new password"
                 error={errors.confirmPassword}
+                maxLength={128}
               />
             </div>
           )}

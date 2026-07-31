@@ -21,13 +21,10 @@ export const useSessionTimeout = (logout, isAuthenticated, bufferMs = DEFAULT_BU
     if (!isAuthenticated) return;
 
     const checkExpiry = () => {
-      const token = tokenManager.getAccessToken();
-      if (!token) return;
-
-      const expiry = tokenManager.getTokenExpiry(token);
+      const expiry = tokenManager.getTokenExpiry();
       if (!expiry) return;
 
-      const timeUntilExpiry = expiry.getTime() - Date.now();
+      const timeUntilExpiry = expiry - Date.now();
       if (timeUntilExpiry <= bufferMs) {
         toast.error('Your session has expired. Please log in again.');
         logoutRef.current?.();

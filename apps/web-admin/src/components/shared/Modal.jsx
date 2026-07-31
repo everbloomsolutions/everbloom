@@ -27,17 +27,18 @@ const Modal = memo(({ isOpen, onClose, title, children, size = 'md' }) => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Focus trap - focus first focusable element when modal opens
+  // Focus trap - focus first form input when modal opens, or the close button
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const modalElement = document.querySelector('[role="dialog"]');
     if (modalElement) {
-      const focusableElements = modalElement.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusableElements.length > 0) {
-        focusableElements[0].focus();
+      const firstField = modalElement.querySelector('input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (firstField) {
+        firstField.focus();
+      } else {
+        const closeButton = modalElement.querySelector('button[aria-label="Close modal"]');
+        if (closeButton) closeButton.focus();
       }
     }
   }, [isOpen]);

@@ -1,6 +1,5 @@
 import { io } from 'socket.io-client';
 import { appConfig } from '../config/appConfig';
-import { getToken } from '../utils/tokenManager';
 import logger from '../utils/logger';
 
 class SocketService {
@@ -9,7 +8,6 @@ class SocketService {
     this.listeners = new Map();
     this.connectionListeners = new Set();
     this.connectingPromise = null;
-    this.currentToken = null;
     this.lastConnectError = null;
   }
 
@@ -38,16 +36,8 @@ class SocketService {
     };
   }
 
-  connect(explicitToken) {
-    const token = explicitToken || getToken();
-    if (!token) {
-      logger.warn('No token available for socket connection');
-      this.lastConnectError = new Error('No token available for socket connection');
-      this._notifyConnectionState();
-      return;
-    }
-
-    if (this.socket && this.socket.connected && this.currentToken === token) {
+  connect() {
+    if (this.socket && this.socket.connected) {
       return;
     }
 
@@ -55,19 +45,14 @@ class SocketService {
       return;
     }
 
-    // If token changed, fully reset the socket before reconnect
-    if (this.socket && this.currentToken && this.currentToken !== token) {
-      this.disconnect();
-    }
-
-    this.currentToken = token;
     this.lastConnectError = null;
 
     // Create socket but do not auto-connect. This avoids React 18 StrictMode noise
     // and prevents premature connections before auth is ready.
+    // The auth cookie is sent automatically because withCredentials is enabled.
     this.socket = io(appConfig.socketUrl, {
-      auth: { token },
       transports: ['websocket', 'polling'],
+      withCredentials: true,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,

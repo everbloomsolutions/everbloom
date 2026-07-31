@@ -19,21 +19,15 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        const token = tokenManager.getToken();
-        if (token) {
-          const res = await authApi.getProfile();
-          const data = res.data?.data || res.data;
-          if (data?.user) {
-            setUser(data.user);
-            setIsAuthenticated(true);
-            socketService.connect(token);
-          } else {
-            tokenManager.clearAll();
-            socketService.disconnect();
-            setUser(null);
-            setIsAuthenticated(false);
-          }
+        const res = await authApi.getProfile();
+        const data = res.data?.data || res.data;
+        if (data?.user) {
+          setUser(data.user);
+          tokenManager.setUser(data.user);
+          setIsAuthenticated(true);
+          socketService.connect();
         } else {
+          tokenManager.clearAll();
           socketService.disconnect();
           setUser(null);
           setIsAuthenticated(false);
@@ -78,34 +72,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // authApi.login returns { success, user, accessToken, refreshToken, message } directly
+      // authApi.login returns { success, user, tokenExpiry, message }
       const response = await authApi.login({ email, password });
-
-      // Debug logging
-      logger.debug('Full response:', response);
 
       if (!response || typeof response !== 'object') {
         logger.error('Invalid response structure:', response);
         throw new Error('Invalid response from server');
       }
 
-      const { accessToken, user: loggedUser } = response;
+      const { user: loggedUser } = response;
 
-      if (!accessToken) {
-        const msg = response.message || 'No token received from server';
-        logger.error('Login response missing token:', response);
+      if (!loggedUser) {
+        const msg = response.message || 'Login failed';
+        logger.error('Login response missing user:', response);
         throw new Error(msg);
       }
 
-      // Tokens are already set by authApi.login, but we set user state here
-      if (loggedUser) {
-        setUser(loggedUser);
-      } else {
-        setUser(null);
-      }
-
+      setUser(loggedUser);
       setIsAuthenticated(true);
-      socketService.connect(accessToken);
+      socketService.connect();
       return response;
     } catch (error) {
       let serverMessage = error?.response?.data?.message || error.message || 'Login failed';
@@ -155,9 +140,6 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = useCallback(async () => {
     try {
-      const token = tokenManager.getToken();
-      if (!token) return;
-
       const res = await authApi.getProfile();
       const data = res.data?.data || res.data;
       if (data?.user) {

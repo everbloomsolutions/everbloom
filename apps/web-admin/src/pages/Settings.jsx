@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { authApi } from '../api';
 import FormInput from '../components/forms/FormInput';
 import Button from '../components/shared/Button';
+import { validators } from '../utils/validation';
 
 const Settings = () => {
   const { user, updateProfile } = useAuth();
@@ -21,6 +22,14 @@ const Settings = () => {
       const errors = {};
       if (!values.name?.trim()) {
         errors.name = 'Name is required';
+      }
+      const phoneError = validators.phone(values.phone);
+      if (phoneError) {
+        errors.phone = phoneError;
+      }
+      const emailError = validators.email(values.email);
+      if (emailError) {
+        errors.email = emailError;
       }
       return errors;
     },
@@ -122,6 +131,7 @@ const Settings = () => {
               onBlur={profileForm.handleBlur}
               error={profileForm.touched.email ? profileForm.errors.email : undefined}
               disabled
+              helperText="Email cannot be changed. Contact an admin to update it."
             />
 
             <FormInput

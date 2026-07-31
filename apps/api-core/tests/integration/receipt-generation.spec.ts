@@ -1,150 +1,134 @@
 /**
  * Receipt Generation Integration Tests (NestJS)
- * Migrated from Express tests
- * 
- * Tests critical receipt generation flow including:
- * - Atomic receipt number generation
- * - Database transactions
- * - Error handling and rollback
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import mongoose from 'mongoose';
-import { Receipt } from '../../src/modules/receipt/receipt.model';
-import { Project } from '../../src/modules/project/project.model';
-import { ReceiptSequence } from '../../src/modules/receipt/receipt-sequence.model';
-import { generateReceipt } from '../../src/modules/receipt/receipt.service';
+import mongoose, { Model } from 'mongoose';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
+import { ConflictException } from '@nestjs/common';
+import '../env-setup';
 import { setupTestDB, cleanupTestDB, closeTestDB } from '../setup';
+import { DatabaseModule } from '../../src/infrastructure/database/database.module';
+import { ReceiptModule } from '../../src/modules/receipt/receipt.module';
+import { ReceiptService } from '../../src/modules/receipt/receipt.service';
+import { Receipt, ReceiptDocument } from '../../src/modules/receipt/schemas/receipt.schema';
+import { Project, ProjectDocument } from '../../src/modules/project/schemas/project.schema';
+
+const makeProject = (projectModel: Model<ProjectDocument>, overrides = {}) => {
+  return projectModel.create({
+    userId: new mongoose.Types.ObjectId(),
+    serviceType: 'recycling',
+    title: 'Test Collection',
+    description: 'Test description',
+    status: 'completed',
+    priority: 'medium',
+    location: { address: 'Test Address' },
+    collectionItems: [
+      { materialType: 'paper', weight: 10, rate: 5, amount: 50 },
+    ],
+    totalWeight: 10,
+    subTotal: 50,
+    gstRate: 18,
+    gstAmount: 9,
+    totalAmount: 59,
+    ...overrides,
+  });
+};
 
 describe('Receipt Generation Integration Tests (NestJS)', () => {
+  let module: TestingModule;
+  let receiptService: ReceiptService;
+  let receiptModel: Model<ReceiptDocument>;
+  let projectModel: Model<ProjectDocument>;
+
   beforeAll(async () => {
     await setupTestDB();
+
+    module = await Test.createTestingModule({
+      imports: [DatabaseModule, ReceiptModule],
+    }).compile();
+
+    receiptService = module.get<ReceiptService>(ReceiptService);
+    receiptModel = module.get<Model<ReceiptDocument>>(getModelToken(Receipt.name));
+    projectModel = module.get<Model<ProjectDocument>>(getModelToken(Project.name));
   });
 
   afterAll(async () => {
+    await module.close();
     await closeTestDB();
   });
 
   beforeEach(async () => {
     await cleanupTestDB();
-    // Clean up test data
-    await Receipt.deleteMany({});
-    await ReceiptSequence.deleteMany({});
-    await Project.deleteMany({});
+    await receiptModel.deleteMany({});
+    await projectModel.deleteMany({});
   });
 
   it('should generate unique receipt numbers atomically', async () => {
-    // Create test project
-    const project = await Project.create({
-      userId: new mongoose.Types.ObjectId(),
-      serviceType: 'recycling',
-      title: 'Test Collection',
-      description: 'Test description',
-      location: { address: 'Test Address' },
-      collectionItems: [{
-        materialType: 'paper',
-        weight: 10,
-        rate: 5,
-        amount: 50,
-      }],
-      totalWeight: 10,
-      subTotal: 50,
-      gstRate: 18,
-      gstAmount: 9,
-      totalAmount: 59,
-    });
+    const project = await makeProject(projectModel);
+    const generatedBy = new mongoose.Types.ObjectId().toString();
+    const upi = '123456789012';
 
-    // Generate receipts concurrently
     const promises = Array.from({ length: 5 }, () =>
-      generateReceipt({
-        collectionId: project._id.toString(),
-        generatedBy: new mongoose.Types.ObjectId().toString(),
-        upiTransactionId: '123456789012',
-      })
+      receiptService.generateReceipt(
+        { collectionId: project._id.toString(), upiTransactionId: upi },
+        generatedBy,
+      ),
     );
 
-    const receipts = await Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    const fulfilled = results
+      .filter((r): r is PromiseFulfilledResult<ReceiptDocument> => r.status === 'fulfilled')
+      .map((r) => r.value);
 
-    // Verify all receipts have unique numbers
-    const receiptNumbers = receipts.map(r => r.receiptNumber);
+    expect(fulfilled.length).toBe(1);
+
+    const rejected = results.filter((r) => r.status === 'rejected');
+    expect(rejected.length).toBe(4);
+    expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(ConflictException);
+
+    const receiptNumbers = fulfilled.map((r) => r.receiptNumber);
     const uniqueNumbers = new Set(receiptNumbers);
     expect(uniqueNumbers.size).toBe(receiptNumbers.length);
 
-    // Verify sequence counter was incremented correctly
-    const sequence = await ReceiptSequence.findOne({
-      date: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
-    });
-    expect(sequence?.sequence).toBeGreaterThanOrEqual(5);
+    const receipts = await receiptModel.find({ collectionId: project._id });
+    expect(receipts.length).toBe(1);
   });
 
-  it('should rollback transaction on error', async () => {
-    const project = await Project.create({
-      userId: new mongoose.Types.ObjectId(),
-      serviceType: 'recycling',
-      title: 'Test Collection',
-      description: 'Test description',
-      location: { address: 'Test Address' },
-      collectionItems: [{
-        materialType: 'paper',
-        weight: 10,
-        rate: 5,
-        amount: 50,
-      }],
-    });
+  it('should fail when collection does not exist', async () => {
+    const deletedId = new mongoose.Types.ObjectId().toString();
+    const generatedBy = new mongoose.Types.ObjectId().toString();
 
-    // Delete project to cause error
-    await Project.findByIdAndDelete(project._id);
-
-    // Attempt to generate receipt - should fail
     await expect(
-      generateReceipt({
-        collectionId: project._id.toString(),
-        generatedBy: new mongoose.Types.ObjectId().toString(),
-        upiTransactionId: '123456789012',
-      })
+      receiptService.generateReceipt(
+        { collectionId: deletedId, upiTransactionId: '123456789012' },
+        generatedBy,
+      ),
     ).rejects.toThrow();
 
-    // Verify no receipt was created
-    const receipts = await Receipt.find({ collectionId: project._id });
+    const receipts = await receiptModel.find({ collectionId: deletedId });
     expect(receipts.length).toBe(0);
   });
 
-  it('should return existing receipt if already generated', async () => {
-    const project = await Project.create({
-      userId: new mongoose.Types.ObjectId(),
-      serviceType: 'recycling',
-      title: 'Test Collection',
-      description: 'Test description',
-      location: { address: 'Test Address' },
-      collectionItems: [{
-        materialType: 'paper',
-        weight: 10,
-        rate: 5,
-        amount: 50,
-      }],
-    });
-
+  it('should reject duplicate receipt requests with 409', async () => {
+    const project = await makeProject(projectModel);
     const generatedBy = new mongoose.Types.ObjectId().toString();
+    const upi = '123456789012';
 
-    // Generate first receipt
-    const receipt1 = await generateReceipt({
-      collectionId: project._id.toString(),
+    await receiptService.generateReceipt(
+      { collectionId: project._id.toString(), upiTransactionId: upi },
       generatedBy,
-      upiTransactionId: '123456789012',
-    });
+    );
 
-    // Generate again - should return same receipt
-    const receipt2 = await generateReceipt({
-      collectionId: project._id.toString(),
-      generatedBy,
-      upiTransactionId: '123456789012',
-    });
+    await expect(
+      receiptService.generateReceipt(
+        { collectionId: project._id.toString(), upiTransactionId: upi },
+        generatedBy,
+      ),
+    ).rejects.toThrow(ConflictException);
 
-    expect(receipt1._id.toString()).toBe(receipt2._id.toString());
-    expect(receipt1.receiptNumber).toBe(receipt2.receiptNumber);
-
-    // Verify only one receipt exists
-    const receipts = await Receipt.find({ collectionId: project._id });
+    const receipts = await receiptModel.find({ collectionId: project._id });
     expect(receipts.length).toBe(1);
   });
 });

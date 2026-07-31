@@ -3,8 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth, useForm } from '../hooks';
 import logger from '../utils/logger';
 import { Mail, Lock, LogIn, Shield, Zap, BarChart3 } from 'lucide-react';
-
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+import { EMAIL_REGEX } from '../utils/validation';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -96,6 +95,7 @@ const Login = () => {
               onChange={loginForm.handleChange}
               onBlur={loginForm.handleBlur}
               required
+              maxLength={255}
               className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
                 loginForm.touched.email && loginForm.errors.email
                   ? 'border-red-500 dark:border-red-500'

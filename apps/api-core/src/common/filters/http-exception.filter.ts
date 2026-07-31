@@ -37,12 +37,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       req.id ||
       `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const msgObj = typeof message === 'object' && message !== null ? message as { message?: string | string[] } : null;
-    const errorResponse: { success: false; message: string; requestId: string; errors?: { message: string }[]; stack?: string } = {
+    const msgObj = typeof message === 'object' && message !== null ? message as { message?: string | string[]; data?: unknown } : null;
+    const errorResponse: { success: false; message: string; requestId: string; errors?: { message: string }[]; data?: unknown; stack?: string } = {
       success: false,
       message: typeof message === 'string' ? message : (msgObj?.message && typeof msgObj.message === 'string' ? msgObj.message : 'Error'),
       requestId,
     };
+
+    if (msgObj?.data !== undefined) {
+      errorResponse.data = msgObj.data;
+    }
 
     // Include validation errors if present
     if (

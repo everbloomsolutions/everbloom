@@ -21,6 +21,20 @@ const getCacheKey = (config) => {
 };
 
 /**
+ * Remove GET cache entries for the same resource after a mutation.
+ */
+const clearRelatedCache = (url) => {
+  if (!url) return;
+  for (const key of requestCache.keys()) {
+    const [method, cachedUrl] = key.split(':');
+    if (method !== 'GET') continue;
+    if (cachedUrl === url || cachedUrl?.startsWith(`${url}/`)) {
+      requestCache.delete(key);
+    }
+  }
+};
+
+/**
  * Check if cached data is still valid
  */
 const _isCacheValid = (cached) => {
@@ -401,11 +415,8 @@ axiosInstance.interceptors.request.use(
       });
     }
     
-    // Add auth token to requests
-    const token = tokenManager.getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Authentication is handled by httpOnly cookies (withCredentials: true)
+    // No Authorization header should be set from JavaScript.
 
     // Add cache key to config for response interceptor (for GET requests only)
     if (config.method?.toLowerCase() === 'get' && !config.forceRefresh) {
@@ -440,12 +451,14 @@ axiosInstance.interceptors.response.use(
     // Normalize response to consistent format for JSON responses
     const normalized = normalizeResponse(response);
     
-    // Cache successful GET responses
+    // Cache successful GET responses; invalidate related GET cache on mutations
     if (response.config?.__cacheKey && response.config.method?.toLowerCase() === 'get') {
       requestCache.set(response.config.__cacheKey, {
         data: normalized.data,
         timestamp: Date.now(),
       });
+    } else if (response.config?.method?.toLowerCase() !== 'get') {
+      clearRelatedCache(response.config.url);
     }
 
     // Attach normalized response to original response object for easy access
@@ -472,8 +485,8 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Skip token refresh for authentication endpoints (login, logout, register, refresh-token)
-    const authEndpoints = ['/auth/login', '/auth/logout', '/auth/register', '/auth/refresh-token'];
+    // Skip token refresh for authentication endpoints
+    const authEndpoints = ['/auth/login', '/auth/logout', '/auth/register', '/auth/refresh', '/auth/refresh-token'];
     const isAuthEndpoint = originalRequest?.url && authEndpoints.some(endpoint => 
       originalRequest.url.includes(endpoint)
     );
@@ -483,16 +496,7 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = tokenManager.getRefreshToken();
         const baseURL = axiosInstance.defaults.baseURL || getBaseURL();
-        
-        if (!refreshToken) {
-          // No refresh token available, clear auth and redirect
-          logger.debug('No refresh token available for refresh');
-          tokenManager.clearAll();
-          // Don't redirect here - let the error propagate naturally
-          return Promise.reject(error);
-        }
 
         if (!baseURL) {
           logger.error('Base URL not configured');
@@ -502,30 +506,23 @@ axiosInstance.interceptors.response.use(
         const refreshUrl = `${baseURL}/auth/refresh`;
         logger.debug('Attempting token refresh...');
         
-        const response = await axios.post(refreshUrl, { refreshToken }, {
+        // Cookies are sent automatically by axios (withCredentials: true)
+        const response = await axios.post(refreshUrl, {}, {
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          withCredentials: true,
         });
 
-        // Backend returns: { success: true, data: { token, refreshToken } }
-        const token = response?.data?.data?.token || response?.data?.token;
-        
-        if (token && typeof token === 'string') {
-          // Update access token, keep refresh token if provided
-          const newRefreshToken = response?.data?.data?.refreshToken;
-          if (newRefreshToken) {
-            tokenManager.setTokens(token, newRefreshToken);
-          } else {
-            tokenManager.setToken(token);
+        if (response?.data?.success) {
+          const tokenExpiry = response?.data?.data?.tokenExpiry;
+          if (tokenExpiry) {
+            tokenManager.setTokenExpiry(tokenExpiry);
           }
 
           logger.debug('Token refreshed successfully');
 
-          // Retry original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
+          // Retry original request; the new access cookie will be sent automatically
           return axiosInstance(originalRequest);
         } else {
           throw new Error('Invalid token in refresh response');
@@ -552,11 +549,11 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // If still 401 and it's not an auth endpoint, clear tokens
+    // If still 401 and it's not an auth endpoint, clear session state
     // But don't redirect for auth endpoints (let them handle their own errors)
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      // Only clear if we have tokens (to avoid clearing on initial login failure)
-      if (tokenManager.isAuthenticated()) {
+      // Only clear if we have a stored user (to avoid clearing on initial login failure)
+      if (tokenManager.getUser()) {
         tokenManager.clearAll();
         if (!window.location.pathname.includes('/login')) {
           // Use setTimeout to avoid navigation during error handling

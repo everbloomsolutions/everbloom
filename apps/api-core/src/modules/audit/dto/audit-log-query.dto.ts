@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsOptional, IsDateString, IsNumber, Min } from 'class-validator';
+import { IsEnum, IsString, IsOptional, IsDateString, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EntityType, AuditAction } from '../schemas/audit-log.schema';
 
@@ -13,6 +13,7 @@ export class AuditLogQueryDto {
   @IsNumber()
   @Type(() => Number)
   @Min(1)
+  @Max(100, { message: 'Limit cannot exceed 100' })
   limit?: number;
 
   @IsOptional()

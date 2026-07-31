@@ -5,6 +5,8 @@
  * Provides reusable validators for form validation
  */
 
+export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+
 export const validators = {
   /**
    * Required field validator
@@ -21,8 +23,7 @@ export const validators = {
    */
   email: (value) => {
     if (!value) return null; // Let required handle empty
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
+    if (!EMAIL_REGEX.test(value)) {
       return 'Invalid email format';
     }
     return null;
@@ -81,8 +82,11 @@ export const validators = {
    * Number validator
    */
   number: (value, fieldName = 'Field') => {
-    if (!value) return null;
-    if (isNaN(value) || isNaN(parseFloat(value))) {
+    if (value === null || value === undefined || value === '') return null;
+    const str = String(value).trim();
+    if (str === '') return null;
+    const num = Number(str);
+    if (Number.isNaN(num)) {
       return `${fieldName} must be a valid number`;
     }
     return null;
@@ -92,9 +96,11 @@ export const validators = {
    * Positive number validator
    */
   positiveNumber: (value, fieldName = 'Field') => {
-    if (!value) return null;
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) {
+    if (value === null || value === undefined || value === '') return null;
+    const str = String(value).trim();
+    if (str === '') return null;
+    const num = Number(str);
+    if (Number.isNaN(num) || num <= 0) {
       return `${fieldName} must be a positive number`;
     }
     return null;
@@ -182,8 +188,7 @@ export const schemas = {
  * @deprecated Use validators object instead for better error messages
  */
 export const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 export const validatePassword = (password) => {

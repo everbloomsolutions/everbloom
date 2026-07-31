@@ -1,31 +1,43 @@
-import { format, formatDistance, formatRelative } from 'date-fns';
+import { format, formatDistance, formatRelative, isValid } from 'date-fns';
+
+const toValidDate = (date) => {
+  if (!date) return null;
+  const parsed = date instanceof Date ? date : new Date(date);
+  return isValid(parsed) ? parsed : null;
+};
 
 export const formatDate = (date, formatStr = 'PPP') => {
-  if (!date) return '';
-  return format(new Date(date), formatStr);
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return format(parsed, formatStr);
 };
 
 export const formatDateTime = (date) => {
-  if (!date) return '';
-  return format(new Date(date), 'PPP p');
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return format(parsed, 'PPP p');
 };
 
 export const formatRelativeDate = (date) => {
-  if (!date) return '';
-  return formatRelative(new Date(date), new Date());
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return formatRelative(parsed, new Date());
 };
 
 export const formatDistanceDate = (date) => {
-  if (!date) return '';
-  return formatDistance(new Date(date), new Date(), { addSuffix: true });
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return formatDistance(parsed, new Date(), { addSuffix: true });
 };
 
 export const formatTime = (date) => {
-  if (!date) return '';
-  return format(new Date(date), 'p');
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return format(parsed, 'p');
 };
 
 export const formatShortDate = (date) => {
-  if (!date) return '';
-  return format(new Date(date), 'PP');
+  const parsed = toValidDate(date);
+  if (!parsed) return '';
+  return format(parsed, 'PP');
 };

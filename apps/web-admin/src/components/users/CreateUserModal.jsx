@@ -9,11 +9,12 @@ import ConfirmationModal from '../shared/ConfirmationModal';
 import { userApi } from '../../api';
 import { generatePassword } from '../../utils/passwordGenerator';
 import { toast } from 'react-hot-toast';
-import { UserPlus, Eye, EyeOff, RefreshCw, MapPin, X } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, RefreshCw, MapPin, X, Lightbulb } from 'lucide-react';
 import logger from '../../utils/logger';
 import { sanitizeInput } from '../../utils/sanitize';
 import { useAuth, useModal, useModalWithData } from '../../hooks';
 import { USER_ROLES } from '../../utils/constants';
+import { EMAIL_REGEX, validators } from '../../utils/validation';
 
 const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
@@ -65,16 +66,22 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
 
     if (!formData.name?.trim()) {
       newErrors.name = 'Name is required';
+    } else if (formData.name.length > 100) {
+      newErrors.name = 'Name must be at most 100 characters';
     }
 
     if (!formData.email?.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!EMAIL_REGEX.test(formData.email)) {
       newErrors.email = 'Invalid email format';
+    } else if (formData.email.length > 255) {
+      newErrors.email = 'Email must be at most 255 characters';
     }
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
+    } else if (formData.password.length > 128) {
+      newErrors.password = 'Password must be at most 128 characters';
     } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(formData.password)) {
       newErrors.password = 'Password must be at least 8 characters and include uppercase, lowercase, and a number';
     }
@@ -386,6 +393,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
           placeholder="John Doe"
           required
           error={errors.name}
+          maxLength={100}
         />
 
         <FormInput
@@ -397,10 +405,12 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
           placeholder="john.doe@example.com"
           required
           error={errors.email}
+          maxLength={255}
         />
         {errors.email && errors.email.includes('already exists') && (
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            💡 This email is already registered. If you need to reset the password for this user, use the &quot;Forgot Password&quot; feature or contact an administrator.
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1.5">
+            <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>This email is already registered. If you need to reset the password for this user, use the &quot;Forgot Password&quot; feature or contact an administrator.</span>
           </p>
         )}
 
@@ -415,7 +425,8 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess }) => {
             placeholder="Enter password or generate one"
             required
             error={errors.password}
-            helperText="Minimum 6 characters"
+            helperText="Minimum 8 characters"
+            maxLength={128}
           />
           <div className="absolute right-0 top-8 flex gap-2">
             <button

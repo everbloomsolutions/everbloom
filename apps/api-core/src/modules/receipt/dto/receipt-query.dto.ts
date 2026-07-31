@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsDateString, Min } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsDateString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ReceiptQueryDto {
@@ -12,6 +12,7 @@ export class ReceiptQueryDto {
   @IsNumber()
   @Type(() => Number)
   @Min(1)
+  @Max(100, { message: 'Limit cannot exceed 100' })
   limit?: number;
 
   @IsOptional()

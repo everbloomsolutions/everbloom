@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AnalyticsQueryDto {
@@ -12,6 +12,7 @@ export class AnalyticsQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100, { message: 'Limit cannot exceed 100' })
   limit?: number;
 
   @IsOptional()

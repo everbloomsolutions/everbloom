@@ -12,6 +12,10 @@ import * as jwt from 'jsonwebtoken';
 import { User, UserDocument } from '../../modules/user/schemas/user.schema';
 import { JwtService } from '../services/jwt.service';
 import { TokenBlacklistService } from '../services/token-blacklist.service';
+import {
+  ACCESS_TOKEN_COOKIE,
+  parseCookies,
+} from '../utils/cookie.util';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -29,13 +33,12 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
+    const cookies = parseCookies(request.headers.cookie);
     const authHeader = request.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authentication required');
-    }
-
-    const token = authHeader.substring(7);
+    const token =
+      cookies[ACCESS_TOKEN_COOKIE] ||
+      (authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '');
 
     if (!token) {
       throw new UnauthorizedException('Authentication required');

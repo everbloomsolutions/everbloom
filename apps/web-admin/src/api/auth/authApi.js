@@ -16,23 +16,22 @@ export const authApi = {
       throw new Error(response.data.message || 'Login failed');
     }
 
-    const { user, accessToken, refreshToken } = response.data.data;
+    const { user, tokenExpiry } = response.data.data;
 
-    if (!accessToken) {
-      logger.error('Login response missing token:', response.data);
-      throw new Error('No token received from server');
+    if (!user) {
+      logger.error('Login response missing user:', response.data);
+      throw new Error('Login failed');
     }
 
-    // Store tokens and user data
-    tokenManager.setTokens(accessToken, refreshToken);
+    // Store user and session expiry; tokens are in httpOnly cookies
     tokenManager.setUser(user);
+    if (tokenExpiry) tokenManager.setTokenExpiry(tokenExpiry);
 
     // Return consistent flattened structure
     return {
       success: true,
       user,
-      accessToken,
-      refreshToken,
+      tokenExpiry,
       message: response.data.message || 'Login successful'
     };
   },
@@ -101,34 +100,20 @@ export const authApi = {
 
   // Refresh token
   refreshToken: async () => {
-    const refreshToken = tokenManager.getRefreshToken();
-    
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-    
-    const response = await axiosInstance.post('/auth/refresh', { refreshToken });
-    
-    // Extract and store new access token
+    // Cookies are sent automatically by axios (withCredentials). The refresh
+    // token is read from the httpOnly cookie by the backend.
+    const response = await axiosInstance.post('/auth/refresh', {});
+
     if (response.data.success && response.data.data) {
-      const { accessToken, refreshToken } = response.data.data;
-      
-      // Update tokens (backend may return new refresh token)
-      if (refreshToken) {
-        tokenManager.setTokens(accessToken, refreshToken);
-      } else {
-        // Keep existing refresh token if not provided
-        const currentRefreshToken = tokenManager.getRefreshToken();
-        tokenManager.setTokens(accessToken, currentRefreshToken);
-      }
-      
+      const { tokenExpiry } = response.data.data;
+      if (tokenExpiry) tokenManager.setTokenExpiry(tokenExpiry);
+
       return {
         success: true,
-        accessToken,
-        refreshToken: refreshToken || tokenManager.getRefreshToken()
+        tokenExpiry,
       };
     }
-    
+
     return response.data;
   },
 

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { Receipt, ReceiptDocument } from './schemas/receipt.schema';
@@ -6,6 +6,7 @@ import { GenerateReceiptDto } from './dto/generate-receipt.dto';
 import { ReceiptQueryDto } from './dto/receipt-query.dto';
 import { ReceiptSequence } from './receipt-sequence.model';
 import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
+import { buildSearchRegex } from '../../common/utils/regex.util';
 
 @Injectable()
 export class ReceiptService {
@@ -46,7 +47,14 @@ export class ReceiptService {
     // Prevent duplicate receipts for same collection
     const existing = await this.receiptModel.findOne({ collectionId: collectionObjectId }).exec();
     if (existing) {
-      return existing;
+      throw new ConflictException({
+        success: false,
+        message: 'A receipt already exists for this collection',
+        data: {
+          isDuplicate: true,
+          existingReceipt: existing.toJSON(),
+        },
+      });
     }
 
     // Resolve location fields for PDF
@@ -156,19 +164,30 @@ export class ReceiptService {
     if (filters.search) {
       const s = String(filters.search).trim();
       if (s) {
+        const searchRegex = buildSearchRegex(s);
         query.$or = [
-          { receiptNumber: { $regex: s, $options: 'i' } },
-          { locationName: { $regex: s, $options: 'i' } },
-          { upiTransactionId: { $regex: s, $options: 'i' } },
+          { receiptNumber: { $regex: searchRegex } },
+          { locationName: { $regex: searchRegex } },
+          { upiTransactionId: { $regex: searchRegex } },
         ];
       }
     }
 
     if (filters.startDate || filters.endDate) {
       const queryBuilder = new QueryBuilderService();
+
+      const parseDate = (dateStr?: string): Date | undefined => {
+        if (!dateStr) return undefined;
+        const d = new Date(dateStr);
+        if (Number.isNaN(d.getTime())) {
+          throw new BadRequestException(`Invalid date: ${dateStr}`);
+        }
+        return d;
+      };
+
       const dateRangeFilter = queryBuilder.buildDateRange(
-        filters.startDate ? new Date(filters.startDate) : undefined,
-        filters.endDate ? new Date(filters.endDate) : undefined,
+        parseDate(filters.startDate),
+        parseDate(filters.endDate),
         'collectionDate',
       );
       Object.assign(query, dateRangeFilter);

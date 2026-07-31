@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, Length, Matches } from 'class-validator';
 
 export class GenerateReceiptDto {
   @IsString()
@@ -7,6 +7,7 @@ export class GenerateReceiptDto {
 
   @IsString()
   @IsNotEmpty({ message: 'UPI Transaction ID/UTR is required' })
-  @MinLength(1, { message: 'UPI Transaction ID/UTR is required' })
+  @Length(12, 12, { message: 'UPI Transaction ID/UTR must be exactly 12 characters' })
+  @Matches(/^\d{12}$/, { message: 'UPI Transaction ID/UTR must be exactly 12 digits' })
   upiTransactionId!: string;
 }

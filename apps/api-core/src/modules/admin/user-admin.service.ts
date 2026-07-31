@@ -18,6 +18,7 @@ import * as locationAssignmentService from '../location/location.assignment.serv
 import { Location, ILocation } from '../location/location.model';
 import { Project } from '../project/project.model';
 import { logAuditEvent } from '../audit/audit.helper';
+import { buildSearchRegex } from '../../common/utils/regex.util';
 
  const normalizeEmailKey = (value: string): string => String(value || '').trim().toLowerCase();
 
@@ -259,7 +260,7 @@ export const getUsers = async (params: UserListParams = {}, verifiedConnection?:
 
   if (params.search) {
     // Search by name or email
-    const searchRegex = new RegExp(params.search.trim(), 'i');
+    const searchRegex = buildSearchRegex(params.search.trim());
     query.$or = [
       { name: { $regex: searchRegex, $exists: true, $ne: null } },
       { email: { $regex: searchRegex } },
@@ -878,7 +879,7 @@ export const getDeletedUsers = async (params: UserListParams & {
 
   // Handle search - use regex for deleted users since text search might not work well with isDeleted filter
   if (params.search) {
-    const searchRegex = { $regex: params.search, $options: 'i' };
+    const searchRegex = { $regex: buildSearchRegex(params.search.trim()).source, $options: 'i' };
     query.$or = [
       { email: searchRegex },
       { name: searchRegex },

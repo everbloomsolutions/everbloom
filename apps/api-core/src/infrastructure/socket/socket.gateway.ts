@@ -16,6 +16,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../../modules/user/schemas/user.schema';
 import { formatAllowedOriginsForLog, resolveAllowedOrigins } from '../../config/url-normalization';
+import { ACCESS_TOKEN_COOKIE, parseCookies } from '../../common/utils/cookie.util';
 
 type SocketUser = Pick<UserDocument, '_id' | 'role' | 'isActive' | 'email'>;
 
@@ -118,7 +119,9 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           existing.count += 1;
         };
 
+        const cookies = parseCookies(socket.handshake.headers.cookie);
         const token =
+          cookies[ACCESS_TOKEN_COOKIE] ||
           socket.handshake.auth?.token ||
           socket.handshake.headers.authorization?.replace('Bearer ', '');
 
@@ -220,7 +223,9 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           socket.handshake.address ||
           'unknown';
 
+        const cookies = parseCookies(socket.handshake.headers.cookie);
         const token =
+          cookies[ACCESS_TOKEN_COOKIE] ||
           socket.handshake.auth?.token ||
           socket.handshake.headers.authorization?.replace('Bearer ', '');
         const tokenFingerprint = token ? token.slice(0, 16) : 'no-token';
