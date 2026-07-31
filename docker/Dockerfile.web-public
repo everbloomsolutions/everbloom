@@ -24,7 +24,7 @@ RUN { \
       echo 'error_log /dev/stderr notice;'; \
     } > /etc/nginx/conf.d/runtime_paths.conf
 
-RUN echo "web-public app not yet implemented" > /usr/share/nginx/html/index.html && \
+RUN echo "web-public placeholder" > /usr/share/nginx/html/index.html && \
     echo "OK" > /usr/share/nginx/html/health && \
     chown -R nginx:nginx /usr/share/nginx/html
 
