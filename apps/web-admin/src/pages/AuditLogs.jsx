@@ -398,7 +398,15 @@ const AuditLogs = () => {
             Audit Log Entries
           </h2>
         </div>
-        <Table columns={columns} data={formattedLogs} />
+        {formattedLogs.length === 0 && !loading ? (
+          <EmptyState
+            icon={Activity}
+            title="No audit logs found"
+            description="Audit logs are generated when collections, locations, or users are created, updated, or deleted. Try performing an action or adjusting your filters."
+          />
+        ) : (
+          <Table columns={columns} data={formattedLogs} />
+        )}
       </div>
 
       {totalPages > 1 && (

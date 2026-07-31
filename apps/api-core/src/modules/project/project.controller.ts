@@ -170,9 +170,11 @@ export class ProjectAdminController {
   @Get()
   @Roles('admin', 'super_admin', 'agent', 'user')
   async getAllProjects(@Query() query: any, @CurrentUser() user: UserDocument, @Req() _req: any) {
+    const isAdmin = user.role === 'admin' || user.role === 'super_admin';
     return this.projectService.getAllProjects({
       ...query,
-      userId: user._id.toString(),
+      // Admins can filter by a specific agent/user via query.userId; agents/users are scoped to themselves
+      userId: isAdmin ? query.userId : user._id.toString(),
       userRole: user.role,
       defaultLocation: user.defaultLocation?.toString(),
     });
@@ -277,6 +279,92 @@ export class ProjectAdminController {
     });
   }
 
+  // Import/export routes must come before the @Get(':id') catch-all
+  // otherwise paths like /export and /import/template are treated as IDs.
+  @Get('export')
+  @Roles('admin', 'super_admin', 'agent')
+  async exportCollections(
+    @Query() query: any,
+    @CurrentUser() user: UserDocument,
+    @Res() res: Response,
+  ) {
+    await this.databaseService.ensureConnectionReady();
+    const verifiedConnection = this.databaseService.getConnection();
+    const importService = await import('./project.import.service');
+    const fileFormat = (query?.format === 'xlsx' ? 'xlsx' : 'csv') as 'csv' | 'xlsx';
+    const result = await importService.exportCollections(
+      {
+        locationType: query?.locationType,
+        startDate: query?.startDate ? new Date(query.startDate) : undefined,
+        endDate: query?.endDate ? new Date(query.endDate) : undefined,
+        userId: user._id.toString(),
+        userRole: user.role,
+      },
+      fileFormat,
+      verifiedConnection,
+    );
+
+    const filename = `collections-export-${user.role}-${Date.now()}.${result.extension}`;
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(result.data);
+  }
+
+  @Post('import/validate')
+  @Roles('admin', 'super_admin', 'agent')
+  @UseInterceptors(FileInterceptor('file'))
+  async validateCollectionsImport(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() importDataDto: ImportDataDto,
+    @CurrentUser() user: UserDocument,
+    @Req() _req: any,
+  ) {
+    const csvData = importDataDto?.csvData;
+    const fileBuffer = file?.buffer;
+    if (!fileBuffer && !csvData) {
+      throw new BadRequestException('File upload (file) or csvData is required');
+    }
+    return this.projectService.validateCollectionsImport(
+      fileBuffer || csvData,
+      user._id.toString(),
+      user.role,
+      file?.originalname,
+    );
+  }
+
+  @Post('import')
+  @Roles('admin', 'super_admin', 'agent')
+  @UseInterceptors(FileInterceptor('file'))
+  async importCollections(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() importDataDto: ImportDataDto,
+    @CurrentUser() user: UserDocument,
+    @Req() req: any,
+  ) {
+    const csvData = importDataDto?.csvData;
+    const fileBuffer = file?.buffer;
+    if (!fileBuffer && !csvData) {
+      throw new BadRequestException('File upload (file) or csvData is required');
+    }
+    return this.projectService.importCollections(
+      fileBuffer || csvData,
+      user._id.toString(),
+      user.role,
+      req,
+      file?.originalname,
+    );
+  }
+
+  @Get('import/template')
+  @Roles('admin', 'super_admin', 'agent')
+  async getCollectionsImportTemplate(@Res() res: Response) {
+    const csv = await this.projectService.getCollectionsImportTemplate();
+    const filename = 'collections-import-template.csv';
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  }
+
   @Get(':id')
   @Roles('admin', 'super_admin', 'agent', 'user')
   async getProjectByIdAdmin(@Param('id') id: string, @CurrentUser() user: UserDocument, @Req() _req: any) {
@@ -370,88 +458,6 @@ export class ProjectAdminController {
       data: project,
       message: 'Collection transferred successfully',
     };
-  }
-
-  @Get('export')
-  @Roles('admin', 'super_admin', 'agent')
-  async exportCollections(
-    @Query() query: any,
-    @CurrentUser() user: UserDocument,
-    @Res() res: Response,
-  ) {
-    await this.databaseService.ensureConnectionReady();
-    const verifiedConnection = this.databaseService.getConnection();
-    const importService = await import('./project.import.service');
-    const fileFormat = (query?.format === 'xlsx' ? 'xlsx' : 'csv') as 'csv' | 'xlsx';
-    const result = await importService.exportCollections(
-      {
-        locationType: query?.locationType,
-        startDate: query?.startDate ? new Date(query.startDate) : undefined,
-        endDate: query?.endDate ? new Date(query.endDate) : undefined,
-      },
-      fileFormat,
-      verifiedConnection,
-    );
-
-    const filename = `collections-export-${user.role}-${Date.now()}.${result.extension}`;
-    res.setHeader('Content-Type', result.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(result.data);
-  }
-
-  @Post('import/validate')
-  @Roles('admin', 'super_admin', 'agent')
-  @UseInterceptors(FileInterceptor('file'))
-  async validateCollectionsImport(
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() importDataDto: ImportDataDto,
-    @CurrentUser() user: UserDocument,
-    @Req() _req: any,
-  ) {
-    const csvData = importDataDto?.csvData;
-    const fileBuffer = file?.buffer;
-    if (!fileBuffer && !csvData) {
-      throw new BadRequestException('File upload (file) or csvData is required');
-    }
-    return this.projectService.validateCollectionsImport(
-      fileBuffer || csvData,
-      user._id.toString(),
-      user.role,
-      file?.originalname,
-    );
-  }
-
-  @Post('import')
-  @Roles('admin', 'super_admin', 'agent')
-  @UseInterceptors(FileInterceptor('file'))
-  async importCollections(
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() importDataDto: ImportDataDto,
-    @CurrentUser() user: UserDocument,
-    @Req() req: any,
-  ) {
-    const csvData = importDataDto?.csvData;
-    const fileBuffer = file?.buffer;
-    if (!fileBuffer && !csvData) {
-      throw new BadRequestException('File upload (file) or csvData is required');
-    }
-    return this.projectService.importCollections(
-      fileBuffer || csvData,
-      user._id.toString(),
-      user.role,
-      req,
-      file?.originalname,
-    );
-  }
-
-  @Get('import/template')
-  @Roles('admin', 'super_admin', 'agent')
-  async getCollectionsImportTemplate(@Res() res: Response) {
-    const csv = await this.projectService.getCollectionsImportTemplate();
-    const filename = 'collections-import-template.csv';
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(csv);
   }
 }
 

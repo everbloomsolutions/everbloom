@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { COLLECTION_LOCATION_TYPES, MATERIAL_TYPE_ENUM } from '../../../types/collections';
+import { FINANCIAL } from '../../../config/constants';
 
 export type ProjectDocument = Project & Document;
 
@@ -263,6 +264,26 @@ export class Project {
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);
+
+// Pre-save hook: calculate item amounts and collection totals
+ProjectSchema.pre('save', function (next) {
+  if (this.serviceType === 'recycling' && this.collectionItems && this.collectionItems.length > 0) {
+    this.collectionItems.forEach((item: { weight: number; rate: number; amount?: number }) => {
+      item.amount = item.weight * item.rate;
+    });
+
+    this.totalWeight = this.collectionItems.reduce((sum, item) => sum + item.weight, 0);
+    this.subTotal = this.collectionItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+    const gstRate = typeof this.gstRate === 'number' && this.gstRate >= 0 && this.gstRate <= 100
+      ? this.gstRate
+      : FINANCIAL.DEFAULT_GST_RATE;
+    this.gstRate = gstRate;
+    this.gstAmount = this.subTotal * (gstRate / 100);
+    this.totalAmount = this.subTotal + this.gstAmount;
+  }
+  next();
+});
 
 // Indexes
 ProjectSchema.index({ userId: 1, status: 1, createdAt: -1 });

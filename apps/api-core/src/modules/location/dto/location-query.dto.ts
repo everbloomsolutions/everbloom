@@ -1,5 +1,5 @@
 import { IsEnum, IsString, IsOptional, IsArray, IsBoolean, IsNumber, IsDateString, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { COLLECTION_LOCATION_TYPES } from '../../../types/collections';
 
 export class LocationQueryDto {
@@ -22,7 +22,13 @@ export class LocationQueryDto {
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value, obj, key }) => {
+    const raw = obj ? (obj as any)[key] : value;
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    if (raw === 'true' || raw === true || raw === 1 || raw === '1') return true;
+    if (raw === 'false' || raw === false || raw === 0 || raw === '0') return false;
+    return undefined;
+  })
   isActive?: boolean;
 
   @IsOptional()
@@ -65,7 +71,13 @@ export class LocationQueryDto {
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value, obj, key }) => {
+    const raw = obj ? (obj as any)[key] : value;
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    if (raw === 'true' || raw === true || raw === 1 || raw === '1') return true;
+    if (raw === 'false' || raw === false || raw === 0 || raw === '0') return false;
+    return undefined;
+  })
   unassigned?: boolean;
 
   @IsOptional()

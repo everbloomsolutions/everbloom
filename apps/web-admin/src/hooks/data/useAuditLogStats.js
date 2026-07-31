@@ -5,6 +5,19 @@ import { createQueryFn } from '../../utils/queryAdapter';
 import logger from '../../utils/logger';
 
 /**
+ * Extract the analytics payload from the API response.
+ * Handles both normalized and raw nested ({ data: {...} }) shapes.
+ */
+const getAnalyticsData = (data) => {
+  if (!data) return null;
+  if (data.series && Array.isArray(data.series)) return data;
+  if (data.data?.series && Array.isArray(data.data.series)) return data.data;
+  if (data.byAction && typeof data.byAction === 'object') return data;
+  if (data.data?.byAction && typeof data.data.byAction === 'object') return data.data;
+  return null;
+};
+
+/**
  * Custom hook for fetching audit log analytics
  * @param {Object} filters - Filter parameters (startDate, endDate, entityType)
  * @param {Object} options - Query options (enabled)
@@ -45,11 +58,17 @@ export const useAuditLogStats = (filters = {}, options = {}) => {
   });
 
   const analytics = useMemo(() => {
-    if (!data) return null;
+    const payload = getAnalyticsData(data);
+    if (!payload) {
+      if (import.meta.env.DEV && data) {
+        logger.debug('[useAuditLogStats] Unexpected data format:', data);
+      }
+      return null;
+    }
 
     // Enhanced endpoint returns { groupBy, series: [{ _id: { period, action }, count }] }
-    if (data.series && Array.isArray(data.series)) {
-      const { groupBy, series } = data;
+    if (payload.series && Array.isArray(payload.series)) {
+      const { groupBy, series } = payload;
 
       const actionCounts = {};
       const periodTotals = {};
@@ -102,8 +121,8 @@ export const useAuditLogStats = (filters = {}, options = {}) => {
     }
 
     // Non-enhanced endpoint fallback returns { total, byAction: { action: count } }
-    if (data.byAction && typeof data.byAction === 'object') {
-      const byAction = data.byAction;
+    if (payload.byAction && typeof payload.byAction === 'object') {
+      const byAction = payload.byAction;
       const total = Object.values(byAction).reduce((sum, count) => sum + count, 0);
 
       const topActions = Object.entries(byAction)
@@ -116,10 +135,6 @@ export const useAuditLogStats = (filters = {}, options = {}) => {
         }));
 
       return { topActions, activityTrend: 'stable', byAction, total };
-    }
-
-    if (import.meta.env.DEV) {
-      logger.debug('[useAuditLogStats] Unexpected data format:', data);
     }
 
     return null;

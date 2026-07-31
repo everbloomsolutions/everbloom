@@ -413,6 +413,22 @@ export const generateReport = async (
 };
 
 /**
+ * Extract the actual payload from an analytics service response.
+ * Some services return { success: true, data: {...} } while others return the data directly.
+ */
+const extractServiceData = (response: unknown): Record<string, unknown> | null => {
+  if (!response || typeof response !== 'object') return null;
+
+  // Handle standardized { success: true, data: {...} } wrappers
+  const obj = response as Record<string, unknown>;
+  if (obj.success === true && obj.data && typeof obj.data === 'object') {
+    return obj.data as Record<string, unknown>;
+  }
+
+  return obj;
+};
+
+/**
  * Fetch analytics data based on report type
  */
 const fetchAnalyticsData = async (
@@ -420,14 +436,21 @@ const fetchAnalyticsData = async (
   verifiedConnection?: mongoose.Connection
 ): Promise<unknown> => {
   // Convert date strings to Date objects, handling empty strings
-  const filters = {
-    startDate: request.filters?.startDate && request.filters.startDate.trim() 
-      ? new Date(request.filters.startDate) 
+  const filters: { startDate?: Date; endDate?: Date } = {
+    startDate: request.filters?.startDate && request.filters.startDate.trim()
+      ? new Date(request.filters.startDate)
       : undefined,
-    endDate: request.filters?.endDate && request.filters.endDate.trim() 
-      ? new Date(request.filters.endDate) 
+    endDate: request.filters?.endDate && request.filters.endDate.trim()
+      ? new Date(request.filters.endDate)
       : undefined,
   };
+
+  // Extend the end date to the end of the day so a date range like
+  // 2026-07-01 to 2026-07-31 includes all data created on the 31st.
+  // This matches how the frontend sends YYYY-MM-DD and how collectionDate is used.
+  if (filters.endDate) {
+    filters.endDate.setHours(23, 59, 59, 999);
+  }
 
   logger.debug(`Fetching analytics data for report type: ${request.reportType}`, {
     filters: {
@@ -443,7 +466,9 @@ const fetchAnalyticsData = async (
       if (!request.userId) {
         throw new AppError('User ID required for my-analytics report', 400);
       }
-      return projectService.getMyCollectionAnalytics(request.userId, filters);
+      return extractServiceData(
+        await projectService.getMyCollectionAnalytics(request.userId, filters),
+      );
 
     case 'location':
       return locationService.getLocationAnalytics({
@@ -455,7 +480,13 @@ const fetchAnalyticsData = async (
 
     case 'agent':
       try {
-        const agentData = await projectService.getAgentPerformanceAnalytics(filters);
+        const agentData = extractServiceData(
+          await projectService.getAgentPerformanceAnalytics({
+            ...filters,
+            userId: request.userId,
+            userRole: request.role,
+          }),
+        );
         // Ensure the data structure is correct
         if (!agentData || typeof agentData !== 'object') {
           throw new AppError('Invalid agent analytics data structure', 500);
@@ -484,15 +515,23 @@ const fetchAnalyticsData = async (
         throw new AppError(`Failed to fetch agent analytics: ${error instanceof Error ? error.message : 'Unknown error'}`, 500);
       }
 
-    case 'collection':
-      return projectService.getCollectionAnalytics({
-        ...filters,
-        userId: request.userId,
-        userRole: request.role,
-      });
+    case 'collection': {
+      const collectionData = extractServiceData(
+        await projectService.getCollectionAnalytics({
+          ...filters,
+          userId: request.userId,
+          userRole: request.role,
+        }),
+      );
+      // Report generators expect overall metrics at the top level
+      if (collectionData?.overall && typeof collectionData.overall === 'object') {
+        return { ...collectionData, ...(collectionData.overall as Record<string, unknown>) };
+      }
+      return collectionData;
+    }
 
     case 'user':
-      return userAdminService.getUserStats(request.userId, request.role, verifiedConnection);
+      return userAdminService.getUserStats(request.userId, request.role, verifiedConnection, filters);
 
     case 'comprehensive': {
       // Fetch all analytics for comprehensive report
@@ -503,15 +542,29 @@ const fetchAnalyticsData = async (
           userId: request.userId,
           userRole: request.role,
         }),
-        projectService.getAgentPerformanceAnalytics(filters),
+        projectService.getAgentPerformanceAnalytics({
+          ...filters,
+          userId: request.userId,
+          userRole: request.role,
+        }),
         projectService.getCollectionAnalytics({
           ...filters,
           userId: request.userId,
           userRole: request.role,
         }),
-        userAdminService.getUserStats(request.userId, request.role, verifiedConnection),
+        userAdminService.getUserStats(request.userId, request.role, verifiedConnection, filters),
       ]);
-      return { location, agent, collection, user };
+
+      // Normalize each service response and flatten collection overall metrics
+      const collectionData = extractServiceData(collection);
+      return {
+        location: extractServiceData(location),
+        agent: extractServiceData(agent),
+        collection: collectionData?.overall && typeof collectionData.overall === 'object'
+          ? { ...collectionData, ...(collectionData.overall as Record<string, unknown>) }
+          : collectionData,
+        user: extractServiceData(user),
+      };
     }
 
     default:

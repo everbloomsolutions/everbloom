@@ -1057,6 +1057,7 @@ export const getUserStats = async (
   requesterId?: string,
   requesterRole?: string,
   verifiedConnection?: mongoose.Connection,
+  filters?: { startDate?: Date; endDate?: Date },
 ): Promise<{
   total: number;
   active: number;
@@ -1066,13 +1067,24 @@ export const getUserStats = async (
   users?: number; // Regular users count
   recent: number; // Users created in last 7 days
 }> => {
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const rangeEnd = filters?.endDate ? new Date(filters.endDate) : new Date();
+  const sevenDaysAgo = new Date(rangeEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   // For agents, only show 'user' role statistics
   const isAgent = requesterRole === 'agent';
   const queryBuilder = new QueryBuilderService();
   const baseQuery = queryBuilder.excludeDeleted({});
+
+  // Apply optional report date range to user creation
+  if (filters?.startDate || filters?.endDate) {
+    baseQuery.createdAt = {};
+    if (filters.startDate) {
+      (baseQuery.createdAt as Record<string, unknown>).$gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      (baseQuery.createdAt as Record<string, unknown>).$lte = new Date(filters.endDate);
+    }
+  }
 
   // Use verified connection if provided, otherwise use default
   const _connection = verifiedConnection || mongoose.connection;

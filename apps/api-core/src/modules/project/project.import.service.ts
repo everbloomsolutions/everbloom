@@ -75,6 +75,8 @@ export const exportCollections = async (
     locationType?: string;
     startDate?: Date;
     endDate?: Date;
+    userId?: string;
+    userRole?: string;
   },
   format: FileFormat = 'csv'
 , verifiedConnection?: mongoose.Connection): Promise<{ data: string | Buffer; mimeType: string; extension: string }> => {
@@ -85,6 +87,17 @@ export const exportCollections = async (
 
   if (filters?.locationType) {
     query.locationType = filters.locationType;
+  }
+
+  // Role-based filtering
+  if (filters?.userRole === 'agent' && filters?.userId) {
+    const userObjectId = new Types.ObjectId(filters.userId);
+    query.$or = [
+      { collectedBy: userObjectId },
+      { userId: userObjectId },
+    ];
+  } else if (filters?.userRole === 'user' && filters?.userId) {
+    query.userId = new Types.ObjectId(filters.userId);
   }
 
   // Use QueryBuilderService for consistent date filtering

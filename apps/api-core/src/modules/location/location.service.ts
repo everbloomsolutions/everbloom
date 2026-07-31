@@ -9,6 +9,7 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationQueryDto } from './dto/location-query.dto';
 import { ValidationService } from '../../common/validation/validation.service';
 import { PaginationService } from '../../common/pagination/pagination.service';
+import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { PAGINATION } from '../../config/constants';
 import { CollectionLocationType } from '../../types/collections';
@@ -733,20 +734,24 @@ export class LocationService {
         };
 
         if (filters?.startDate || filters?.endDate) {
-          projectFilter.createdAt = {};
-          if (filters.startDate) {
-            (projectFilter.createdAt as Record<string, unknown>).$gte = filters.startDate;
-          }
-          if (filters.endDate) {
-            (projectFilter.createdAt as Record<string, unknown>).$lte = filters.endDate;
-          }
+          const queryBuilder = new QueryBuilderService();
+          const dateRangeFilter = queryBuilder.buildDateRange(
+            filters?.startDate ? new Date(filters.startDate) : undefined,
+            filters?.endDate ? new Date(filters.endDate) : undefined,
+            'collectionDate',
+          );
+          projectFilter.collectionDate = {
+            $exists: true,
+            $ne: null,
+            ...(dateRangeFilter.collectionDate as Record<string, unknown> || {}),
+          };
         }
 
         const trendResult = await this.projectModel.aggregate([
           { $match: projectFilter },
           {
             $group: {
-              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$collectionDate' } },
               count: { $sum: 1 },
             },
           },

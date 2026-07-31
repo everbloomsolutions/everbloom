@@ -5,6 +5,7 @@ import { Receipt, ReceiptDocument } from './schemas/receipt.schema';
 import { GenerateReceiptDto } from './dto/generate-receipt.dto';
 import { ReceiptQueryDto } from './dto/receipt-query.dto';
 import { ReceiptSequence } from './receipt-sequence.model';
+import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
 
 @Injectable()
 export class ReceiptService {
@@ -164,10 +165,13 @@ export class ReceiptService {
     }
 
     if (filters.startDate || filters.endDate) {
-      const dateQuery: Record<string, unknown> = {};
-      if (filters.startDate) dateQuery.$gte = new Date(filters.startDate);
-      if (filters.endDate) dateQuery.$lte = new Date(filters.endDate);
-      query.collectionDate = dateQuery;
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters.startDate ? new Date(filters.startDate) : undefined,
+        filters.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(query, dateRangeFilter);
     }
 
     // Role-based filtering (agent/user see only their receipts)

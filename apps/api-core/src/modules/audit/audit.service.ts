@@ -34,8 +34,16 @@ export class AuditService {
 
     if (query.startDate || query.endDate) {
       const createdAt: Record<string, unknown> = {};
-      if (query.startDate) createdAt.$gte = new Date(query.startDate);
-      if (query.endDate) createdAt.$lte = new Date(query.endDate);
+      if (query.startDate) {
+        const start = new Date(query.startDate);
+        start.setHours(0, 0, 0, 0);
+        createdAt.$gte = start;
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAt.$lte = end;
+      }
       filter.createdAt = createdAt;
     }
 
@@ -89,8 +97,16 @@ export class AuditService {
     }
     if (filters?.startDate || filters?.endDate) {
       const createdAt: Record<string, unknown> = {};
-      if (filters.startDate) createdAt.$gte = filters.startDate;
-      if (filters.endDate) createdAt.$lte = filters.endDate;
+      if (filters.startDate) {
+        const start = new Date(filters.startDate);
+        start.setHours(0, 0, 0, 0);
+        createdAt.$gte = start;
+      }
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAt.$lte = end;
+      }
       filter.createdAt = createdAt;
     }
 
@@ -124,8 +140,16 @@ export class AuditService {
     if (filters?.entityType) match.entityType = filters.entityType;
     if (filters?.startDate || filters?.endDate) {
       const createdAt: Record<string, unknown> = {};
-      if (filters?.startDate) createdAt.$gte = filters.startDate;
-      if (filters?.endDate) createdAt.$lte = filters.endDate;
+      if (filters?.startDate) {
+        const start = new Date(filters.startDate);
+        start.setHours(0, 0, 0, 0);
+        createdAt.$gte = start;
+      }
+      if (filters?.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAt.$lte = end;
+      }
       match.createdAt = createdAt;
     }
 
@@ -161,8 +185,16 @@ export class AuditService {
     if (filters?.entityType) match.entityType = filters.entityType;
     if (filters?.startDate || filters?.endDate) {
       const createdAt: Record<string, unknown> = {};
-      if (filters?.startDate) createdAt.$gte = filters.startDate;
-      if (filters?.endDate) createdAt.$lte = filters.endDate;
+      if (filters?.startDate) {
+        const start = new Date(filters.startDate);
+        start.setHours(0, 0, 0, 0);
+        createdAt.$gte = start;
+      }
+      if (filters?.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        createdAt.$lte = end;
+      }
       match.createdAt = createdAt;
     }
 

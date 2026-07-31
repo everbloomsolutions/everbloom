@@ -2,7 +2,18 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { auditApi } from '../../api';
 import { createQueryFn } from '../../utils/queryAdapter';
-import logger from '../../utils/logger';
+
+/**
+ * Extract the page payload from the API response.
+ * Handles both the normalized { logs, total, ... } shape and the
+ * raw / partially normalized { data: { logs, total, ... } } shape.
+ */
+const getPageData = (data) => {
+  if (!data) return null;
+  if (data.logs && Array.isArray(data.logs)) return data;
+  if (data.data?.logs && Array.isArray(data.data.logs)) return data.data;
+  return null;
+};
 
 /**
  * Custom hook for fetching audit log data
@@ -50,27 +61,16 @@ export const useAuditLogs = (filters = {}) => {
     staleTime: 30000,
   });
 
+  const pageData = useMemo(() => getPageData(data), [data]);
+
   const auditLogs = useMemo(() => {
-    if (!data) return [];
+    if (!pageData) return [];
+    return pageData.logs || [];
+  }, [pageData]);
 
-    if (data.logs && Array.isArray(data.logs)) {
-      return data.logs;
-    }
+  const total = useMemo(() => pageData?.total ?? 0, [pageData]);
 
-    if (Array.isArray(data)) {
-      return data;
-    }
-
-    if (import.meta.env.DEV) {
-      logger.debug('[useAuditLogs] Unexpected data format:', data);
-    }
-
-    return [];
-  }, [data]);
-
-  const total = useMemo(() => data?.total || 0, [data]);
-
-  const totalPages = useMemo(() => data?.totalPages || 1, [data]);
+  const totalPages = useMemo(() => pageData?.totalPages ?? 1, [pageData]);
 
   return {
     auditLogs,

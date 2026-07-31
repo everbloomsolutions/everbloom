@@ -8,6 +8,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ValidationService } from '../../common/validation/validation.service';
 import { PaginationService } from '../../common/pagination/pagination.service';
+import { QueryBuilderService } from '../../infrastructure/database/query-builder.service';
 import { PAGINATION } from '../../config/constants';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { logAuditEvent } from '../audit/audit.helper';
@@ -394,13 +395,12 @@ export class ProjectService {
     const filter: Record<string, unknown> = { ...baseQuery };
 
     // Role-based filtering
-    const orConditions: Record<string, unknown>[] = [];
+    const andConditions: Record<string, unknown>[] = [];
     if (filters?.userRole === 'agent' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
-      orConditions.push(
-        { collectedBy: userObjectId },
-        { userId: userObjectId },
-      );
+      andConditions.push({
+        $or: [{ collectedBy: userObjectId }, { userId: userObjectId }],
+      });
     } else if (filters?.userRole === 'user' && filters?.userId) {
       const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
       filter.userId = userObjectId;
@@ -412,6 +412,12 @@ export class ProjectService {
         // No defaultLocation -> no visible collections
         filter._id = { $in: [] };
       }
+    } else if ((filters?.userRole === 'admin' || filters?.userRole === 'super_admin') && filters?.userId) {
+      // Admin filtering by a specific agent/customer
+      const userObjectId = this.validationService.validateObjectId(filters.userId, 'userId');
+      andConditions.push({
+        $or: [{ collectedBy: userObjectId }, { userId: userObjectId }],
+      });
     }
     // Admin/super_admin can see all projects
 
@@ -420,32 +426,60 @@ export class ProjectService {
       filter.serviceType = filters.serviceType;
     }
 
-    // Filter by status
-    if (filters?.status) {
+    // Filter by receipt status
+    if (filters?.hasReceipt === true || filters?.hasReceipt === 'true') {
+      filter.receiptNumber = { $exists: true, $ne: null, $nin: [''] };
+    } else if (filters?.hasReceipt === false || filters?.hasReceipt === 'false') {
+      filter.$or = [
+        ...(filter.$or as Record<string, unknown>[] || []),
+        { receiptNumber: { $exists: false } },
+        { receiptNumber: null },
+        { receiptNumber: '' },
+      ];
+    }
+
+    // Filter by project status (skip UI receipt status pseudo-values)
+    if (filters?.status && !['with-receipt', 'without-receipt'].includes(filters.status)) {
       filter.status = filters.status;
     }
 
-    // Filter by search (search in project name, address, etc.)
+    // Filter by search (search in title, location name, address, city, state, receipt)
     if (filters?.search) {
-      orConditions.push(
-        { projectName: { $regex: filters.search, $options: 'i' } } as Record<string, unknown>,
-        { address: { $regex: filters.search, $options: 'i' } } as Record<string, unknown>,
-        { city: { $regex: filters.search, $options: 'i' } } as Record<string, unknown>,
-        { state: { $regex: filters.search, $options: 'i' } } as Record<string, unknown>,
-      );
+      const searchRegex = { $regex: filters.search, $options: 'i' };
+      andConditions.push({
+        $or: [
+          { title: searchRegex },
+          { locationName: searchRegex },
+          { 'location.address': searchRegex },
+          { 'location.city': searchRegex },
+          { 'location.state': searchRegex },
+          { receiptNumber: searchRegex },
+        ],
+      });
     }
 
-    // Add $or if we have conditions
-    if (orConditions.length > 0) {
-      filter.$or = orConditions;
+    // Combine role/search as $and so they are all required
+    if (andConditions.length > 0) {
+      filter.$and = [
+        ...(filter.$and as Record<string, unknown>[] || []),
+        ...andConditions,
+      ];
     }
 
-    // Date range filters
-    if (filters?.startDate) {
-      filter.createdAt = { ...(filter.createdAt as Record<string, unknown> || {}), $gte: new Date(filters.startDate) };
-    }
-    if (filters?.endDate) {
-      filter.createdAt = { ...(filter.createdAt as Record<string, unknown> || {}), $lte: new Date(filters.endDate) };
+    // Date range filters on collectionDate with end-of-day
+    if (filters?.startDate || filters?.endDate) {
+      const dateQuery: Record<string, unknown> = {};
+      if (filters?.startDate) {
+        const start = new Date(filters.startDate);
+        start.setHours(0, 0, 0, 0);
+        (dateQuery as any).$gte = start;
+      }
+      if (filters?.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        (dateQuery as any).$lte = end;
+      }
+      filter.collectionDate = dateQuery;
     }
 
     // Build sort
@@ -463,6 +497,18 @@ export class ProjectService {
           break;
         case 'serviceType':
           sort = { serviceType: 1, createdAt: -1 };
+          break;
+        case 'amount-high':
+          sort = { totalAmount: -1, createdAt: -1 };
+          break;
+        case 'amount-low':
+          sort = { totalAmount: 1, createdAt: -1 };
+          break;
+        case 'weight-high':
+          sort = { totalWeight: -1, createdAt: -1 };
+          break;
+        case 'weight-low':
+          sort = { totalWeight: 1, createdAt: -1 };
           break;
         default:
           sort = { createdAt: -1 };
@@ -877,13 +923,13 @@ export class ProjectService {
 
     // Date range on collectionDate (more meaningful for collections)
     if (filters?.startDate || filters?.endDate) {
-      match.collectionDate = {};
-      if (filters.startDate) {
-        (match.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (match.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(match, dateRangeFilter);
     }
 
     const pipeline: any[] = [
@@ -964,13 +1010,13 @@ export class ProjectService {
     }
 
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.createdAt = {};
-      if (filters.startDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery.createdAt as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'createdAt',
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     const pipeline: any[] = [
@@ -1022,13 +1068,13 @@ export class ProjectService {
 
     // Date range filter on collectionDate (consistent with financial/time-series analytics)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.collectionDate = {};
-      if (filters.startDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     // Service type filter
@@ -1293,13 +1339,13 @@ export class ProjectService {
     }
 
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.collectionDate = {};
-      if (filters.startDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     const pipeline: any[] = [
@@ -1371,13 +1417,13 @@ export class ProjectService {
     const dateField = filters?.dateField || 'collectionDate';
 
     if (filters?.startDate || filters?.endDate) {
-      baseQuery[dateField] = {};
-      if (filters.startDate) {
-        (baseQuery[dateField] as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery[dateField] as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        dateField,
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     let groupId: Record<string, unknown>;
@@ -1427,13 +1473,13 @@ export class ProjectService {
 
     // Date range filter on collectionDate (consistent with other analytics endpoints)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.collectionDate = {};
-      if (filters.startDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     // Service type filter
@@ -1662,13 +1708,13 @@ export class ProjectService {
 
     // Date range filter on collectionDate (consistent with other analytics endpoints)
     if (filters?.startDate || filters?.endDate) {
-      baseQuery.collectionDate = {};
-      if (filters.startDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        (baseQuery.collectionDate as Record<string, unknown>).$lte = new Date(filters.endDate);
-      }
+      const queryBuilder = new QueryBuilderService();
+      const dateRangeFilter = queryBuilder.buildDateRange(
+        filters?.startDate ? new Date(filters.startDate) : undefined,
+        filters?.endDate ? new Date(filters.endDate) : undefined,
+        'collectionDate',
+      );
+      Object.assign(baseQuery, dateRangeFilter);
     }
 
     // Service type filter

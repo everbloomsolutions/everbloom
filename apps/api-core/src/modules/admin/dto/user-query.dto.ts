@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsEnum, IsBoolean, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class UserQueryDto {
   @IsOptional()
@@ -24,6 +24,12 @@ export class UserQueryDto {
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value, obj, key }) => {
+    const raw = obj ? (obj as any)[key] : value;
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    if (raw === 'true' || raw === true || raw === 1 || raw === '1') return true;
+    if (raw === 'false' || raw === false || raw === 0 || raw === '0') return false;
+    return undefined;
+  })
   isActive?: boolean;
 }
