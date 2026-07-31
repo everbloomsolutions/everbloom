@@ -230,6 +230,7 @@ resource "helm_release" "ingress" {
             "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internet-facing"
             "service.beta.kubernetes.io/aws-load-balancer-attributes"                        = "load_balancing.cross_zone.enabled=true"
             "service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags"          = "Environment=production,ManagedBy=terraform"
+            "service.beta.kubernetes.io/aws-load-balancer-subnets"                             = join(",", [aws_subnet.public[0].id, aws_subnet.public[1].id])
           }
         }
       }

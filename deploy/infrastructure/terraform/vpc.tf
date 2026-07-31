@@ -57,11 +57,11 @@ resource "aws_internet_gateway" "everbloom" {
 
 # NAT Gateways
 resource "aws_eip" "nat" {
-  count  = 2
+  count  = 1
   domain = "vpc"
 
   tags = {
-    Name        = "everbloom-nat-eip-${count.index + 1}"
+    Name        = "everbloom-nat-eip-1"
     Environment = "production"
     ManagedBy   = "terraform"
   }
@@ -70,12 +70,12 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "everbloom" {
-  count         = 2
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+  count         = 1
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name        = "everbloom-nat-gateway-${count.index + 1}"
+    Name        = "everbloom-nat-gateway-1"
     Environment = "production"
     ManagedBy   = "terraform"
   }
@@ -107,16 +107,16 @@ resource "aws_route_table_association" "public" {
 
 # Private Route Tables
 resource "aws_route_table" "private" {
-  count  = 2
+  count  = 1
   vpc_id = aws_vpc.everbloom.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.everbloom[count.index].id
+    nat_gateway_id = aws_nat_gateway.everbloom[0].id
   }
 
   tags = {
-    Name        = "everbloom-private-rt-${count.index + 1}"
+    Name        = "everbloom-private-rt-1"
     Environment = "production"
     ManagedBy   = "terraform"
   }
@@ -125,40 +125,10 @@ resource "aws_route_table" "private" {
 resource "aws_route_table_association" "private" {
   count          = 3
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index % 2].id
+  route_table_id = aws_route_table.private[0].id
 }
 
-# VPC Endpoints for ECR, S3, Secrets Manager
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id              = aws_vpc.everbloom.id
-  service_name        = "com.amazonaws.ap-south-2.ecr.dkr"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name        = "everbloom-ecr-dkr-endpoint"
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id              = aws_vpc.everbloom.id
-  service_name        = "com.amazonaws.ap-south-2.ecr.api"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name        = "everbloom-ecr-api-endpoint"
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
-}
-
+# S3 Gateway VPC Endpoint (free; ECR image layers are in S3)
 resource "aws_vpc_endpoint" "s3" {
   vpc_id          = aws_vpc.everbloom.id
   service_name    = "com.amazonaws.ap-south-2.s3"
@@ -166,48 +136,6 @@ resource "aws_vpc_endpoint" "s3" {
 
   tags = {
     Name        = "everbloom-s3-endpoint"
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id              = aws_vpc.everbloom.id
-  service_name        = "com.amazonaws.ap-south-2.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name        = "everbloom-secretsmanager-endpoint"
-    Environment = "production"
-    ManagedBy   = "terraform"
-  }
-}
-
-# VPC Endpoint Security Groups
-resource "aws_security_group" "vpc_endpoints" {
-  name        = "everbloom-vpc-endpoints-sg"
-  description = "Security group for VPC endpoints"
-  vpc_id      = aws_vpc.everbloom.id
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "everbloom-vpc-endpoints-sg"
     Environment = "production"
     ManagedBy   = "terraform"
   }

@@ -61,7 +61,6 @@ resource "aws_eks_cluster" "everbloom" {
   }
 
   enabled_cluster_log_types = [
-    "audit",
     "authenticator"
   ]
 
@@ -255,4 +254,26 @@ resource "aws_eks_node_group" "application" {
     aws_iam_role_policy_attachment.ecr_readonly_policy,
     aws_iam_role_policy_attachment.eks_cw_policy
   ]
+}
+
+# EKS Metrics Server addon (needed for HPA / kubectl top)
+resource "aws_eks_addon" "metrics_server" {
+  cluster_name                = aws_eks_cluster.everbloom.name
+  addon_name                  = "metrics-server"
+  addon_version               = "v0.9.0-eksbuild.4"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [
+    aws_eks_cluster.everbloom,
+    aws_eks_node_group.application,
+  ]
+}
+
+# Retention for EKS control-plane log group created by enabled_cluster_log_types
+resource "aws_cloudwatch_log_group" "eks_control_plane" {
+  name              = "/aws/eks/${aws_eks_cluster.everbloom.name}/cluster"
+  retention_in_days = 7
+
+  depends_on = [aws_eks_cluster.everbloom]
 }

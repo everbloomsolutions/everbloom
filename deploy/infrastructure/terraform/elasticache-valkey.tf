@@ -83,7 +83,7 @@ resource "aws_elasticache_parameter_group" "everbloom" {
 resource "aws_elasticache_replication_group" "everbloom" {
   replication_group_id = "everbloom-valkey"
   description          = "Everbloom Valkey replication group"
-  node_type            = "cache.t3.medium"
+  node_type            = "cache.t3.small"
   num_cache_clusters   = 1
   port                 = 6379
   engine               = "valkey"
@@ -110,6 +110,8 @@ resource "aws_elasticache_replication_group" "everbloom" {
 
   # Cluster mode disabled for single primary/replica setup
   cluster_mode = "disabled"
+
+  apply_immediately = true
 
   tags = {
     Name        = "everbloom-valkey"

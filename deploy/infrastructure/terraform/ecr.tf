@@ -42,7 +42,7 @@ resource "aws_ecr_lifecycle_policy" "api_core" {
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 20
+          countNumber = 10
         }
         action = {
           type = "expire"
@@ -93,7 +93,7 @@ resource "aws_ecr_lifecycle_policy" "web_admin" {
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 20
+          countNumber = 10
         }
         action = {
           type = "expire"
@@ -144,7 +144,7 @@ resource "aws_ecr_lifecycle_policy" "web_public" {
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 20
+          countNumber = 10
         }
         action = {
           type = "expire"
